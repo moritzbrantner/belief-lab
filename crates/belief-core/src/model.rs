@@ -28,8 +28,8 @@ pub enum BeliefError {
         observation: String,
         reference: String,
     },
-    #[error("source span `{span}` references unknown source `{source}`")]
-    UnknownSource { span: String, source: String },
+    #[error("source span `{span}` references unknown source `{source_id}`")]
+    UnknownSource { span: String, source_id: String },
     #[error("source span `{span}` has an invalid time range")]
     InvalidTimedSpan { span: String },
     #[error("media evidence `{id}` has an invalid time range")]
