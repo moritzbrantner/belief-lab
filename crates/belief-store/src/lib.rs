@@ -5,7 +5,7 @@ use belief_core::{
     Belief, BeliefId, Claim, ClaimId, ClaimOrigin, Derivation, EvidenceId, EvidenceRef, Judgment,
     JudgmentId,
 };
-use inference_core::InferenceResult;
+use inference_core::{AuthorizationReceipt, InferenceResult};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Validity {
@@ -41,6 +41,7 @@ pub struct InMemoryBeliefStore {
     claims: BTreeMap<ClaimId, Stored<Claim>>,
     beliefs: BTreeMap<BeliefId, Stored<Belief>>,
     derivations: BTreeMap<BeliefId, Derivation>,
+    authorizations: BTreeMap<BeliefId, AuthorizationReceipt>,
 }
 
 impl InMemoryBeliefStore {
@@ -101,8 +102,7 @@ impl InMemoryBeliefStore {
     }
 
     pub fn insert_inference_result(&mut self, result: InferenceResult) -> Result<(), StoreError> {
-        let belief = result.belief;
-        let derivation = result.derivation;
+        let (belief, derivation, selected_judgments, _, authorization) = result.into_parts();
 
         if self.beliefs.contains_key(&belief.id) {
             return Err(StoreError::Duplicate {
@@ -123,7 +123,7 @@ impl InMemoryBeliefStore {
                 "derivation inference run does not match belief".into(),
             ));
         }
-        if derivation.judgments != result.selected_judgments {
+        if derivation.judgments != selected_judgments {
             return Err(StoreError::InconsistentResult(
                 "derivation judgments do not match selected judgments".into(),
             ));
@@ -139,6 +139,8 @@ impl InMemoryBeliefStore {
             self.require_active_claim(claim)?;
         }
 
+        self.authorizations
+            .insert(belief.id.clone(), authorization);
         self.derivations.insert(belief.id.clone(), derivation);
         self.beliefs
             .insert(belief.id.clone(), Stored::active(belief));
@@ -215,10 +217,20 @@ impl InMemoryBeliefStore {
             .filter_map(|id| self.claims.get(id).cloned())
             .collect();
 
+        let authorization = self
+            .authorizations
+            .get(belief)
+            .cloned()
+            .ok_or_else(|| StoreError::Missing {
+                kind: "authorization",
+                id: belief.to_string(),
+            })?;
+
         Ok(BeliefExplanation {
             belief: stored_belief,
             claim,
             derivation,
+            authorization,
             judgments,
             evidence,
             input_claims,
@@ -406,6 +418,7 @@ pub struct BeliefExplanation {
     pub belief: Stored<Belief>,
     pub claim: Stored<Claim>,
     pub derivation: Derivation,
+    pub authorization: AuthorizationReceipt,
     pub judgments: Vec<Stored<Judgment>>,
     pub evidence: Vec<Stored<EvidenceRef>>,
     pub input_claims: Vec<Stored<Claim>>,
