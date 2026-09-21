@@ -6,3 +6,7 @@ edition.workspace = true
 [dependencies]
 belief-core = { path = "../belief-core" }
 inference-core = { path = "../inference-core" }
+
+[dev-dependencies]
+belief-policy = { path = "../belief-policy" }
+inference-baseline = { path = "../inference-baseline" }
