@@ -1,0 +1,258 @@
+{
+  "schema": "belief_evidence_bundle",
+  "schemaVersion": 1,
+  "sourceSpans": {
+    "schema": "source_span_interchange",
+    "schemaVersion": 1,
+    "producer": {
+      "name": "youtube-corpus",
+      "revision": "git:8df17090f279b1d9e6f6f357c2c3f8f7a43e48d5"
+    },
+    "sources": [
+      {
+        "id": "stream-demo-manual-en",
+        "kind": "youtube_transcript",
+        "revision": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "uri": "https://example.test/watch?v=belief-demo",
+        "title": "Belief Lab multimodal fixture",
+        "creators": ["Fixture Speaker"],
+        "language": "en",
+        "contentHash": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "metadata": {
+          "videoId": "video-demo"
+        }
+      }
+    ],
+    "spans": [
+      {
+        "id": "span-transcript-1",
+        "sourceId": "stream-demo-manual-en",
+        "sequence": 0,
+        "text": "I've been using this ThinkPad with Arch for about two years.",
+        "contentHash": "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+        "language": "en",
+        "locator": {
+          "kind": "timed",
+          "segmentIndex": 0,
+          "startSeconds": 752.2,
+          "endSeconds": 756.8
+        },
+        "metadata": {
+          "videoId": "video-demo",
+          "speakerTrack": "voice-track-2"
+        }
+      }
+    ]
+  },
+  "mediaEvidence": [
+    {
+      "schema": "media_evidence",
+      "schemaVersion": 1,
+      "producer": {
+        "name": "youtube-corpus",
+        "revision": "git:8df17090f279b1d9e6f6f357c2c3f8f7a43e48d5"
+      },
+      "video": {
+        "id": "video-demo",
+        "youtubeId": "belief-demo",
+        "sourceUrl": "https://example.test/watch?v=belief-demo",
+        "title": "Belief Lab multimodal fixture"
+      },
+      "revision": "sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+      "scenes": [
+        {
+          "id": "scene-17",
+          "sceneIndex": 17,
+          "startFrame": 22500,
+          "endFrame": 23010,
+          "startSeconds": 750.0,
+          "endSeconds": 767.0,
+          "metadata": {
+            "detector": "content"
+          },
+          "provenance": {
+            "runId": "scene-run-1",
+            "processor": "scenedetect-rs",
+            "processorVersion": "git:ff0466b41c2b2d54bc3f4210d079d51a4d3c6353",
+            "model": "content-detector",
+            "modelVersion": "v1",
+            "inputHash": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+            "configHash": "sha256:2222222222222222222222222222222222222222222222222222222222222222",
+            "processingConfig": {
+              "threshold": 27.0
+            }
+          }
+        }
+      ],
+      "ocrObservations": [
+        {
+          "id": "ocr-observation-1",
+          "text": "ThinkPad X1",
+          "language": "en",
+          "frameIndex": 22620,
+          "timestampSeconds": 754.0,
+          "sceneIndex": 17,
+          "confidence": 0.88,
+          "attributes": {
+            "role": "device_label"
+          },
+          "provenance": {
+            "runId": "ocr-run-1",
+            "processor": "visual-analysis",
+            "processorVersion": "git:6399e2fd28ebe0a574ba605fced155e4f90afc9b",
+            "model": "trocr-local",
+            "modelVersion": "fixture",
+            "inputHash": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+            "configHash": "sha256:3333333333333333333333333333333333333333333333333333333333333333",
+            "processingConfig": {}
+          }
+        }
+      ],
+      "ocrTracks": [
+        {
+          "id": "ocr-track-1",
+          "text": "ThinkPad X1",
+          "role": "scene_text",
+          "language": "en",
+          "sampleCount": 3,
+          "startFrame": 22590,
+          "endFrame": 22720,
+          "startSeconds": 753.0,
+          "endSeconds": 757.3,
+          "metadata": {},
+          "observationIds": ["ocr-observation-1"],
+          "sceneIds": ["scene-17"],
+          "provenance": {
+            "runId": "ocr-run-1",
+            "processor": "visual-analysis",
+            "processorVersion": "git:6399e2fd28ebe0a574ba605fced155e4f90afc9b",
+            "model": "video-text-semantics",
+            "modelVersion": "fixture",
+            "inputHash": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+            "configHash": "sha256:4444444444444444444444444444444444444444444444444444444444444444",
+            "processingConfig": {}
+          }
+        }
+      ],
+      "sponsorblock": null
+    }
+  ],
+  "observations": [
+    {
+      "id": "object-laptop-1",
+      "kind": "object_detection",
+      "subject": "object:thinkpad",
+      "predicate": "visible_in",
+      "object": "scene-17",
+      "score": {
+        "value": 0.94,
+        "semantics": "detection_confidence"
+      },
+      "evidenceRefs": ["scene-17", "ocr-track-1"],
+      "correlationGroup": "visual-device-scene-17",
+      "provenance": {
+        "name": "visual-analysis",
+        "revision": "git:6399e2fd28ebe0a574ba605fced155e4f90afc9b"
+      },
+      "attributes": {
+        "detector": "detr"
+      }
+    },
+    {
+      "id": "face-track-4",
+      "kind": "face_track",
+      "subject": "face-track-4",
+      "predicate": "visible_in",
+      "object": "scene-17",
+      "score": {
+        "value": 0.9,
+        "semantics": "detection_confidence"
+      },
+      "evidenceRefs": ["scene-17"],
+      "correlationGroup": "person-presence-scene-17",
+      "provenance": {
+        "name": "visual-analysis",
+        "revision": "git:6399e2fd28ebe0a574ba605fced155e4f90afc9b"
+      },
+      "attributes": {}
+    },
+    {
+      "id": "voice-track-2",
+      "kind": "voice_track",
+      "subject": "voice-track-2",
+      "predicate": "speaks_in",
+      "object": "scene-17",
+      "score": {
+        "value": 0.92,
+        "semantics": "transcription_confidence"
+      },
+      "evidenceRefs": ["span-transcript-1", "scene-17"],
+      "correlationGroup": "speaker-turn-752",
+      "provenance": {
+        "name": "audio-analysis",
+        "revision": "git:b1ad1f4ec60ff895fef73ae610f2be8ff61a066c"
+      },
+      "attributes": {
+        "workflow": "native-whisperx"
+      }
+    },
+    {
+      "id": "ner-thinkpad-1",
+      "kind": "named_entity",
+      "subject": "span-transcript-1",
+      "predicate": "mentions",
+      "object": "product:thinkpad",
+      "score": {
+        "value": 0.91,
+        "semantics": "ner_confidence"
+      },
+      "evidenceRefs": ["span-transcript-1"],
+      "correlationGroup": "transcript-semantics-span-1",
+      "provenance": {
+        "name": "nlp-stack",
+        "revision": "git:aa425fcc8f030731a000f72c736e13d36d2829d3"
+      },
+      "attributes": {}
+    },
+    {
+      "id": "relation-uses-thinkpad",
+      "kind": "relation",
+      "subject": "voice-track-2",
+      "predicate": "uses",
+      "object": "product:thinkpad",
+      "score": {
+        "value": 0.88,
+        "semantics": "ner_confidence"
+      },
+      "evidenceRefs": ["span-transcript-1", "ner-thinkpad-1", "ocr-track-1"],
+      "correlationGroup": "transcript-semantics-span-1",
+      "provenance": {
+        "name": "nlp-stack",
+        "revision": "git:aa425fcc8f030731a000f72c736e13d36d2829d3"
+      },
+      "attributes": {
+        "relationExtractor": "fixture"
+      }
+    },
+    {
+      "id": "identity-guest-alice",
+      "kind": "entity_link",
+      "subject": "voice-track-2",
+      "predicate": "same_entity",
+      "object": "person:alice",
+      "score": {
+        "value": 0.91,
+        "semantics": "entity_link_probability"
+      },
+      "evidenceRefs": ["voice-track-2", "face-track-4"],
+      "correlationGroup": "cross-modal-identity-alice",
+      "provenance": {
+        "name": "youtube-corpus",
+        "revision": "git:8df17090f279b1d9e6f6f357c2c3f8f7a43e48d5"
+      },
+      "attributes": {
+        "identityStatus": "hypothesis"
+      }
+    }
+  ]
+}
