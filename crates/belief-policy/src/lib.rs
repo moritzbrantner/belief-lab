@@ -1,6 +1,8 @@
 use std::collections::{BTreeMap, BTreeSet};
 use std::fmt;
 
+pub use belief_core::{EvidenceClass, EvidencePurpose, InferenceClass};
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub enum AuthorizationProfile {
     ObserveOnly,
@@ -23,82 +25,6 @@ impl AuthorizationProfile {
             Self::ObserveOnly => "observe_only",
             Self::SemanticResearch => "semantic_research",
             Self::MultimodalResearch => "multimodal_research",
-        }
-    }
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
-pub enum EvidenceClass {
-    UserAssertion,
-    Metadata,
-    Transcript,
-    Ocr,
-    ObjectDetection,
-    SceneDetection,
-    NamedEntity,
-    FaceTrackReference,
-    VoiceTrackReference,
-}
-
-impl EvidenceClass {
-    fn parse(value: &str) -> Option<Self> {
-        match value {
-            "user_assertion" => Some(Self::UserAssertion),
-            "metadata" => Some(Self::Metadata),
-            "transcript" => Some(Self::Transcript),
-            "ocr" => Some(Self::Ocr),
-            "object_detection" => Some(Self::ObjectDetection),
-            "scene_detection" => Some(Self::SceneDetection),
-            "named_entity" => Some(Self::NamedEntity),
-            "face_track_reference" => Some(Self::FaceTrackReference),
-            "voice_track_reference" => Some(Self::VoiceTrackReference),
-            _ => None,
-        }
-    }
-
-    fn is_biometric_reference(self) -> bool {
-        matches!(self, Self::FaceTrackReference | Self::VoiceTrackReference)
-    }
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
-pub enum EvidencePurpose {
-    DirectSupport,
-    Corroboration,
-    EntityLinking,
-}
-
-impl EvidencePurpose {
-    fn parse(value: &str) -> Option<Self> {
-        match value {
-            "direct_support" => Some(Self::DirectSupport),
-            "corroboration" => Some(Self::Corroboration),
-            "entity_linking" => Some(Self::EntityLinking),
-            _ => None,
-        }
-    }
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
-pub enum InferenceClass {
-    Descriptive,
-    Preference,
-    LocalEntityLink,
-    CrossSourceAssociation,
-    SensitiveTrait,
-    RealWorldIdentity,
-}
-
-impl InferenceClass {
-    fn parse(value: &str) -> Option<Self> {
-        match value {
-            "descriptive" => Some(Self::Descriptive),
-            "preference" => Some(Self::Preference),
-            "local_entity_link" => Some(Self::LocalEntityLink),
-            "cross_source_association" => Some(Self::CrossSourceAssociation),
-            "sensitive_trait" => Some(Self::SensitiveTrait),
-            "real_world_identity" => Some(Self::RealWorldIdentity),
-            _ => None,
         }
     }
 }
