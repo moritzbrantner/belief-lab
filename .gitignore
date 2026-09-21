@@ -1,0 +1,4 @@
+/target/
+/dist/
+/.pages-template/
+.DS_Store
