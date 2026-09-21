@@ -86,12 +86,13 @@ impl InferenceEngine for BaselineInferenceEngine {
             request.run_id.clone(),
         )?;
 
-        Ok(InferenceResult {
+        InferenceResult::new(
+            request,
             belief,
             derivation,
             selected_judgments,
             ignored_correlated_judgments,
-        })
+        )
     }
 }
 
@@ -223,15 +224,15 @@ mod tests {
 
         let result = BaselineInferenceEngine.infer(&request).unwrap();
 
-        assert_eq!(result.selected_judgments.len(), 2);
+        assert_eq!(result.selected_judgments().len(), 2);
         assert!(result
             .selected_judgments
             .contains(&JudgmentId::new("judgment:strong").unwrap()));
         assert!(result
             .ignored_correlated_judgments
             .contains(&JudgmentId::new("judgment:derived").unwrap()));
-        assert_eq!(result.belief.value.semantics(), ScoreSemantics::SoftTruth);
-        assert!((result.belief.value.value() - 0.55).abs() < f64::EPSILON);
+        assert_eq!(result.belief().value.semantics(), ScoreSemantics::SoftTruth);
+        assert!((result.belief().value.value() - 0.55).abs() < f64::EPSILON);
     }
 
     #[test]
@@ -274,12 +275,12 @@ mod tests {
         let second_result = engine.infer(&second).unwrap();
 
         assert_eq!(
-            first_result.belief.value.value(),
-            second_result.belief.value.value()
+            first_result.belief().value.value(),
+            second_result.belief().value.value()
         );
         assert_eq!(
-            first_result.selected_judgments,
-            second_result.selected_judgments
+            first_result.selected_judgments(),
+            second_result.selected_judgments()
         );
     }
 
