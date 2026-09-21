@@ -1,0 +1,42 @@
+name: Validate
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  rust:
+    name: Rust
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: "1.95"
+          components: rustfmt,clippy
+      - run: cargo fmt --all -- --check
+      - run: cargo clippy --workspace --all-targets -- -D warnings
+      - run: cargo test --workspace
+      - run: cargo run -p belief-cli -- validate fixtures/multimodal-person.json
+      - run: cargo run -p belief-cli -- infer fixtures/multimodal-person.json --json
+      - run: cargo run -p belief-cli -- explain fixtures/multimodal-person.json claim:person:alice:uses:product:thinkpad --json
+
+  pages:
+    name: Pages build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          repository: moritzbrantner/github-pages-template
+          ref: 7696672835b8a33eb31607ce000e650775e0f0b8
+          path: .pages-template
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+      - run: bash scripts/build-pages.sh
+      - run: test -f dist/index.html && test -f dist/stats/index.html && test -f dist/evidence/index.html && test -f dist/project-pages.json
