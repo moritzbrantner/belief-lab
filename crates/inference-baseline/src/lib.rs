@@ -17,7 +17,8 @@ impl InferenceEngine for BaselineInferenceEngine {
         &self,
         request: &AuthorizedInferenceRequest,
     ) -> Result<InferenceResult, InferenceError> {
-        let request = request.request();
+        let authorized_request = request;
+        let request = authorized_request.request();
 
         let mut selected_by_group = BTreeMap::<_, &JudgmentBasis>::new();
         let mut usable_judgments = BTreeSet::new();
@@ -87,7 +88,7 @@ impl InferenceEngine for BaselineInferenceEngine {
         )?;
 
         InferenceResult::new(
-            request,
+            authorized_request,
             belief,
             derivation,
             selected_judgments,
