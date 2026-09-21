@@ -5,7 +5,7 @@ use belief_core::{
     Belief, BeliefId, Claim, Derivation, EvidenceFamilyId, EvidenceId, EvidencePurpose,
     EvidenceRef, InferenceClass, InferenceRunId, Judgment, JudgmentId, ModelError,
 };
-use belief_policy::PolicyConfig;
+use belief_policy::{AuthorizationProfile, PolicyConfig};
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct EvidenceUse {
@@ -100,6 +100,7 @@ impl InferenceRequest {
         }
 
         let mut source_scopes = BTreeSet::new();
+        let mut evidence_uses = BTreeSet::new();
         for basis in &self.bases {
             for evidence_use in &basis.evidence {
                 let evidence = &evidence_use.evidence;
@@ -114,6 +115,7 @@ impl InferenceRequest {
                     evidence.provenance.source.repository.clone(),
                     evidence.provenance.source.scope_id.clone(),
                 ));
+                evidence_uses.insert((evidence.id.clone(), evidence_use.purpose));
             }
         }
 
@@ -121,27 +123,184 @@ impl InferenceRequest {
             return Err(AuthorizationError::CrossSourceJoinDenied { source_scopes });
         }
 
-        Ok(AuthorizedInferenceRequest { inner: self })
+        let authorization = AuthorizationReceipt {
+            profile: policy.profile,
+            inference_class: self.class,
+            source_scopes: source_scopes.clone(),
+            evidence_uses,
+            cross_source_join: source_scopes.len() > 1,
+        };
+
+        Ok(AuthorizedInferenceRequest {
+            inner: self,
+            authorization,
+        })
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct AuthorizationReceipt {
+    profile: AuthorizationProfile,
+    inference_class: InferenceClass,
+    source_scopes: BTreeSet<(String, String)>,
+    evidence_uses: BTreeSet<(EvidenceId, EvidencePurpose)>,
+    cross_source_join: bool,
+}
+
+impl AuthorizationReceipt {
+    pub fn profile(&self) -> AuthorizationProfile {
+        self.profile
+    }
+
+    pub fn inference_class(&self) -> InferenceClass {
+        self.inference_class
+    }
+
+    pub fn source_scopes(&self) -> &BTreeSet<(String, String)> {
+        &self.source_scopes
+    }
+
+    pub fn evidence_uses(&self) -> &BTreeSet<(EvidenceId, EvidencePurpose)> {
+        &self.evidence_uses
+    }
+
+    pub fn cross_source_join(&self) -> bool {
+        self.cross_source_join
     }
 }
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct AuthorizedInferenceRequest {
     inner: InferenceRequest,
+    authorization: AuthorizationReceipt,
 }
 
 impl AuthorizedInferenceRequest {
     pub fn request(&self) -> &InferenceRequest {
         &self.inner
     }
+
+    pub fn authorization(&self) -> &AuthorizationReceipt {
+        &self.authorization
+    }
 }
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct InferenceResult {
-    pub belief: Belief,
-    pub derivation: Derivation,
-    pub selected_judgments: BTreeSet<JudgmentId>,
-    pub ignored_correlated_judgments: BTreeSet<JudgmentId>,
+    belief: Belief,
+    derivation: Derivation,
+    selected_judgments: BTreeSet<JudgmentId>,
+    ignored_correlated_judgments: BTreeSet<JudgmentId>,
+    authorization: AuthorizationReceipt,
+}
+
+impl InferenceResult {
+    pub fn new(
+        request: &AuthorizedInferenceRequest,
+        belief: Belief,
+        derivation: Derivation,
+        selected_judgments: BTreeSet<JudgmentId>,
+        ignored_correlated_judgments: BTreeSet<JudgmentId>,
+    ) -> Result<Self, InferenceError> {
+        let expected = request.request();
+
+        if belief.id != expected.belief_id || belief.claim != expected.claim.id {
+            return Err(InferenceError::InconsistentResult(
+                "belief does not match authorized request".into(),
+            ));
+        }
+        if belief.inference_run != expected.run_id {
+            return Err(InferenceError::InconsistentResult(
+                "belief inference run does not match authorized request".into(),
+            ));
+        }
+        if derivation.belief != belief.id
+            || derivation.inference_run != expected.run_id
+            || derivation.rule_id != expected.rule_id
+        {
+            return Err(InferenceError::InconsistentResult(
+                "derivation does not match authorized request".into(),
+            ));
+        }
+        if derivation.judgments != selected_judgments {
+            return Err(InferenceError::InconsistentResult(
+                "derivation judgments do not match selected judgments".into(),
+            ));
+        }
+
+        let available_judgments = expected
+            .bases
+            .iter()
+            .map(|basis| basis.judgment.id.clone())
+            .collect::<BTreeSet<_>>();
+        if !selected_judgments.is_subset(&available_judgments)
+            || !ignored_correlated_judgments.is_subset(&available_judgments)
+            || !selected_judgments.is_disjoint(&ignored_correlated_judgments)
+        {
+            return Err(InferenceError::InconsistentResult(
+                "result references judgments outside the authorized request".into(),
+            ));
+        }
+
+        let expected_evidence = expected
+            .bases
+            .iter()
+            .filter(|basis| selected_judgments.contains(&basis.judgment.id))
+            .flat_map(|basis| basis.evidence.iter())
+            .map(|evidence_use| evidence_use.evidence.id.clone())
+            .collect::<BTreeSet<_>>();
+        if derivation.evidence != expected_evidence {
+            return Err(InferenceError::InconsistentResult(
+                "derivation evidence does not match selected authorized judgments".into(),
+            ));
+        }
+
+        Ok(Self {
+            belief,
+            derivation,
+            selected_judgments,
+            ignored_correlated_judgments,
+            authorization: request.authorization().clone(),
+        })
+    }
+
+    pub fn belief(&self) -> &Belief {
+        &self.belief
+    }
+
+    pub fn derivation(&self) -> &Derivation {
+        &self.derivation
+    }
+
+    pub fn selected_judgments(&self) -> &BTreeSet<JudgmentId> {
+        &self.selected_judgments
+    }
+
+    pub fn ignored_correlated_judgments(&self) -> &BTreeSet<JudgmentId> {
+        &self.ignored_correlated_judgments
+    }
+
+    pub fn authorization(&self) -> &AuthorizationReceipt {
+        &self.authorization
+    }
+
+    pub fn into_parts(
+        self,
+    ) -> (
+        Belief,
+        Derivation,
+        BTreeSet<JudgmentId>,
+        BTreeSet<JudgmentId>,
+        AuthorizationReceipt,
+    ) {
+        (
+            self.belief,
+            self.derivation,
+            self.selected_judgments,
+            self.ignored_correlated_judgments,
+            self.authorization,
+        )
+    }
 }
 
 pub trait InferenceEngine {
@@ -228,6 +387,7 @@ impl std::error::Error for AuthorizationError {}
 #[derive(Debug, Clone, PartialEq)]
 pub enum InferenceError {
     NoUsableSignals,
+    InconsistentResult(String),
     Model(ModelError),
 }
 
@@ -237,6 +397,9 @@ impl fmt::Display for InferenceError {
             Self::NoUsableSignals => f.write_str(
                 "inference request contains no usable supporting or contradicting signal",
             ),
+            Self::InconsistentResult(reason) => {
+                write!(f, "inconsistent inference result: {reason}")
+            }
             Self::Model(error) => write!(f, "could not construct inference result: {error}"),
         }
     }
