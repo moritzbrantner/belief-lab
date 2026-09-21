@@ -1,0 +1,34 @@
+{
+  "schemaVersion": 1,
+  "project": {
+    "name": "Belief Lab",
+    "repository": "moritzbrantner/belief-lab",
+    "basePath": "/belief-lab/",
+    "kicker": "Provenance-first probabilistic reasoning lab",
+    "description": "Experiments in turning heterogeneous media and language evidence into explainable claims while preserving uncertainty semantics and provenance."
+  },
+  "preferences": {
+    "defaults": {
+      "appearance.color_scheme": "system",
+      "appearance.contrast": "system",
+      "localization.locale": "en"
+    },
+    "locales": [
+      { "id": "en", "label": "English" },
+      { "id": "de", "label": "Deutsch" }
+    ]
+  },
+  "links": [
+    { "label": "Showcase", "href": "/belief-lab/" },
+    { "label": "Source", "href": "https://github.com/moritzbrantner/belief-lab" }
+  ],
+  "evidenceSources": [
+    {
+      "id": "coding-tooling",
+      "label": "Repository verification",
+      "kind": "coding-tooling-analysis-v1",
+      "producer": "coding-tooling",
+      "url": "https://moritzbrantner.github.io/coding-tooling/analysis.json/?repo=moritzbrantner/belief-lab"
+    }
+  ]
+}
