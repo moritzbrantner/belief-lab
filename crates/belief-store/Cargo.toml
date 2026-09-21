@@ -1,0 +1,8 @@
+[package]
+name = "belief-store"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+belief-core = { path = "../belief-core" }
+inference-core = { path = "../inference-core" }
