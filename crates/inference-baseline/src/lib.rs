@@ -1,8 +1,6 @@
 use std::collections::{BTreeMap, BTreeSet};
 
-use belief_core::{
-    Derivation, EvidenceId, JudgmentId, JudgmentOutcome, Score, ScoreSemantics,
-};
+use belief_core::{Derivation, EvidenceId, JudgmentId, JudgmentOutcome, Score, ScoreSemantics};
 use inference_core::{
     AuthorizedInferenceRequest, InferenceEngine, InferenceError, InferenceResult, JudgmentBasis,
 };
@@ -192,8 +190,8 @@ mod tests {
         )
         .unwrap();
 
-        let policy = PolicyConfig::from_pairs([("BELIEF_POLICY_PROFILE", "semantic_research")])
-            .unwrap();
+        let policy =
+            PolicyConfig::from_pairs([("BELIEF_POLICY_PROFILE", "semantic_research")]).unwrap();
         request.authorize(&policy).unwrap()
     }
 
