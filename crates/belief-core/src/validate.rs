@@ -36,7 +36,8 @@ impl ValidatedBundle {
 }
 
 pub fn validate_bundle(bundle: BeliefEvidenceBundleV1) -> Result<ValidatedBundle, BeliefError> {
-    if bundle.schema != BELIEF_EVIDENCE_SCHEMA || bundle.schema_version != BELIEF_EVIDENCE_VERSION_V1
+    if bundle.schema != BELIEF_EVIDENCE_SCHEMA
+        || bundle.schema_version != BELIEF_EVIDENCE_VERSION_V1
     {
         return Err(BeliefError::UnsupportedBundle {
             schema: bundle.schema.clone(),
