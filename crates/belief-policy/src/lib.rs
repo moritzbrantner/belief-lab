@@ -223,8 +223,7 @@ impl PolicyConfig {
             });
         }
 
-        let allow_cross_source_join =
-            parse_bool(&values, "BELIEF_ALLOW_CROSS_SOURCE_JOIN", false)?;
+        let allow_cross_source_join = parse_bool(&values, "BELIEF_ALLOW_CROSS_SOURCE_JOIN", false)?;
         if allow_cross_source_join && !maximum.allow_cross_source_join {
             return Err(ConfigError::CapabilityExceedsProfile {
                 key: "BELIEF_ALLOW_CROSS_SOURCE_JOIN".into(),
@@ -382,11 +381,7 @@ impl ProfileMaximum {
                     E::FaceTrackReference,
                     E::VoiceTrackReference,
                 ]),
-                evidence_purposes: set([
-                    P::DirectSupport,
-                    P::Corroboration,
-                    P::EntityLinking,
-                ]),
+                evidence_purposes: set([P::DirectSupport, P::Corroboration, P::EntityLinking]),
                 inferences: set([
                     I::Descriptive,
                     I::Preference,
@@ -487,9 +482,7 @@ mod tests {
         assert!(
             policy.allows_evidence(EvidenceClass::UserAssertion, EvidencePurpose::DirectSupport)
         );
-        assert!(
-            !policy.allows_evidence(EvidenceClass::Transcript, EvidencePurpose::DirectSupport)
-        );
+        assert!(!policy.allows_evidence(EvidenceClass::Transcript, EvidencePurpose::DirectSupport));
         assert!(!policy.allows_inference(InferenceClass::Descriptive));
     }
 
@@ -503,12 +496,8 @@ mod tests {
         ])
         .expect("narrowed policy should load");
 
-        assert!(
-            policy.allows_evidence(EvidenceClass::Transcript, EvidencePurpose::Corroboration)
-        );
-        assert!(
-            !policy.allows_evidence(EvidenceClass::Transcript, EvidencePurpose::DirectSupport)
-        );
+        assert!(policy.allows_evidence(EvidenceClass::Transcript, EvidencePurpose::Corroboration));
+        assert!(!policy.allows_evidence(EvidenceClass::Transcript, EvidencePurpose::DirectSupport));
         assert!(!policy.allows_evidence(EvidenceClass::Ocr, EvidencePurpose::Corroboration));
         assert!(policy.allows_inference(InferenceClass::Descriptive));
         assert!(!policy.allows_inference(InferenceClass::Preference));
