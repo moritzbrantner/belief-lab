@@ -1,5 +1,5 @@
 [workspace]
-members = ["crates/belief-policy"]
+members = ["crates/belief-core", "crates/belief-policy"]
 resolver = "2"
 
 [workspace.package]
