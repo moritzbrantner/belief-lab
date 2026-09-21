@@ -327,10 +327,7 @@ pub struct JudgmentSpecRef {
 }
 
 impl JudgmentSpecRef {
-    pub fn new(
-        name: impl Into<String>,
-        revision: impl Into<String>,
-    ) -> Result<Self, ModelError> {
+    pub fn new(name: impl Into<String>, revision: impl Into<String>) -> Result<Self, ModelError> {
         Ok(Self {
             name: non_empty("judgment_spec.name", name.into())?,
             revision: non_empty("judgment_spec.revision", revision.into())?,
@@ -409,7 +406,11 @@ pub struct Claim {
 }
 
 impl Claim {
-    pub fn from_user_assertion(id: ClaimId, proposition: Proposition, evidence: EvidenceId) -> Self {
+    pub fn from_user_assertion(
+        id: ClaimId,
+        proposition: Proposition,
+        evidence: EvidenceId,
+    ) -> Self {
         Self {
             id,
             proposition,
@@ -538,7 +539,9 @@ impl fmt::Display for ModelError {
         match self {
             Self::EmptyIdentifier(name) => write!(f, "{name} cannot be empty"),
             Self::EmptyField(name) => write!(f, "{name} cannot be empty"),
-            Self::InvalidScore(value) => write!(f, "score must be finite and in [0, 1], got {value}"),
+            Self::InvalidScore(value) => {
+                write!(f, "score must be finite and in [0, 1], got {value}")
+            }
             Self::MissingEvidence(context) => write!(f, "{context} requires at least one input"),
             Self::WrongScoreSemantics {
                 context,
