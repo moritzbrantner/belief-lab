@@ -1,5 +1,10 @@
 [workspace]
-members = ["crates/belief-core", "crates/belief-policy"]
+members = [
+    "crates/belief-core",
+    "crates/belief-policy",
+    "crates/inference-core",
+    "crates/inference-baseline",
+]
 resolver = "2"
 
 [workspace.package]
