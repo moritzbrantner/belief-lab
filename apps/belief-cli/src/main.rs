@@ -110,7 +110,10 @@ fn print_explanation(node: &ExplanationNode, depth: usize) {
         println!("{indent}  {detail}");
     }
     if let Some(producer) = &node.producer {
-        println!("{indent}  producer: {} @ {}", producer.name, producer.revision);
+        println!(
+            "{indent}  producer: {} @ {}",
+            producer.name, producer.revision
+        );
     }
     if let Some(group) = &node.correlation_group {
         println!("{indent}  correlation group: {group}");
