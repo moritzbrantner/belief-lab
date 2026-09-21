@@ -174,14 +174,14 @@ impl InMemoryBeliefStore {
     }
 
     pub fn explain_belief(&self, belief: &BeliefId) -> Result<BeliefExplanation, StoreError> {
-        let stored_belief = self
-            .beliefs
-            .get(belief)
-            .cloned()
-            .ok_or_else(|| StoreError::Missing {
-                kind: "belief",
-                id: belief.to_string(),
-            })?;
+        let stored_belief =
+            self.beliefs
+                .get(belief)
+                .cloned()
+                .ok_or_else(|| StoreError::Missing {
+                    kind: "belief",
+                    id: belief.to_string(),
+                })?;
         let claim = self
             .claims
             .get(&stored_belief.value.claim)
@@ -190,14 +190,14 @@ impl InMemoryBeliefStore {
                 kind: "claim",
                 id: stored_belief.value.claim.to_string(),
             })?;
-        let derivation = self
-            .derivations
-            .get(belief)
-            .cloned()
-            .ok_or_else(|| StoreError::Missing {
-                kind: "derivation",
-                id: belief.to_string(),
-            })?;
+        let derivation =
+            self.derivations
+                .get(belief)
+                .cloned()
+                .ok_or_else(|| StoreError::Missing {
+                    kind: "derivation",
+                    id: belief.to_string(),
+                })?;
 
         let judgments = derivation
             .judgments
@@ -378,10 +378,9 @@ fn require_active<T>(
 ) -> Result<(), StoreError> {
     match stored {
         None => Err(StoreError::Missing { kind, id }),
-        Some(stored) if !stored.validity.is_active() => Err(StoreError::InvalidDependency {
-            kind,
-            id,
-        }),
+        Some(stored) if !stored.validity.is_active() => {
+            Err(StoreError::InvalidDependency { kind, id })
+        }
         Some(_) => Ok(()),
     }
 }
@@ -414,18 +413,9 @@ pub struct BeliefExplanation {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum StoreError {
-    Duplicate {
-        kind: &'static str,
-        id: String,
-    },
-    Missing {
-        kind: &'static str,
-        id: String,
-    },
-    InvalidDependency {
-        kind: &'static str,
-        id: String,
-    },
+    Duplicate { kind: &'static str, id: String },
+    Missing { kind: &'static str, id: String },
+    InvalidDependency { kind: &'static str, id: String },
     InconsistentResult(String),
     EmptyInvalidationReason,
 }
@@ -438,7 +428,9 @@ impl fmt::Display for StoreError {
             Self::InvalidDependency { kind, id } => {
                 write!(f, "{kind} dependency {id} is invalidated")
             }
-            Self::InconsistentResult(reason) => write!(f, "inconsistent inference result: {reason}"),
+            Self::InconsistentResult(reason) => {
+                write!(f, "inconsistent inference result: {reason}")
+            }
             Self::EmptyInvalidationReason => f.write_str("invalidation reason cannot be empty"),
         }
     }
@@ -507,7 +499,11 @@ mod tests {
         .unwrap()
     }
 
-    fn inference_result(evidence: &EvidenceRef, judgment: &Judgment, claim: Claim) -> InferenceResult {
+    fn inference_result(
+        evidence: &EvidenceRef,
+        judgment: &Judgment,
+        claim: Claim,
+    ) -> InferenceResult {
         let basis = JudgmentBasis::new(
             judgment.clone(),
             EvidenceFamilyId::new("correlation:utterance:1").unwrap(),
@@ -526,8 +522,8 @@ mod tests {
             vec![basis],
         )
         .unwrap();
-        let policy = PolicyConfig::from_pairs([("BELIEF_POLICY_PROFILE", "semantic_research")])
-            .unwrap();
+        let policy =
+            PolicyConfig::from_pairs([("BELIEF_POLICY_PROFILE", "semantic_research")]).unwrap();
         let authorized = request.authorize(&policy).unwrap();
 
         BaselineInferenceEngine.infer(&authorized).unwrap()
