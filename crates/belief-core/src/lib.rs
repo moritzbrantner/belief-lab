@@ -181,6 +181,7 @@ impl Score {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct SourceRef {
     pub repository: String,
+    pub scope_id: String,
     pub record_id: String,
     pub revision: String,
 }
@@ -188,11 +189,13 @@ pub struct SourceRef {
 impl SourceRef {
     pub fn new(
         repository: impl Into<String>,
+        scope_id: impl Into<String>,
         record_id: impl Into<String>,
         revision: impl Into<String>,
     ) -> Result<Self, ModelError> {
         Ok(Self {
             repository: non_empty("source.repository", repository.into())?,
+            scope_id: non_empty("source.scope_id", scope_id.into())?,
             record_id: non_empty("source.record_id", record_id.into())?,
             revision: non_empty("source.revision", revision.into())?,
         })
@@ -615,11 +618,17 @@ mod tests {
 
     #[test]
     fn evidence_requires_pinned_source_and_producer_revisions() {
-        assert!(SourceRef::new("youtube-corpus", "video:1", "").is_err());
+        assert!(SourceRef::new("youtube-corpus", "video:1", "frame:42", "").is_err());
         assert!(ProducerRef::new("visual-analysis", "", None, None).is_err());
 
         let provenance = Provenance::new(
-            SourceRef::new("youtube-corpus", "video:1#frame:42", "sha256:abc").unwrap(),
+            SourceRef::new(
+                "youtube-corpus",
+                "video:1",
+                "video:1#frame:42",
+                "sha256:abc",
+            )
+            .unwrap(),
             ProducerRef::new(
                 "visual-analysis",
                 "commit:123",
