@@ -139,8 +139,7 @@ impl InMemoryBeliefStore {
             self.require_active_claim(claim)?;
         }
 
-        self.authorizations
-            .insert(belief.id.clone(), authorization);
+        self.authorizations.insert(belief.id.clone(), authorization);
         self.derivations.insert(belief.id.clone(), derivation);
         self.beliefs
             .insert(belief.id.clone(), Stored::active(belief));
@@ -217,14 +216,14 @@ impl InMemoryBeliefStore {
             .filter_map(|id| self.claims.get(id).cloned())
             .collect();
 
-        let authorization = self
-            .authorizations
-            .get(belief)
-            .cloned()
-            .ok_or_else(|| StoreError::Missing {
-                kind: "authorization",
-                id: belief.to_string(),
-            })?;
+        let authorization =
+            self.authorizations
+                .get(belief)
+                .cloned()
+                .ok_or_else(|| StoreError::Missing {
+                    kind: "authorization",
+                    id: belief.to_string(),
+                })?;
 
         Ok(BeliefExplanation {
             belief: stored_belief,
