@@ -458,7 +458,7 @@ mod tests {
         InferenceClass, InferenceRunId, JudgmentOutcome, JudgmentSpecRef, ObjectValue, Predicate,
         ProducerRef, Proposition, Provenance, Score, ScoreSemantics, SourceRef,
     };
-    use belief_policy::PolicyConfig;
+    use belief_policy::{AuthorizationProfile, PolicyConfig};
     use inference_baseline::BaselineInferenceEngine;
     use inference_core::{EvidenceUse, InferenceEngine, InferenceRequest, JudgmentBasis};
 
@@ -573,6 +573,11 @@ mod tests {
             "commit:abc"
         );
         assert_eq!(explanation.belief.validity, Validity::Active);
+        assert_eq!(
+            explanation.authorization.profile(),
+            AuthorizationProfile::SemanticResearch
+        );
+        assert_eq!(explanation.authorization.evidence_uses().len(), 1);
     }
 
     #[test]
