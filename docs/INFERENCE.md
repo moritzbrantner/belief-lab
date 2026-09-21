@@ -51,3 +51,12 @@ The baseline engine intentionally produces `ScoreSemantics::SoftTruth`, never `P
 For each selected supporting or contradicting judgment it uses the model confidence as a signed heuristic signal, averages the selected signals, and maps the result to `[0, 1]` around a neutral value of `0.5`.
 
 This gives the project a deterministic reference implementation for tests and explanations without pretending that model confidence is a Bayesian likelihood.
+
+
+## Authorization receipts
+
+Authorization is persisted as provenance rather than discarded after the gate.
+
+An authorized request carries a receipt containing the selected policy profile, inference class, source scopes, evidence ids and purposes, and whether the request crossed source scopes. `InferenceResult` fields are private and a result can only be created through its validating constructor with an `AuthorizedInferenceRequest`.
+
+The store persists that receipt with the belief and exposes it through `explain_belief`. This prevents callers from bypassing policy by constructing a result with a public struct literal and makes the authorization context auditable alongside the evidence derivation.
