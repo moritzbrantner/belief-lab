@@ -1,0 +1,50 @@
+name: Deploy Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  actions: read
+  contents: read
+  pages: write
+  id-token: write
+
+jobs:
+  pages-preflight:
+    name: Pages preflight
+    runs-on: ubuntu-latest
+    outputs:
+      enabled: ${{ steps.pages.outputs.enabled }}
+    steps:
+      - name: Check repository Pages configuration
+        id: pages
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          status="$(curl --silent --show-error --output /tmp/pages.json --write-out '%{http_code}'             --header "Authorization: Bearer $GH_TOKEN"             --header "Accept: application/vnd.github+json"             --header "X-GitHub-Api-Version: 2022-11-28"             "https://api.github.com/repos/$GITHUB_REPOSITORY/pages")"
+          case "$status" in
+            200) echo "enabled=true" >> "$GITHUB_OUTPUT" ;;
+            404)
+              echo "enabled=false" >> "$GITHUB_OUTPUT"
+              echo "Enable Settings → Pages → Source: GitHub Actions once." >> "$GITHUB_STEP_SUMMARY"
+              ;;
+            *) cat /tmp/pages.json >&2 || true; exit 1 ;;
+          esac
+
+  deploy-pages:
+    name: Deploy Pages
+    needs: pages-preflight
+    if: ${{ needs.pages-preflight.outputs.enabled == 'true' }}
+    uses: moritzbrantner/reusable-workflows/.github/workflows/deploy-pages.yml@197a252fcfc3d4a631010c61ef77369f5461365c
+    with:
+      node_version: "24"
+      bun_version: ""
+      install_command: ""
+      pre_command: "git clone --filter=blob:none https://github.com/moritzbrantner/github-pages-template.git .pages-template && git -C .pages-template checkout 7696672835b8a33eb31607ce000e650775e0f0b8"
+      build_command: "bash scripts/build-pages.sh"
+      artifact_path: dist
+      cache_bun: false
+      cache_node: false
