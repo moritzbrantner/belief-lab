@@ -226,10 +226,10 @@ mod tests {
 
         assert_eq!(result.selected_judgments().len(), 2);
         assert!(result
-            .selected_judgments
+            .selected_judgments()
             .contains(&JudgmentId::new("judgment:strong").unwrap()));
         assert!(result
-            .ignored_correlated_judgments
+            .ignored_correlated_judgments()
             .contains(&JudgmentId::new("judgment:derived").unwrap()));
         assert_eq!(result.belief().value.semantics(), ScoreSemantics::SoftTruth);
         assert!((result.belief().value.value() - 0.55).abs() < f64::EPSILON);
