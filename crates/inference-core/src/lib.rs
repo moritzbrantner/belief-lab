@@ -91,7 +91,10 @@ impl InferenceRequest {
         })
     }
 
-    pub fn authorize(self, policy: &PolicyConfig) -> Result<AuthorizedInferenceRequest, AuthorizationError> {
+    pub fn authorize(
+        self,
+        policy: &PolicyConfig,
+    ) -> Result<AuthorizedInferenceRequest, AuthorizationError> {
         if !policy.allows_inference(self.class) {
             return Err(AuthorizationError::InferenceDenied(self.class));
         }
@@ -231,9 +234,9 @@ pub enum InferenceError {
 impl fmt::Display for InferenceError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Self::NoUsableSignals => {
-                f.write_str("inference request contains no usable supporting or contradicting signal")
-            }
+            Self::NoUsableSignals => f.write_str(
+                "inference request contains no usable supporting or contradicting signal",
+            ),
             Self::Model(error) => write!(f, "could not construct inference result: {error}"),
         }
     }
@@ -328,8 +331,8 @@ mod tests {
 
     #[test]
     fn semantic_policy_authorizes_semantic_evidence() {
-        let policy = PolicyConfig::from_pairs([("BELIEF_POLICY_PROFILE", "semantic_research")])
-            .unwrap();
+        let policy =
+            PolicyConfig::from_pairs([("BELIEF_POLICY_PROFILE", "semantic_research")]).unwrap();
         let request = request(vec![basis(
             "judgment:1",
             evidence("transcript:1", EvidenceClass::Transcript, "video:1"),
@@ -340,15 +343,11 @@ mod tests {
 
     #[test]
     fn policy_denies_unlisted_evidence_before_engine_execution() {
-        let policy = PolicyConfig::from_pairs([("BELIEF_POLICY_PROFILE", "semantic_research")])
-            .unwrap();
+        let policy =
+            PolicyConfig::from_pairs([("BELIEF_POLICY_PROFILE", "semantic_research")]).unwrap();
         let request = request(vec![basis(
             "judgment:1",
-            evidence(
-                "face:1",
-                EvidenceClass::FaceTrackReference,
-                "video:1",
-            ),
+            evidence("face:1", EvidenceClass::FaceTrackReference, "video:1"),
         )]);
 
         assert!(matches!(
