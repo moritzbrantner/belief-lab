@@ -71,7 +71,7 @@ pub fn validate_bundle(bundle: BeliefEvidenceBundleV1) -> Result<ValidatedBundle
         if !source_ids.contains_key(&span.source_id) {
             return Err(BeliefError::UnknownSource {
                 span: span.id.clone(),
-                source: span.source_id.clone(),
+                source_id: span.source_id.clone(),
             });
         }
         validate_locator(span)?;
