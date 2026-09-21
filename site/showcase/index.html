@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="color-scheme" content="light dark" />
+  <title>Belief Lab · Evidence to explainable claims</title>
+  <meta name="description" content="Interactive overview of Belief Lab's provenance-first evidence and inference model." />
+  <link rel="stylesheet" href="./site.css" />
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="./">Belief Lab</a>
+    <nav aria-label="Project navigation">
+      <a href="#pipeline">Pipeline</a>
+      <a href="#explain">Explain</a>
+      <a href="./stats/">Stats</a>
+      <a href="./evidence/">Evidence</a>
+      <a href="https://github.com/moritzbrantner/belief-lab">Source</a>
+    </nav>
+  </header>
+
+  <main>
+    <section class="hero">
+      <p class="eyebrow">PROVENANCE-FIRST REASONING</p>
+      <h1>From noisy multimodal evidence to claims you can trace.</h1>
+      <p class="lede">Belief Lab consumes evidence from scene detection, vision, speech, and NLP without turning producer confidence into truth. Every derived claim keeps its rule, score semantics, and source chain.</p>
+      <div class="hero-actions">
+        <a class="primary" href="#explain">Inspect the first inference</a>
+        <a href="./evidence/">Repository evidence</a>
+      </div>
+      <div class="principles" aria-label="Project principles">
+        <span>Producer authority stays upstream</span>
+        <span>Uncertainty semantics stay explicit</span>
+        <span>Derived state stays rebuildable</span>
+      </div>
+    </section>
+
+    <section id="pipeline" class="section">
+      <div class="section-heading">
+        <p class="eyebrow">INTEGRATION MODEL</p>
+        <h2>One evidence graph, many authoritative producers</h2>
+        <p>The first fixture deliberately crosses repository boundaries while retaining the exact producer for each observation.</p>
+      </div>
+      <div class="pipeline" role="list">
+        <article role="listitem"><strong>scenedetect-rs</strong><span>scene spans</span></article>
+        <article role="listitem"><strong>visual-analysis</strong><span>objects · faces · OCR</span></article>
+        <article role="listitem"><strong>audio-analysis</strong><span>speech · speaker tracks</span></article>
+        <article role="listitem"><strong>nlp-stack</strong><span>entities · relations</span></article>
+        <div class="pipeline-arrow" aria-hidden="true">↓</div>
+        <article class="wide" role="listitem"><strong>youtube-corpus / corpus owners</strong><span>aligned, versioned evidence exports</span></article>
+        <div class="pipeline-arrow" aria-hidden="true">↓</div>
+        <article class="wide accent" role="listitem"><strong>belief-lab</strong><span>entity links · claims · derivations · explanations</span></article>
+      </div>
+    </section>
+
+    <section id="explain" class="section explanation-section">
+      <div class="section-heading">
+        <p class="eyebrow">MILESTONE 1</p>
+        <h2>Explain the derived claim</h2>
+        <p>The score below is <code>heuristic_strength</code>. It is not presented as a posterior probability.</p>
+      </div>
+      <div class="claim-card">
+        <div>
+          <span class="label">Derived claim</span>
+          <strong id="claim-label">person:alice uses product:thinkpad</strong>
+        </div>
+        <div class="score"><span id="claim-score">0.88</span><small>heuristic strength</small></div>
+      </div>
+      <div class="explain-layout">
+        <div>
+          <div class="toolbar" role="group" aria-label="Explanation depth">
+            <button type="button" data-mode="summary" class="active">Summary</button>
+            <button type="button" data-mode="full">Full provenance</button>
+          </div>
+          <div id="explanation-tree" class="tree" aria-live="polite"></div>
+        </div>
+        <aside class="semantics-card">
+          <span class="label">Why the number is safe to read</span>
+          <h3>Scores carry their meaning.</h3>
+          <ul>
+            <li><code>detection_confidence</code> describes a detector output.</li>
+            <li><code>ner_confidence</code> describes an NLP extraction.</li>
+            <li><code>entity_link_probability</code> describes an identity hypothesis.</li>
+            <li><code>heuristic_strength</code> describes this baseline rule.</li>
+          </ul>
+          <p>None are silently relabeled as Bayesian posterior probability.</p>
+        </aside>
+      </div>
+    </section>
+
+    <section class="section next-section">
+      <div class="section-heading">
+        <p class="eyebrow">NEXT</p>
+        <h2>Keep the evidence contract stable; swap the reasoning layer.</h2>
+      </div>
+      <div class="next-grid">
+        <article><span>02</span><h3>Corpus adapter</h3><p>Export the same evidence shape directly from <code>youtube-corpus</code> with deterministic invalidation.</p></article>
+        <article><span>03</span><h3>Jev shadow judgments</h3><p>Store typed bounded decisions with the exact evidence set and question definition.</p></article>
+        <article><span>04</span><h3>Scallop comparison</h3><p>Run the same fixtures through a provenance-aware probabilistic Datalog adapter.</p></article>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <span>Belief Lab · evidence before inference</span>
+    <a href="./preferences/">Appearance & language</a>
+  </footer>
+  <script src="./demo-data.js"></script>
+  <script type="module" src="./site.js"></script>
+</body>
+</html>
