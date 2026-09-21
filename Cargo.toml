@@ -4,6 +4,7 @@ members = [
     "crates/belief-policy",
     "crates/inference-core",
     "crates/inference-baseline",
+    "crates/belief-store",
 ]
 resolver = "2"
 
