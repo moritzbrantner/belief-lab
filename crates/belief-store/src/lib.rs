@@ -44,7 +44,7 @@ pub struct InMemoryBeliefStore {
     beliefs: BTreeMap<BeliefId, Stored<Belief>>,
     derivations: BTreeMap<BeliefId, Derivation>,
     authorizations: BTreeMap<BeliefId, AuthorizationReceipt>,
-    import_receipts: BTreeMap<(String, AuthorizationProfile), EvidenceImportReceipt>,
+    import_receipts: BTreeMap<(String, String, AuthorizationProfile), EvidenceImportReceipt>,
 }
 
 impl InMemoryBeliefStore {
@@ -53,7 +53,11 @@ impl InMemoryBeliefStore {
         batch: AuthorizedEvidenceBatch,
     ) -> Result<EvidenceImportOutcome, StoreError> {
         let (evidence, receipt) = batch.into_parts();
-        let receipt_key = (receipt.batch_revision().to_string(), receipt.profile());
+        let receipt_key = (
+            receipt.exporter_name().to_string(),
+            receipt.batch_revision().to_string(),
+            receipt.profile(),
+        );
 
         if let Some(existing) = self.import_receipts.get(&receipt_key) {
             if existing != &receipt {
@@ -116,11 +120,15 @@ impl InMemoryBeliefStore {
 
     pub fn import_receipt(
         &self,
+        exporter_name: &str,
         batch_revision: &str,
         profile: AuthorizationProfile,
     ) -> Option<&EvidenceImportReceipt> {
-        self.import_receipts
-            .get(&(batch_revision.to_string(), profile))
+        self.import_receipts.get(&(
+            exporter_name.to_string(),
+            batch_revision.to_string(),
+            profile,
+        ))
     }
 
     pub fn insert_evidence(&mut self, evidence: EvidenceRef) -> Result<(), StoreError> {
@@ -706,8 +714,64 @@ mod tests {
         assert_eq!(second.inserted, 0);
         assert_eq!(second.already_present, 1);
         assert!(store
-            .import_receipt("batch:1", AuthorizationProfile::SemanticResearch)
+            .import_receipt(
+                "youtube-corpus",
+                "batch:1",
+                AuthorizationProfile::SemanticResearch,
+            )
             .is_some());
+    }
+
+    #[test]
+    fn distinct_exporters_can_reuse_batch_revision_under_same_profile() {
+        let policy =
+            PolicyConfig::from_pairs([("BELIEF_POLICY_PROFILE", "semantic_research")]).unwrap();
+        let first = ValidatedEvidenceBatch::parse_json(&import_json("sha256:source-v1"))
+            .unwrap()
+            .authorize(&policy)
+            .unwrap();
+        let second_json = import_json("sha256:source-v2")
+            .replace(r#""name": "youtube-corpus""#, r#""name": "document-search""#)
+            .replace(r#""revision": "git:exporter-1""#, r#""revision": "git:exporter-2""#)
+            .replace(
+                r#""repository": "youtube-corpus""#,
+                r#""repository": "document-search""#,
+            )
+            .replace("evidence:transcript:1", "evidence:transcript:2")
+            .replace("transcript-segment:1", "document:segment:2");
+        let second = ValidatedEvidenceBatch::parse_json(&second_json)
+            .unwrap()
+            .authorize(&policy)
+            .unwrap();
+
+        let mut store = InMemoryBeliefStore::default();
+        let first_outcome = store.insert_authorized_evidence_batch(first).unwrap();
+        let second_outcome = store.insert_authorized_evidence_batch(second).unwrap();
+
+        assert_eq!(first_outcome.inserted, 1);
+        assert_eq!(second_outcome.inserted, 1);
+        assert_eq!(
+            store
+                .import_receipt(
+                    "youtube-corpus",
+                    "batch:1",
+                    AuthorizationProfile::SemanticResearch,
+                )
+                .unwrap()
+                .exporter_revision(),
+            "git:exporter-1"
+        );
+        assert_eq!(
+            store
+                .import_receipt(
+                    "document-search",
+                    "batch:1",
+                    AuthorizationProfile::SemanticResearch,
+                )
+                .unwrap()
+                .exporter_revision(),
+            "git:exporter-2"
+        );
     }
 
     #[test]
