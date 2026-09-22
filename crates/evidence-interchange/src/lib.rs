@@ -424,7 +424,10 @@ impl fmt::Display for InterchangeError {
                 write!(f, "evidence {evidence} references missing parent {parent}")
             }
             Self::EvidenceCycle(id) => {
-                write!(f, "evidence dependency graph contains a cycle involving {id}")
+                write!(
+                    f,
+                    "evidence dependency graph contains a cycle involving {id}"
+                )
             }
             Self::UnknownEvidenceClass { evidence, class } => {
                 write!(f, "evidence {evidence} uses unknown class {class:?}")
@@ -538,7 +541,8 @@ mod tests {
 
     #[test]
     fn multimodal_fixture_requires_the_biometric_import_gate() {
-        let json = include_str!("../../../fixtures/evidence-interchange/youtube-multimodal-v1.json");
+        let json =
+            include_str!("../../../fixtures/evidence-interchange/youtube-multimodal-v1.json");
         let batch = ValidatedEvidenceBatch::parse_json(json).unwrap();
 
         assert_eq!(batch.evidence().len(), 6);
@@ -588,10 +592,7 @@ mod tests {
         assert_eq!(batch.evidence().len(), 2);
         assert_eq!(batch.evidence()[0].id.as_str(), "evidence:transcript:1");
         assert_eq!(batch.evidence()[1].id.as_str(), "evidence:entity:1");
-        assert_eq!(
-            batch.evidence()[1].provenance.producer.name,
-            "nlp-stack"
-        );
+        assert_eq!(batch.evidence()[1].provenance.producer.name, "nlp-stack");
         assert!(batch.evidence()[1]
             .provenance
             .parent_evidence
@@ -600,10 +601,8 @@ mod tests {
 
     #[test]
     fn rejects_unknown_schema_versions() {
-        let json = base_json(transcript_record()).replace(
-            r#""schemaVersion": 1"#,
-            r#""schemaVersion": 2"#,
-        );
+        let json = base_json(transcript_record())
+            .replace(r#""schemaVersion": 1"#, r#""schemaVersion": 2"#);
 
         assert!(matches!(
             ValidatedEvidenceBatch::parse_json(&json),
@@ -637,9 +636,8 @@ mod tests {
 
     #[test]
     fn imported_evidence_cannot_claim_posterior_semantics() {
-        let json = base_json(
-            &transcript_record().replace("model_confidence", "posterior_probability"),
-        );
+        let json =
+            base_json(&transcript_record().replace("model_confidence", "posterior_probability"));
 
         assert!(matches!(
             ValidatedEvidenceBatch::parse_json(&json),
@@ -651,7 +649,10 @@ mod tests {
     fn policy_controls_whether_biometric_references_are_admitted() {
         let face = transcript_record()
             .replace("evidence:transcript:1", "evidence:face:1")
-            .replace(r#""class": "transcript""#, r#""class": "face_track_reference""#)
+            .replace(
+                r#""class": "transcript""#,
+                r#""class": "face_track_reference""#,
+            )
             .replace("transcript-segment:1", "face-track:1");
         let batch = ValidatedEvidenceBatch::parse_json(&base_json(&face)).unwrap();
 
@@ -688,18 +689,14 @@ mod tests {
 
     #[test]
     fn authorization_receipt_pins_exporter_and_batch_revisions() {
-        let batch =
-            ValidatedEvidenceBatch::parse_json(&base_json(transcript_record())).unwrap();
+        let batch = ValidatedEvidenceBatch::parse_json(&base_json(transcript_record())).unwrap();
         let policy =
             PolicyConfig::from_pairs([("BELIEF_POLICY_PROFILE", "semantic_research")]).unwrap();
 
         let authorized = batch.authorize(&policy).unwrap();
 
         assert_eq!(authorized.receipt().exporter_name(), "youtube-corpus");
-        assert_eq!(
-            authorized.receipt().exporter_revision(),
-            "git:exporter-123"
-        );
+        assert_eq!(authorized.receipt().exporter_revision(), "git:exporter-123");
         assert_eq!(authorized.receipt().batch_revision(), "batch:abc");
         assert_eq!(authorized.receipt().evidence_ids().len(), 1);
     }
