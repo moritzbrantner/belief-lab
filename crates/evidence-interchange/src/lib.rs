@@ -537,6 +537,46 @@ mod tests {
     }
 
     #[test]
+    fn multimodal_fixture_requires_the_biometric_import_gate() {
+        let json = include_str!("../../../fixtures/evidence-interchange/youtube-multimodal-v1.json");
+        let batch = ValidatedEvidenceBatch::parse_json(json).unwrap();
+
+        assert_eq!(batch.evidence().len(), 6);
+        assert_eq!(batch.exporter_name(), "youtube-corpus");
+
+        let semantic =
+            PolicyConfig::from_pairs([("BELIEF_POLICY_PROFILE", "semantic_research")]).unwrap();
+        assert!(matches!(
+            batch.clone().authorize(&semantic),
+            Err(ImportAuthorizationError::EvidenceClassDenied { .. })
+        ));
+
+        let multimodal = PolicyConfig::from_pairs([
+            ("BELIEF_POLICY_PROFILE", "multimodal_research"),
+            ("BELIEF_BIOMETRIC_EVIDENCE", "reference_only"),
+        ])
+        .unwrap();
+        let authorized = batch.authorize(&multimodal).unwrap();
+
+        assert!(authorized
+            .receipt()
+            .classes()
+            .contains(&EvidenceClass::Transcript));
+        assert!(authorized
+            .receipt()
+            .classes()
+            .contains(&EvidenceClass::NamedEntity));
+        assert!(authorized
+            .receipt()
+            .classes()
+            .contains(&EvidenceClass::FaceTrackReference));
+        assert!(authorized
+            .receipt()
+            .classes()
+            .contains(&EvidenceClass::VoiceTrackReference));
+    }
+
+    #[test]
     fn parses_and_topologically_orders_producer_owned_references() {
         let entity = named_entity_record("evidence:transcript:1");
         let json = base_json(&format!("{entity},{}", transcript_record()));
