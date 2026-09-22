@@ -494,13 +494,13 @@ fn invalidate_many<K: Ord, T>(
     changed
 }
 
-#[derive(Debug, Clone, PartialEq)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct EvidenceImportOutcome {
     pub inserted: usize,
     pub already_present: usize,
 }
 
+#[derive(Debug, Clone, PartialEq)]
 pub struct BeliefExplanation {
     pub belief: Stored<Belief>,
     pub claim: Stored<Claim>,
