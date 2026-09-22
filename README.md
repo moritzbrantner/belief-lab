@@ -2,11 +2,22 @@
 
 Provenance-first experiments for turning heterogeneous evidence into explainable beliefs.
 
+## Architecture
+
+The current foundation separates:
+
+- `belief-core` — evidence, judgments, claims, beliefs, derivations, provenance, and score semantics;
+- `belief-policy` — fail-closed authorization over evidence and inference classes;
+- `evidence-interchange` — versioned, policy-admitted references to producer-owned evidence;
+- `inference-core` — the authorization boundary for inference execution;
+- `inference-baseline` — deterministic, correlation-aware soft-truth reference inference;
+- `belief-store` — explanation, import receipts, and transitive invalidation semantics.
+
+See [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md), [`docs/POLICY.md`](docs/POLICY.md), [`docs/EVIDENCE_INTERCHANGE.md`](docs/EVIDENCE_INTERCHANGE.md), [`docs/INFERENCE.md`](docs/INFERENCE.md), and [`docs/STORE.md`](docs/STORE.md).
+
 ## Safety-first policy boundary
 
-The first implementation slice is `belief-policy`: a fail-closed authorization layer that decides which evidence classes, evidence purposes, and inference classes a process may use.
-
-Configuration is supplied through environment variables. See [`.env.example`](.env.example) and [`docs/POLICY.md`](docs/POLICY.md).
+Configuration is supplied through environment variables. See [`.env.example`](.env.example).
 
 The shipped profiles are deliberately bounded:
 
