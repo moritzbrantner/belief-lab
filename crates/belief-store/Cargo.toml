@@ -5,8 +5,10 @@ edition.workspace = true
 
 [dependencies]
 belief-core = { path = "../belief-core" }
+belief-policy = { path = "../belief-policy" }
+evidence-interchange = { path = "../evidence-interchange" }
 inference-core = { path = "../inference-core" }
 
 [dev-dependencies]
-belief-policy = { path = "../belief-policy" }
 inference-baseline = { path = "../inference-baseline" }
+serde_json = "1"
