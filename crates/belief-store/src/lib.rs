@@ -53,10 +53,7 @@ impl InMemoryBeliefStore {
         batch: AuthorizedEvidenceBatch,
     ) -> Result<EvidenceImportOutcome, StoreError> {
         let (evidence, receipt) = batch.into_parts();
-        let receipt_key = (
-            receipt.batch_revision().to_string(),
-            receipt.profile(),
-        );
+        let receipt_key = (receipt.batch_revision().to_string(), receipt.profile());
 
         if let Some(existing) = self.import_receipts.get(&receipt_key) {
             if existing != &receipt {
@@ -105,8 +102,7 @@ impl InMemoryBeliefStore {
 
         for item in evidence {
             if !self.evidence.contains_key(&item.id) {
-                self.evidence
-                    .insert(item.id.clone(), Stored::active(item));
+                self.evidence.insert(item.id.clone(), Stored::active(item));
             }
         }
 
@@ -513,9 +509,18 @@ pub struct BeliefExplanation {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum StoreError {
-    Duplicate { kind: &'static str, id: String },
-    Missing { kind: &'static str, id: String },
-    InvalidDependency { kind: &'static str, id: String },
+    Duplicate {
+        kind: &'static str,
+        id: String,
+    },
+    Missing {
+        kind: &'static str,
+        id: String,
+    },
+    InvalidDependency {
+        kind: &'static str,
+        id: String,
+    },
     InconsistentResult(String),
     EvidenceConflict(EvidenceId),
     ImportReceiptConflict {
@@ -537,7 +542,10 @@ impl fmt::Display for StoreError {
                 write!(f, "inconsistent inference result: {reason}")
             }
             Self::EvidenceConflict(id) => {
-                write!(f, "evidence {id} already exists with different provenance or content")
+                write!(
+                    f,
+                    "evidence {id} already exists with different provenance or content"
+                )
             }
             Self::ImportReceiptConflict { revision, profile } => write!(
                 f,
@@ -684,17 +692,14 @@ mod tests {
     fn authorized_evidence_import_is_idempotent_and_persists_receipt() {
         let policy =
             PolicyConfig::from_pairs([("BELIEF_POLICY_PROFILE", "semantic_research")]).unwrap();
-        let batch =
-            ValidatedEvidenceBatch::parse_json(&import_json("sha256:source-v1")).unwrap();
+        let batch = ValidatedEvidenceBatch::parse_json(&import_json("sha256:source-v1")).unwrap();
         let authorized = batch.authorize(&policy).unwrap();
 
         let mut store = InMemoryBeliefStore::default();
         let first = store
             .insert_authorized_evidence_batch(authorized.clone())
             .unwrap();
-        let second = store
-            .insert_authorized_evidence_batch(authorized)
-            .unwrap();
+        let second = store.insert_authorized_evidence_batch(authorized).unwrap();
 
         assert_eq!(first.inserted, 1);
         assert_eq!(first.already_present, 0);
