@@ -731,8 +731,14 @@ mod tests {
             .authorize(&policy)
             .unwrap();
         let second_json = import_json("sha256:source-v2")
-            .replace(r#""name": "youtube-corpus""#, r#""name": "document-search""#)
-            .replace(r#""revision": "git:exporter-1""#, r#""revision": "git:exporter-2""#)
+            .replace(
+                r#""name": "youtube-corpus""#,
+                r#""name": "document-search""#,
+            )
+            .replace(
+                r#""revision": "git:exporter-1""#,
+                r#""revision": "git:exporter-2""#,
+            )
             .replace(
                 r#""repository": "youtube-corpus""#,
                 r#""repository": "document-search""#,
