@@ -1,10 +1,12 @@
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, BTreeSet};
 use std::fmt;
 
 use belief_core::{
     Belief, BeliefId, Claim, ClaimId, ClaimOrigin, Derivation, EvidenceId, EvidenceRef, Judgment,
     JudgmentId,
 };
+use belief_policy::AuthorizationProfile;
+use evidence_interchange::{AuthorizedEvidenceBatch, EvidenceImportReceipt};
 use inference_core::{AuthorizationReceipt, InferenceResult};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -42,9 +44,89 @@ pub struct InMemoryBeliefStore {
     beliefs: BTreeMap<BeliefId, Stored<Belief>>,
     derivations: BTreeMap<BeliefId, Derivation>,
     authorizations: BTreeMap<BeliefId, AuthorizationReceipt>,
+    import_receipts: BTreeMap<(String, AuthorizationProfile), EvidenceImportReceipt>,
 }
 
 impl InMemoryBeliefStore {
+    pub fn insert_authorized_evidence_batch(
+        &mut self,
+        batch: AuthorizedEvidenceBatch,
+    ) -> Result<EvidenceImportOutcome, StoreError> {
+        let (evidence, receipt) = batch.into_parts();
+        let receipt_key = (
+            receipt.batch_revision().to_string(),
+            receipt.profile(),
+        );
+
+        if let Some(existing) = self.import_receipts.get(&receipt_key) {
+            if existing != &receipt {
+                return Err(StoreError::ImportReceiptConflict {
+                    revision: receipt.batch_revision().to_string(),
+                    profile: receipt.profile(),
+                });
+            }
+        }
+
+        let mut available = self
+            .evidence
+            .iter()
+            .filter(|(_, stored)| stored.validity.is_active())
+            .map(|(id, _)| id.clone())
+            .collect::<BTreeSet<_>>();
+        let mut inserted = 0usize;
+        let mut already_present = 0usize;
+
+        for item in &evidence {
+            if let Some(existing) = self.evidence.get(&item.id) {
+                if !existing.validity.is_active() {
+                    return Err(StoreError::InvalidDependency {
+                        kind: "evidence",
+                        id: item.id.to_string(),
+                    });
+                }
+                if existing.value != *item {
+                    return Err(StoreError::EvidenceConflict(item.id.clone()));
+                }
+                already_present += 1;
+            } else {
+                for parent in &item.provenance.parent_evidence {
+                    if !available.contains(parent) {
+                        return Err(StoreError::Missing {
+                            kind: "evidence",
+                            id: parent.to_string(),
+                        });
+                    }
+                }
+                inserted += 1;
+            }
+
+            available.insert(item.id.clone());
+        }
+
+        for item in evidence {
+            if !self.evidence.contains_key(&item.id) {
+                self.evidence
+                    .insert(item.id.clone(), Stored::active(item));
+            }
+        }
+
+        self.import_receipts.insert(receipt_key, receipt);
+
+        Ok(EvidenceImportOutcome {
+            inserted,
+            already_present,
+        })
+    }
+
+    pub fn import_receipt(
+        &self,
+        batch_revision: &str,
+        profile: AuthorizationProfile,
+    ) -> Option<&EvidenceImportReceipt> {
+        self.import_receipts
+            .get(&(batch_revision.to_string(), profile))
+    }
+
     pub fn insert_evidence(&mut self, evidence: EvidenceRef) -> Result<(), StoreError> {
         if self.evidence.contains_key(&evidence.id) {
             return Err(StoreError::Duplicate {
@@ -413,6 +495,12 @@ fn invalidate_many<K: Ord, T>(
 }
 
 #[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct EvidenceImportOutcome {
+    pub inserted: usize,
+    pub already_present: usize,
+}
+
 pub struct BeliefExplanation {
     pub belief: Stored<Belief>,
     pub claim: Stored<Claim>,
@@ -429,6 +517,11 @@ pub enum StoreError {
     Missing { kind: &'static str, id: String },
     InvalidDependency { kind: &'static str, id: String },
     InconsistentResult(String),
+    EvidenceConflict(EvidenceId),
+    ImportReceiptConflict {
+        revision: String,
+        profile: AuthorizationProfile,
+    },
     EmptyInvalidationReason,
 }
 
@@ -443,6 +536,14 @@ impl fmt::Display for StoreError {
             Self::InconsistentResult(reason) => {
                 write!(f, "inconsistent inference result: {reason}")
             }
+            Self::EvidenceConflict(id) => {
+                write!(f, "evidence {id} already exists with different provenance or content")
+            }
+            Self::ImportReceiptConflict { revision, profile } => write!(
+                f,
+                "evidence import {revision} already has a different receipt for profile {}",
+                profile.as_str()
+            ),
             Self::EmptyInvalidationReason => f.write_str("invalidation reason cannot be empty"),
         }
     }
@@ -457,7 +558,8 @@ mod tests {
         InferenceClass, InferenceRunId, JudgmentOutcome, JudgmentSpecRef, ObjectValue, Predicate,
         ProducerRef, Proposition, Provenance, Score, ScoreSemantics, SourceRef,
     };
-    use belief_policy::{AuthorizationProfile, PolicyConfig};
+    use belief_policy::PolicyConfig;
+    use evidence_interchange::ValidatedEvidenceBatch;
     use inference_baseline::BaselineInferenceEngine;
     use inference_core::{EvidenceUse, InferenceEngine, InferenceRequest, JudgmentBasis};
 
@@ -539,6 +641,90 @@ mod tests {
         let authorized = request.authorize(&policy).unwrap();
 
         BaselineInferenceEngine.infer(&authorized).unwrap()
+    }
+
+    fn import_json(source_revision: &str) -> String {
+        format!(
+            r#"{{
+  "schema": "belief_evidence_interchange",
+  "schemaVersion": 1,
+  "exporter": {{
+    "name": "youtube-corpus",
+    "revision": "git:exporter-1"
+  }},
+  "revision": "batch:1",
+  "evidence": [
+    {{
+      "id": "evidence:transcript:1",
+      "subject": "corpus-person:1",
+      "class": "transcript",
+      "familyId": "family:utterance:1",
+      "source": {{
+        "repository": "youtube-corpus",
+        "scopeId": "video:1",
+        "recordId": "transcript-segment:1",
+        "revision": "{source_revision}"
+      }},
+      "producer": {{
+        "name": "audio-analysis",
+        "revision": "git:audio-1",
+        "model": "whisper"
+      }},
+      "score": {{
+        "value": 0.9,
+        "semantics": "model_confidence"
+      }}
+    }}
+  ]
+}}"#
+        )
+    }
+
+    #[test]
+    fn authorized_evidence_import_is_idempotent_and_persists_receipt() {
+        let policy =
+            PolicyConfig::from_pairs([("BELIEF_POLICY_PROFILE", "semantic_research")]).unwrap();
+        let batch =
+            ValidatedEvidenceBatch::parse_json(&import_json("sha256:source-v1")).unwrap();
+        let authorized = batch.authorize(&policy).unwrap();
+
+        let mut store = InMemoryBeliefStore::default();
+        let first = store
+            .insert_authorized_evidence_batch(authorized.clone())
+            .unwrap();
+        let second = store
+            .insert_authorized_evidence_batch(authorized)
+            .unwrap();
+
+        assert_eq!(first.inserted, 1);
+        assert_eq!(first.already_present, 0);
+        assert_eq!(second.inserted, 0);
+        assert_eq!(second.already_present, 1);
+        assert!(store
+            .import_receipt("batch:1", AuthorizationProfile::SemanticResearch)
+            .is_some());
+    }
+
+    #[test]
+    fn same_evidence_id_cannot_silently_change_source_revision() {
+        let policy =
+            PolicyConfig::from_pairs([("BELIEF_POLICY_PROFILE", "semantic_research")]).unwrap();
+        let first = ValidatedEvidenceBatch::parse_json(&import_json("sha256:source-v1"))
+            .unwrap()
+            .authorize(&policy)
+            .unwrap();
+        let changed = ValidatedEvidenceBatch::parse_json(&import_json("sha256:source-v2"))
+            .unwrap()
+            .authorize(&policy)
+            .unwrap();
+
+        let mut store = InMemoryBeliefStore::default();
+        store.insert_authorized_evidence_batch(first).unwrap();
+
+        assert!(matches!(
+            store.insert_authorized_evidence_batch(changed),
+            Err(StoreError::EvidenceConflict(_))
+        ));
     }
 
     #[test]
