@@ -143,8 +143,8 @@ impl DecisionRequest {
                 });
             }
             source_scopes.insert((
-                evidence.provenance.source.repository.clone(),
-                evidence.provenance.source.scope_id.clone(),
+                evidence.provenance.source.repository().to_string(),
+                evidence.provenance.source.scope_id().to_string(),
             ));
             evidence_uses.insert((evidence.id.clone(), evidence_use.purpose));
         }
@@ -830,7 +830,7 @@ mod tests {
             )
             .unwrap();
 
-        assert_eq!(semantic.judgment().outcome(), JudgmentOutcome::Supports);
+        assert_eq!(semantic.judgment().outcome()(), JudgmentOutcome::Supports);
         assert_eq!(
             semantic.judgment().confidence().semantics(),
             ScoreSemantics::ConditionalOptionProbability
