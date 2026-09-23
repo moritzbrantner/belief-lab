@@ -951,10 +951,7 @@ mod tests {
         let explanation = store
             .explain_belief(&BeliefId::new("belief:1").unwrap())
             .unwrap();
-        let provenance = explanation
-            .semantic_judgments
-            .get(&judgment_id)
-            .unwrap();
+        let provenance = explanation.semantic_judgments.get(&judgment_id).unwrap();
 
         assert_eq!(provenance.decision().provider(), "semif");
         assert_eq!(provenance.decision().prompt_sha256(), "sha256:prompt");
