@@ -230,7 +230,7 @@ impl InMemoryBeliefStore {
             });
         }
 
-        self.require_active_claim(&belief.claim())?;
+        self.require_active_claim(belief.claim())?;
 
         if derivation.belief() != belief.id() {
             return Err(StoreError::InconsistentResult(
@@ -319,7 +319,7 @@ impl InMemoryBeliefStore {
                 })?;
         let claim = self
             .claims
-            .get(&stored_belief.value.claim())
+            .get(stored_belief.value.claim())
             .cloned()
             .ok_or_else(|| StoreError::Missing {
                 kind: "claim",
@@ -499,7 +499,7 @@ impl InMemoryBeliefStore {
     }
 
     fn invalid_belief_dependency(&self, id: &BeliefId, belief: &Belief) -> Option<String> {
-        if self.is_invalid_claim(&belief.claim()) {
+        if self.is_invalid_claim(belief.claim()) {
             return Some(format!(
                 "claim dependency {} was invalidated",
                 belief.claim()
