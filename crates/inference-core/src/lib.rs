@@ -118,7 +118,7 @@ impl InferenceRequest {
         for basis in &self.bases {
             for evidence_use in &basis.evidence {
                 let evidence = &evidence_use.evidence;
-                if !policy.allows_evidence(evidence.class, evidence_use.purpose) {
+                if !policy.allows_evidence_ref(evidence, evidence_use.purpose) {
                     return Err(AuthorizationError::EvidenceDenied {
                         evidence: evidence.id.clone(),
                         class: evidence.class,
@@ -138,7 +138,7 @@ impl InferenceRequest {
         }
 
         let authorization = AuthorizationReceipt {
-            profile: policy.profile,
+            profile: policy.profile(),
             inference_class: self.class,
             source_scopes: source_scopes.clone(),
             evidence_uses,
