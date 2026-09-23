@@ -592,7 +592,7 @@ mod tests {
         assert_eq!(batch.evidence().len(), 2);
         assert_eq!(batch.evidence()[0].id.as_str(), "evidence:transcript:1");
         assert_eq!(batch.evidence()[1].id.as_str(), "evidence:entity:1");
-        assert_eq!(batch.evidence()[1].provenance.producer.name, "nlp-stack");
+        assert_eq!(batch.evidence()[1].provenance.producer.name(), "nlp-stack");
         assert!(batch.evidence()[1]
             .provenance
             .parent_evidence
