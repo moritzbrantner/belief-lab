@@ -435,6 +435,10 @@ pub fn bootstrap_semif(
         true
     };
 
+    if !cloned {
+        ensure_clean_checkout(directory)?;
+    }
+
     if !revision_exists(directory)? {
         run_command(
             Command::new("git")
@@ -456,19 +460,21 @@ pub fn bootstrap_semif(
             .arg(SEMIF_SOURCE_REVISION),
         "check out pinned SemIf revision",
     )?;
+    ensure_clean_checkout(directory)?;
 
     let interpreter = venv_python(directory);
-    let venv_created = if interpreter.is_file() {
+    let venv_created = if venv_is_usable(&interpreter) {
         false
     } else {
         let python = env::var("BELIEF_SEMIF_PYTHON").unwrap_or_else(|_| "python3".into());
-        run_command(
-            Command::new(&python)
-                .arg("-m")
-                .arg("venv")
-                .arg(directory.join(".venv")),
-            "create SemIf virtual environment",
-        )?;
+        let venv = directory.join(".venv");
+        let mut command = Command::new(&python);
+        command.arg("-m").arg("venv");
+        if venv.exists() {
+            command.arg("--clear");
+        }
+        command.arg(&venv);
+        run_command(&mut command, "create or repair SemIf virtual environment")?;
         true
     };
 
@@ -591,6 +597,36 @@ fn verify_size(path: &Path, expected: u64) -> Result<(), SemifSetupError> {
     Ok(())
 }
 
+fn ensure_clean_checkout(directory: &Path) -> Result<(), SemifSetupError> {
+    let status = command_output(
+        Command::new("git")
+            .arg("-C")
+            .arg(directory)
+            .arg("status")
+            .arg("--porcelain")
+            .arg("--untracked-files=all"),
+        "inspect SemIf working tree",
+    )?;
+    if status.is_empty() {
+        Ok(())
+    } else {
+        Err(SemifSetupError::DirtyCheckout {
+            directory: directory.to_path_buf(),
+            status,
+        })
+    }
+}
+
+fn venv_is_usable(interpreter: &Path) -> bool {
+    interpreter.is_file()
+        && Command::new(interpreter)
+            .arg("-m")
+            .arg("pip")
+            .arg("--version")
+            .output()
+            .is_ok_and(|output| output.status.success())
+}
+
 fn revision_exists(directory: &Path) -> Result<bool, SemifSetupError> {
     let status = Command::new("git")
         .arg("-C")
@@ -653,6 +689,10 @@ fn venv_python(root: &Path) -> PathBuf {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum SemifSetupError {
     ExistingPathIsNotRepository(PathBuf),
+    DirtyCheckout {
+        directory: PathBuf,
+        status: String,
+    },
     UnexpectedRepositoryOrigin {
         directory: PathBuf,
         origin: String,
@@ -680,6 +720,12 @@ impl std::fmt::Display for SemifSetupError {
                 f,
                 "{} exists but is not a SemIf git checkout",
                 path.display()
+            ),
+            Self::DirtyCheckout { directory, status } => write!(
+                f,
+                "{} contains local modifications; refusing to install modified code as pinned SemIf: {}",
+                directory.display(),
+                status.replace('\n', "; ")
             ),
             Self::UnexpectedRepositoryOrigin { directory, origin } => write!(
                 f,
@@ -851,6 +897,29 @@ mod tests {
                     .unwrap(),
             )
             .unwrap()
+    }
+
+    #[test]
+    fn unusable_venv_is_not_treated_as_complete() {
+        let temp = tempfile::tempdir().unwrap();
+        let fake = temp.path().join("python");
+        fs::write(&fake, b"not an executable").unwrap();
+
+        assert!(!venv_is_usable(&fake));
+    }
+
+    #[test]
+    fn dirty_checkout_status_is_reported() {
+        let temp = tempfile::tempdir().unwrap();
+        run_command(
+            Command::new("git").arg("init").arg(temp.path()),
+            "initialize test repository",
+        )
+        .unwrap();
+        fs::write(temp.path().join("untracked.txt"), b"change").unwrap();
+
+        let error = ensure_clean_checkout(temp.path()).unwrap_err();
+        assert!(matches!(error, SemifSetupError::DirtyCheckout { .. }));
     }
 
     #[test]
