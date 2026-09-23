@@ -192,13 +192,11 @@ fn store_rejects_same_id_evidence_content_and_provenance_drift() {
         match field {
             "source_revision" => {
                 changed.provenance.source =
-                    SourceRef::new("corpus", "source:1", "evidence:1", "sha256:source-v2")
-                        .unwrap();
+                    SourceRef::new("corpus", "source:1", "evidence:1", "sha256:source-v2").unwrap();
             }
             "source_scope" => {
                 changed.provenance.source =
-                    SourceRef::new("corpus", "source:2", "evidence:1", "sha256:source-v1")
-                        .unwrap();
+                    SourceRef::new("corpus", "source:2", "evidence:1", "sha256:source-v1").unwrap();
             }
             "source_record" => {
                 changed.provenance.source =
@@ -225,7 +223,11 @@ fn store_rejects_same_id_evidence_content_and_provenance_drift() {
         }
         let mut store = seed_store(changed.clone(), judgment, claim);
         assert_rejected_atomically(&mut store, result);
-        assert_eq!(&store.evidence(&changed.id).unwrap().value, &changed, "{field}");
+        assert_eq!(
+            &store.evidence(&changed.id).unwrap().value,
+            &changed,
+            "{field}"
+        );
     }
 }
 
