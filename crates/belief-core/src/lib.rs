@@ -149,6 +149,7 @@ impl InferenceClass {
 pub enum ScoreSemantics {
     DetectorConfidence,
     ModelConfidence,
+    ConditionalOptionProbability,
     Similarity,
     SoftTruth,
     PosteriorProbability,
@@ -366,10 +367,13 @@ impl Judgment {
         spec: JudgmentSpecRef,
         model_revision: impl Into<String>,
     ) -> Result<Self, ModelError> {
-        if confidence.semantics() != ScoreSemantics::ModelConfidence {
+        if !matches!(
+            confidence.semantics(),
+            ScoreSemantics::ModelConfidence | ScoreSemantics::ConditionalOptionProbability
+        ) {
             return Err(ModelError::WrongScoreSemantics {
                 context: "judgment confidence",
-                expected: "model_confidence",
+                expected: "model_confidence or conditional_option_probability",
                 actual: confidence.semantics(),
             });
         }
@@ -667,6 +671,44 @@ mod tests {
             result,
             Err(ModelError::WrongScoreSemantics {
                 context: "judgment confidence",
+                ..
+            })
+        ));
+    }
+
+    #[test]
+    fn conditional_option_probabilities_are_judgment_semantics_not_belief_truth() {
+        let confidence = Score::new(
+            0.8,
+            ScoreSemantics::ConditionalOptionProbability,
+        )
+        .unwrap();
+        let judgment = Judgment::new(
+            JudgmentId::new("judgment:conditional").unwrap(),
+            proposition(),
+            JudgmentOutcome::Supports,
+            confidence,
+            [evidence_id("evidence:1")],
+            JudgmentSpecRef::new("support-check", "v1").unwrap(),
+            "semif:model@revision",
+        )
+        .unwrap();
+
+        assert_eq!(
+            judgment.confidence.semantics(),
+            ScoreSemantics::ConditionalOptionProbability
+        );
+
+        let belief = Belief::new(
+            BeliefId::new("belief:conditional").unwrap(),
+            ClaimId::new("claim:1").unwrap(),
+            confidence,
+            InferenceRunId::new("run:1").unwrap(),
+        );
+        assert!(matches!(
+            belief,
+            Err(ModelError::WrongScoreSemantics {
+                context: "belief value",
                 ..
             })
         ));
