@@ -678,11 +678,7 @@ mod tests {
 
     #[test]
     fn conditional_option_probabilities_are_judgment_semantics_not_belief_truth() {
-        let confidence = Score::new(
-            0.8,
-            ScoreSemantics::ConditionalOptionProbability,
-        )
-        .unwrap();
+        let confidence = Score::new(0.8, ScoreSemantics::ConditionalOptionProbability).unwrap();
         let judgment = Judgment::new(
             JudgmentId::new("judgment:conditional").unwrap(),
             proposition(),
