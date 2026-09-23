@@ -301,7 +301,7 @@ impl InferenceResult {
         let expected_evidence = expected
             .bases
             .iter()
-            .filter(|basis| selected_judgments.contains(&basis.judgment.id))
+            .filter(|basis| selected_judgments.contains(basis.judgment.id()))
             .flat_map(|basis| basis.evidence.iter())
             .map(|evidence_use| evidence_use.evidence.id.clone())
             .collect::<BTreeSet<_>>();
@@ -314,7 +314,7 @@ impl InferenceResult {
         let selected_judgment_values = expected
             .bases
             .iter()
-            .filter(|basis| selected_judgments.contains(&basis.judgment.id))
+            .filter(|basis| selected_judgments.contains(basis.judgment.id()))
             .map(|basis| (basis.judgment.id().clone(), basis.judgment.clone()))
             .collect::<BTreeMap<_, _>>();
 
