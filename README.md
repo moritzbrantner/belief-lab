@@ -20,7 +20,7 @@ cargo run -- setup
 cargo run -- semantic-demo
 ```
 
-`setup` is retry-safe and idempotent. By default it installs the pinned SemIf revision under `.local/semif` with the CPU `llama.cpp` backend and downloads the phone-tier GGUF (~639 MB) under `.local/models`. Re-running the command reuses a valid checkout, virtual environment, and completed model, and resumes an interrupted model download.
+`setup` is retry-safe and idempotent. By default it installs the pinned SemIf revision under `.local/semif` with the CPU `llama.cpp` backend and downloads the phone-tier GGUF (~639 MB) under `.local/models`. Re-running the command reuses a clean valid checkout and usable virtual environment, repairs an incomplete virtual environment, reuses a completed model, and resumes an interrupted model download. A dirty SemIf checkout is refused rather than silently attributed to the pinned revision.
 
 Optional model tiers are `phone`, `desktop`, and `high-memory`:
 
