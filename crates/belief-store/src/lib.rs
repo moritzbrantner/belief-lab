@@ -231,6 +231,16 @@ impl InMemoryBeliefStore {
         }
 
         self.require_active_claim(belief.claim())?;
+        let stored_claim = self
+            .claims
+            .get(belief.claim())
+            .expect("active claim must exist");
+        if &stored_claim.value != authorization.authorized_claim() {
+            return Err(StoreError::InconsistentResult(format!(
+                "stored claim {} differs from the authorized claim",
+                belief.claim()
+            )));
+        }
 
         if derivation.belief() != belief.id() {
             return Err(StoreError::InconsistentResult(
@@ -250,6 +260,23 @@ impl InMemoryBeliefStore {
 
         for evidence in derivation.evidence() {
             self.require_active_evidence(evidence)?;
+            let stored = self
+                .evidence
+                .get(evidence)
+                .expect("active evidence must exist");
+            let authorized = authorization
+                .authorized_evidence()
+                .get(evidence)
+                .ok_or_else(|| {
+                    StoreError::InconsistentResult(format!(
+                        "selected evidence {evidence} is missing from the authorized request"
+                    ))
+                })?;
+            if &stored.value != authorized {
+                return Err(StoreError::InconsistentResult(format!(
+                    "stored evidence {evidence} differs from the authorized evidence"
+                )));
+            }
         }
         for judgment in derivation.judgments() {
             self.require_active_judgment(judgment)?;
