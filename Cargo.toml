@@ -6,6 +6,8 @@ members = [
     "crates/inference-baseline",
     "crates/belief-store",
     "crates/evidence-interchange",
+    "crates/semantic-decision",
+    "crates/semif-provider",
 ]
 resolver = "2"
 
