@@ -23,7 +23,7 @@ impl InferenceEngine for BaselineInferenceEngine {
         let mut selected_by_group = BTreeMap::<_, &JudgmentBasis>::new();
         let mut usable_judgments = BTreeSet::new();
 
-        for basis in &request.bases {
+        for basis in request.bases() {
             if basis.judgment.outcome == JudgmentOutcome::Unknown {
                 continue;
             }
@@ -72,15 +72,15 @@ impl InferenceEngine for BaselineInferenceEngine {
         let soft_truth = (0.5 + signed_mean / 2.0).clamp(0.0, 1.0);
 
         let belief = belief_core::Belief::new(
-            request.belief_id.clone(),
-            request.claim.id.clone(),
+            request.belief_id().clone(),
+            request.claim().id.clone(),
             Score::new(soft_truth, ScoreSemantics::SoftTruth)?,
-            request.run_id.clone(),
+            request.run_id().clone(),
         )?;
 
         let derivation = Derivation::new(
             belief.id.clone(),
-            request.rule_id.clone(),
+            request.rule_id().to_string(),
             evidence,
             selected_judgments.clone(),
             [],
@@ -115,7 +115,7 @@ mod tests {
         ScoreSemantics, SourceRef,
     };
     use belief_policy::PolicyConfig;
-    use inference_core::{EvidenceUse, InferenceRequest, JudgmentBasis};
+    use inference_core::{EvidenceUse, InferenceRequest, JudgmentBasis, TrustedInferenceRule};
 
     use super::*;
 
@@ -185,9 +185,8 @@ mod tests {
         let request = InferenceRequest::new(
             InferenceRunId::new("run:1").unwrap(),
             BeliefId::new("belief:1").unwrap(),
-            InferenceClass::Preference,
+            TrustedInferenceRule::BaselinePreferenceV1,
             claim(),
-            "baseline:preference:v1",
             bases,
         )
         .unwrap();
