@@ -1,7 +1,7 @@
 use std::collections::{BTreeMap, BTreeSet};
 use std::fmt;
 
-pub use belief_core::{EvidenceClass, EvidencePurpose, InferenceClass};
+pub use belief_core::{EvidenceClass, EvidencePurpose, EvidenceRef, InferenceClass};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub enum AuthorizationProfile {
@@ -65,7 +65,7 @@ impl IdentityResolutionMode {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct PolicyConfig {
-    pub profile: AuthorizationProfile,
+    profile: AuthorizationProfile,
     pub allowed_evidence: BTreeSet<EvidenceClass>,
     pub allowed_evidence_purposes: BTreeSet<EvidencePurpose>,
     pub allowed_inferences: BTreeSet<InferenceClass>,
@@ -181,8 +181,15 @@ impl PolicyConfig {
         })
     }
 
+    pub fn profile(&self) -> AuthorizationProfile {
+        self.profile
+    }
+
     pub fn allows_evidence(&self, class: EvidenceClass, purpose: EvidencePurpose) -> bool {
-        if !self.allowed_evidence.contains(&class)
+        let maximum = ProfileMaximum::for_profile(self.profile);
+        if !maximum.evidence.contains(&class)
+            || !maximum.evidence_purposes.contains(&purpose)
+            || !self.allowed_evidence.contains(&class)
             || !self.allowed_evidence_purposes.contains(&purpose)
         {
             return false;
@@ -190,14 +197,22 @@ impl PolicyConfig {
 
         if class.is_biometric_reference() {
             return self.biometric_evidence == BiometricEvidenceMode::ReferenceOnly
+                && self.biometric_evidence <= maximum.biometric_evidence
                 && purpose != EvidencePurpose::DirectSupport;
         }
 
         true
     }
 
+    pub fn allows_evidence_ref(&self, evidence: &EvidenceRef, purpose: EvidencePurpose) -> bool {
+        self.require_complete_provenance
+            && evidence.has_complete_provenance()
+            && self.allows_evidence(evidence.class, purpose)
+    }
+
     pub fn allows_inference(&self, class: InferenceClass) -> bool {
-        if !self.allowed_inferences.contains(&class) {
+        let maximum = ProfileMaximum::for_profile(self.profile);
+        if !maximum.inferences.contains(&class) || !self.allowed_inferences.contains(&class) {
             return false;
         }
 
@@ -205,7 +220,9 @@ impl PolicyConfig {
             InferenceClass::LocalEntityLink => {
                 self.identity_resolution == IdentityResolutionMode::CorpusLocal
             }
-            InferenceClass::CrossSourceAssociation => self.allow_cross_source_join,
+            InferenceClass::CrossSourceAssociation => {
+                self.allow_cross_source_join && maximum.allow_cross_source_join
+            },
             InferenceClass::SensitiveTrait | InferenceClass::RealWorldIdentity => false,
             InferenceClass::Descriptive | InferenceClass::Preference => true,
         }
