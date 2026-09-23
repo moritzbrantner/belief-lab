@@ -110,9 +110,9 @@ fn should_replace(selected: &JudgmentBasis, candidate: &JudgmentBasis) -> bool {
 mod tests {
     use belief_core::{
         BeliefId, Claim, ClaimId, EntityId, EvidenceClass, EvidenceFamilyId, EvidenceId,
-        EvidencePurpose, EvidenceRef, InferenceRunId, Judgment, JudgmentId,
-        JudgmentSpecRef, ObjectValue, Predicate, ProducerRef, Proposition, Provenance, Score,
-        ScoreSemantics, SourceRef,
+        EvidencePurpose, EvidenceRef, InferenceRunId, Judgment, JudgmentId, JudgmentSpecRef,
+        ObjectValue, Predicate, ProducerRef, Proposition, Provenance, Score, ScoreSemantics,
+        SourceRef,
     };
     use belief_policy::PolicyConfig;
     use inference_core::{EvidenceUse, InferenceRequest, JudgmentBasis, TrustedInferenceRule};
@@ -231,7 +231,10 @@ mod tests {
         assert!(result
             .ignored_correlated_judgments()
             .contains(&JudgmentId::new("judgment:derived").unwrap()));
-        assert_eq!(result.belief().value().semantics(), ScoreSemantics::SoftTruth);
+        assert_eq!(
+            result.belief().value().semantics(),
+            ScoreSemantics::SoftTruth
+        );
         assert!((result.belief().value().value() - 0.55).abs() < f64::EPSILON);
     }
 
