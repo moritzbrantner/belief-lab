@@ -234,11 +234,8 @@ impl AuthorizedDecisionRequest {
             .iter()
             .map(|option| option.id.as_str())
             .collect::<BTreeSet<_>>();
-        let expected = BTreeSet::from([
-            SUPPORTS_OPTION_ID,
-            CONTRADICTS_OPTION_ID,
-            UNKNOWN_OPTION_ID,
-        ]);
+        let expected =
+            BTreeSet::from([SUPPORTS_OPTION_ID, CONTRADICTS_OPTION_ID, UNKNOWN_OPTION_ID]);
         if option_ids != expected {
             return Err(SemanticDecisionError::NotThreeWaySupportDecision);
         }
@@ -267,11 +264,8 @@ impl AuthorizedDecisionRequest {
             judgment_id,
             proposition,
             outcome,
-            Score::new(
-                confidence,
-                ScoreSemantics::ConditionalOptionProbability,
-            )
-            .map_err(SemanticDecisionError::Model)?,
+            Score::new(confidence, ScoreSemantics::ConditionalOptionProbability)
+                .map_err(SemanticDecisionError::Model)?,
             evidence,
             spec,
             model_revision,
@@ -331,10 +325,7 @@ impl SemanticDecisionReceipt {
             .collect::<BTreeSet<_>>();
         let actual = scores.keys().cloned().collect::<BTreeSet<_>>();
         if expected != actual {
-            return Err(SemanticDecisionError::OptionScoresMismatch {
-                expected,
-                actual,
-            });
+            return Err(SemanticDecisionError::OptionScoresMismatch { expected, actual });
         }
 
         if scores
@@ -367,15 +358,9 @@ impl SemanticDecisionReceipt {
                 provider_revision.into(),
             )?,
             model: semantic_required("decision.model", model.into())?,
-            model_revision: semantic_required(
-                "decision.model_revision",
-                model_revision.into(),
-            )?,
+            model_revision: semantic_required("decision.model_revision", model_revision.into())?,
             runtime: semantic_required("decision.runtime", runtime.into())?,
-            prompt_sha256: semantic_required(
-                "decision.prompt_sha256",
-                prompt_sha256.into(),
-            )?,
+            prompt_sha256: semantic_required("decision.prompt_sha256", prompt_sha256.into())?,
             readout: semantic_required("decision.readout", readout.into())?,
             scores,
             selected_option: selected,
@@ -473,9 +458,7 @@ impl fmt::Display for DecisionRequestError {
         match self {
             Self::EmptyField(field) => write!(f, "{field} cannot be empty"),
             Self::InvalidState => {
-                f.write_str(
-                    "decision state must be a non-empty string, object, or array",
-                )
+                f.write_str("decision state must be a non-empty string, object, or array")
             }
             Self::InvalidOptionCount(count) => write!(
                 f,
@@ -485,9 +468,7 @@ impl fmt::Display for DecisionRequestError {
                 write!(f, "duplicate decision option id {id:?}")
             }
             Self::NoEvidence => {
-                f.write_str(
-                    "semantic decisions require at least one evidence input",
-                )
+                f.write_str("semantic decisions require at least one evidence input")
             }
         }
     }
@@ -512,11 +493,7 @@ impl fmt::Display for DecisionAuthorizationError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::InferenceDenied(class) => {
-                write!(
-                    f,
-                    "inference class {} is not authorized",
-                    class.as_str()
-                )
+                write!(f, "inference class {} is not authorized", class.as_str())
             }
             Self::EvidenceDenied {
                 evidence,
@@ -616,10 +593,7 @@ impl fmt::Display for SemanticDecisionError {
 
 impl std::error::Error for SemanticDecisionError {}
 
-fn required(
-    field: &'static str,
-    value: String,
-) -> Result<String, DecisionRequestError> {
+fn required(field: &'static str, value: String) -> Result<String, DecisionRequestError> {
     if value.trim().is_empty() {
         Err(DecisionRequestError::EmptyField(field))
     } else {
@@ -627,10 +601,7 @@ fn required(
     }
 }
 
-fn semantic_required(
-    field: &'static str,
-    value: String,
-) -> Result<String, SemanticDecisionError> {
+fn semantic_required(field: &'static str, value: String) -> Result<String, SemanticDecisionError> {
     if value.trim().is_empty() {
         Err(SemanticDecisionError::EmptyField(field))
     } else {
@@ -654,17 +625,11 @@ fn validate_state(state: &Value) -> Result<(), DecisionRequestError> {
 
 #[cfg(test)]
 mod tests {
-    use belief_core::{
-        EntityId, EvidenceClass, EvidenceFamilyId, ProducerRef, SourceRef,
-    };
+    use belief_core::{EntityId, EvidenceClass, EvidenceFamilyId, ProducerRef, SourceRef};
 
     use super::*;
 
-    fn evidence(
-        id: &str,
-        scope: &str,
-        class: EvidenceClass,
-    ) -> EvidenceRef {
+    fn evidence(id: &str, scope: &str, class: EvidenceClass) -> EvidenceRef {
         EvidenceRef::new(
             EvidenceId::new(id).unwrap(),
             Some(EntityId::new("person:alice").unwrap()),
@@ -679,13 +644,7 @@ mod tests {
                     "sha256:source",
                 )
                 .unwrap(),
-                ProducerRef::new(
-                    "fixture",
-                    "commit:1",
-                    None,
-                    None,
-                )
-                .unwrap(),
+                ProducerRef::new("fixture", "commit:1", None, None).unwrap(),
                 [],
             ),
         )
@@ -693,29 +652,19 @@ mod tests {
 
     fn options() -> Vec<DecisionOption> {
         [
-            (
-                SUPPORTS_OPTION_ID,
-                "The evidence supports the proposition.",
-            ),
+            (SUPPORTS_OPTION_ID, "The evidence supports the proposition."),
             (
                 CONTRADICTS_OPTION_ID,
                 "The evidence contradicts the proposition.",
             ),
-            (
-                UNKNOWN_OPTION_ID,
-                "The evidence is insufficient.",
-            ),
+            (UNKNOWN_OPTION_ID, "The evidence is insufficient."),
         ]
         .into_iter()
-        .map(|(id, description)| {
-            DecisionOption::new(id, description).unwrap()
-        })
+        .map(|(id, description)| DecisionOption::new(id, description).unwrap())
         .collect()
     }
 
-    fn request(
-        evidence: Vec<DecisionEvidenceUse>,
-    ) -> DecisionRequest {
+    fn request(evidence: Vec<DecisionEvidenceUse>) -> DecisionRequest {
         DecisionRequest::new(
             "decision:1",
             Value::String("bounded evidence text".into()),
@@ -728,20 +677,12 @@ mod tests {
     }
 
     fn policy() -> PolicyConfig {
-        PolicyConfig::from_pairs([(
-            "BELIEF_POLICY_PROFILE",
-            "semantic_research",
-        )])
-        .unwrap()
+        PolicyConfig::from_pairs([("BELIEF_POLICY_PROFILE", "semantic_research")]).unwrap()
     }
 
     #[test]
     fn request_rejects_duplicate_options() {
-        let evidence = evidence(
-            "transcript:1",
-            "video:1",
-            EvidenceClass::Transcript,
-        );
+        let evidence = evidence("transcript:1", "video:1", EvidenceClass::Transcript);
         let result = DecisionRequest::new(
             "decision:1",
             Value::String("state".into()),
@@ -765,11 +706,7 @@ mod tests {
 
     #[test]
     fn policy_denies_semantic_decision_over_unlisted_evidence() {
-        let face = evidence(
-            "face:1",
-            "video:1",
-            EvidenceClass::FaceTrackReference,
-        );
+        let face = evidence("face:1", "video:1", EvidenceClass::FaceTrackReference);
         let request = request(vec![DecisionEvidenceUse::new(
             face,
             EvidencePurpose::Corroboration,
@@ -783,44 +720,22 @@ mod tests {
 
     #[test]
     fn cross_source_semantic_decision_requires_opt_in() {
-        let first = evidence(
-            "transcript:1",
-            "video:1",
-            EvidenceClass::Transcript,
-        );
-        let second = evidence(
-            "transcript:2",
-            "video:2",
-            EvidenceClass::Transcript,
-        );
+        let first = evidence("transcript:1", "video:1", EvidenceClass::Transcript);
+        let second = evidence("transcript:2", "video:2", EvidenceClass::Transcript);
         let request = request(vec![
-            DecisionEvidenceUse::new(
-                first,
-                EvidencePurpose::Corroboration,
-            ),
-            DecisionEvidenceUse::new(
-                second,
-                EvidencePurpose::Corroboration,
-            ),
+            DecisionEvidenceUse::new(first, EvidencePurpose::Corroboration),
+            DecisionEvidenceUse::new(second, EvidencePurpose::Corroboration),
         ]);
 
         assert!(matches!(
             request.authorize(&policy()),
-            Err(
-                DecisionAuthorizationError::CrossSourceJoinDenied {
-                    ..
-                }
-            )
+            Err(DecisionAuthorizationError::CrossSourceJoinDenied { .. })
         ));
     }
 
     #[test]
     fn three_way_receipt_becomes_conditional_probability_judgment() {
-        let evidence = evidence(
-            "transcript:1",
-            "video:1",
-            EvidenceClass::Transcript,
-        );
+        let evidence = evidence("transcript:1", "video:1", EvidenceClass::Transcript);
         let authorized = request(vec![DecisionEvidenceUse::new(
             evidence,
             EvidencePurpose::Corroboration,
@@ -851,30 +766,19 @@ mod tests {
                 Proposition::new(
                     EntityId::new("person:alice").unwrap(),
                     belief_core::Predicate::new("uses").unwrap(),
-                    belief_core::ObjectValue::text("Linux")
-                        .unwrap(),
+                    belief_core::ObjectValue::text("Linux").unwrap(),
                 ),
-                JudgmentSpecRef::new(
-                    "support-check",
-                    "v1",
-                )
-                .unwrap(),
+                JudgmentSpecRef::new("support-check", "v1").unwrap(),
             )
             .unwrap();
 
-        assert_eq!(
-            semantic.judgment().outcome,
-            JudgmentOutcome::Supports
-        );
+        assert_eq!(semantic.judgment().outcome, JudgmentOutcome::Supports);
         assert_eq!(
             semantic.judgment().confidence.semantics(),
             ScoreSemantics::ConditionalOptionProbability
         );
         assert_eq!(
-            semantic
-                .provenance()
-                .decision()
-                .selected_option(),
+            semantic.provenance().decision().selected_option(),
             "supports"
         );
     }
