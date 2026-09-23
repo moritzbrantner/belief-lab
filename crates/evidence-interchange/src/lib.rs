@@ -137,7 +137,7 @@ impl ValidatedEvidenceBatch {
         let mut evidence_ids = BTreeSet::new();
 
         for evidence in &self.evidence {
-            if !evidence_class_is_admissible(policy, evidence.class) {
+            if !evidence_is_admissible(policy, evidence) {
                 return Err(ImportAuthorizationError::EvidenceClassDenied {
                     evidence: evidence.id.clone(),
                     class: evidence.class,
@@ -148,7 +148,7 @@ impl ValidatedEvidenceBatch {
         }
 
         let receipt = EvidenceImportReceipt {
-            profile: policy.profile,
+            profile: policy.profile(),
             exporter_name: self.exporter_name.clone(),
             exporter_revision: self.exporter_revision.clone(),
             batch_revision: self.revision.clone(),
@@ -163,14 +163,14 @@ impl ValidatedEvidenceBatch {
     }
 }
 
-fn evidence_class_is_admissible(policy: &PolicyConfig, class: EvidenceClass) -> bool {
+fn evidence_is_admissible(policy: &PolicyConfig, evidence: &EvidenceRef) -> bool {
     [
         EvidencePurpose::DirectSupport,
         EvidencePurpose::Corroboration,
         EvidencePurpose::EntityLinking,
     ]
     .into_iter()
-    .any(|purpose| policy.allows_evidence(class, purpose))
+    .any(|purpose| policy.allows_evidence_ref(evidence, purpose))
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
