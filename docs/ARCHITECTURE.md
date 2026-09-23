@@ -16,7 +16,15 @@ provenance-preserving evidence references
         +----> belief-policy
         |
         v
-future judgment / inference engines
+ semantic-decision
+        |
+        +----> SemIf / future providers
+        |
+        v
+ judgments + provider receipts
+        |
+        v
+ inference-core / inference-baseline
 ```
 
 Producer repositories remain authoritative for their outputs. `belief-lab` stores references and derivations, not replacement detector truth.
@@ -48,3 +56,10 @@ Evidence families identify observations that share underlying information. Futur
 Domain vocabulary such as evidence and inference classes belongs to `belief-core`. `belief-policy` consumes that vocabulary and decides which classes a process may use.
 
 This keeps authorization from becoming the owner of the domain model and lets future inference engines depend on a stable core while still requiring policy checks at execution boundaries.
+
+
+## Semantic decision boundary
+
+Semantic providers receive only an `AuthorizedDecisionRequest`: bounded state plus explicit evidence references and purposes that have passed `belief-policy`. Providers do not receive the store or corpus/database authority.
+
+Provider output is recorded as a judgment. Direct option scores use `conditional_option_probability` semantics and therefore cannot be inserted as a belief value. Provider identity, model revision, runtime, prompt hash, readout, option scores, and authorization receipt remain available through the store explanation path.
