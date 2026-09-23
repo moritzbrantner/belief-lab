@@ -133,7 +133,7 @@ impl InferenceRequest {
             }
         }
 
-        if source_scopes.len() > 1 && !policy.allow_cross_source_join {
+        if source_scopes.len() > 1 && !policy.allows_cross_source_join() {
             return Err(AuthorizationError::CrossSourceJoinDenied { source_scopes });
         }
 
