@@ -35,7 +35,8 @@ fn run(args: Vec<String>) -> Result<(), String> {
             let tier = SemifModelTier::parse(tier).ok_or_else(|| {
                 format!("unknown model tier {tier:?}; use phone, desktop, or high-memory")
             })?;
-            let path = download_model(tier, Path::new(directory)).map_err(|error| error.to_string())?;
+            let path =
+                download_model(tier, Path::new(directory)).map_err(|error| error.to_string())?;
             println!("Model ready at {}.", path.display());
             Ok(())
         }
