@@ -24,11 +24,11 @@ impl InferenceEngine for BaselineInferenceEngine {
         let mut usable_judgments = BTreeSet::new();
 
         for basis in request.bases() {
-            if basis.judgment.outcome == JudgmentOutcome::Unknown {
+            if basis.judgment.outcome() == JudgmentOutcome::Unknown {
                 continue;
             }
 
-            usable_judgments.insert(basis.judgment.id.clone());
+            usable_judgments.insert(basis.judgment.id().clone());
             selected_by_group
                 .entry(basis.correlation_group.clone())
                 .and_modify(|selected| {
@@ -48,13 +48,13 @@ impl InferenceEngine for BaselineInferenceEngine {
         let mut evidence = BTreeSet::<EvidenceId>::new();
 
         for basis in selected_by_group.values() {
-            let confidence = basis.judgment.confidence.value();
-            signed_sum += match basis.judgment.outcome {
+            let confidence = basis.judgment.confidence().value();
+            signed_sum += match basis.judgment.outcome() {
                 JudgmentOutcome::Supports => confidence,
                 JudgmentOutcome::Contradicts => -confidence,
                 JudgmentOutcome::Unknown => unreachable!("unknown judgments are filtered above"),
             };
-            selected_judgments.insert(basis.judgment.id.clone());
+            selected_judgments.insert(basis.judgment.id().clone());
             evidence.extend(
                 basis
                     .evidence
@@ -79,7 +79,7 @@ impl InferenceEngine for BaselineInferenceEngine {
         )?;
 
         let derivation = Derivation::new(
-            belief.id.clone(),
+            belief.id().clone(),
             request.rule_id().to_string(),
             evidence,
             selected_judgments.clone(),
@@ -98,19 +98,19 @@ impl InferenceEngine for BaselineInferenceEngine {
 }
 
 fn should_replace(selected: &JudgmentBasis, candidate: &JudgmentBasis) -> bool {
-    let selected_confidence = selected.judgment.confidence.value();
-    let candidate_confidence = candidate.judgment.confidence.value();
+    let selected_confidence = selected.judgment.confidence().value();
+    let candidate_confidence = candidate.judgment.confidence().value();
 
     candidate_confidence > selected_confidence
         || (candidate_confidence == selected_confidence
-            && candidate.judgment.id.as_str() < selected.judgment.id.as_str())
+            && candidate.judgment.id().as_str() < selected.judgment.id().as_str())
 }
 
 #[cfg(test)]
 mod tests {
     use belief_core::{
         BeliefId, Claim, ClaimId, EntityId, EvidenceClass, EvidenceFamilyId, EvidenceId,
-        EvidencePurpose, EvidenceRef, InferenceClass, InferenceRunId, Judgment, JudgmentId,
+        EvidencePurpose, EvidenceRef, InferenceRunId, Judgment, JudgmentId,
         JudgmentSpecRef, ObjectValue, Predicate, ProducerRef, Proposition, Provenance, Score,
         ScoreSemantics, SourceRef,
     };
@@ -231,8 +231,8 @@ mod tests {
         assert!(result
             .ignored_correlated_judgments()
             .contains(&JudgmentId::new("judgment:derived").unwrap()));
-        assert_eq!(result.belief().value.semantics(), ScoreSemantics::SoftTruth);
-        assert!((result.belief().value.value() - 0.55).abs() < f64::EPSILON);
+        assert_eq!(result.belief().value().semantics(), ScoreSemantics::SoftTruth);
+        assert!((result.belief().value().value() - 0.55).abs() < f64::EPSILON);
     }
 
     #[test]
@@ -275,8 +275,8 @@ mod tests {
         let second_result = engine.infer(&second).unwrap();
 
         assert_eq!(
-            first_result.belief().value.value(),
-            second_result.belief().value.value()
+            first_result.belief().value().value(),
+            second_result.belief().value().value()
         );
         assert_eq!(
             first_result.selected_judgments(),
