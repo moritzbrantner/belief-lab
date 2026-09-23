@@ -220,7 +220,14 @@ impl InMemoryBeliefStore {
     }
 
     pub fn insert_inference_result(&mut self, result: InferenceResult) -> Result<(), StoreError> {
-        let (belief, derivation, selected_judgments, _, authorization) = result.into_parts();
+        let (
+            belief,
+            derivation,
+            selected_judgments,
+            selected_judgment_values,
+            _,
+            authorization,
+        ) = result.into_parts();
 
         if self.beliefs.contains_key(&belief.id) {
             return Err(StoreError::Duplicate {
@@ -252,6 +259,20 @@ impl InMemoryBeliefStore {
         }
         for judgment in &derivation.judgments {
             self.require_active_judgment(judgment)?;
+            let stored = self
+                .judgments
+                .get(judgment)
+                .expect("active judgment must exist");
+            let authorized = selected_judgment_values.get(judgment).ok_or_else(|| {
+                StoreError::InconsistentResult(format!(
+                    "selected judgment {judgment} is missing from the authorized request"
+                ))
+            })?;
+            if &stored.value != authorized {
+                return Err(StoreError::InconsistentResult(format!(
+                    "stored judgment {judgment} differs from the authorized judgment"
+                )));
+            }
         }
         for claim in &derivation.claims {
             self.require_active_claim(claim)?;
@@ -396,6 +417,27 @@ impl InMemoryBeliefStore {
     fn propagate_invalidation(&mut self) {
         loop {
             let mut changed = false;
+
+            let invalid_evidence = self
+                .evidence
+                .iter()
+                .filter(|(_, stored)| stored.validity.is_active())
+                .filter_map(|(id, stored)| {
+                    stored
+                        .value
+                        .provenance
+                        .parent_evidence
+                        .iter()
+                        .find(|parent| self.is_invalid_evidence(parent))
+                        .map(|parent| {
+                            (
+                                id.clone(),
+                                format!("evidence dependency {parent} was invalidated"),
+                            )
+                        })
+                })
+                .collect::<Vec<_>>();
+            changed |= invalidate_many(&mut self.evidence, invalid_evidence);
 
             let invalid_judgments = self
                 .judgments
@@ -999,6 +1041,38 @@ mod tests {
             .unwrap();
         assert!(!explanation.belief.validity.is_active());
         assert!(!explanation.evidence[0].validity.is_active());
+    }
+
+    #[test]
+    fn parent_evidence_revocation_invalidates_descendants() {
+        let parent = evidence("evidence:parent");
+        let child = EvidenceRef::new(
+            EvidenceId::new("evidence:child").unwrap(),
+            Some(EntityId::new("person:alice").unwrap()),
+            EvidenceClass::Transcript,
+            EvidenceFamilyId::new("family:child").unwrap(),
+            None,
+            Provenance::new(
+                SourceRef::new(
+                    "youtube-corpus",
+                    "video:1",
+                    "video:1#evidence:child",
+                    "sha256:source-v1",
+                )
+                .unwrap(),
+                ProducerRef::new("audio-analysis", "commit:abc", None, None).unwrap(),
+                [parent.id.clone()],
+            ),
+        );
+
+        let mut store = InMemoryBeliefStore::default();
+        store.insert_evidence(parent.clone()).unwrap();
+        store.insert_evidence(child.clone()).unwrap();
+        store
+            .revoke_evidence(&parent.id, "source record was removed")
+            .unwrap();
+
+        assert!(!store.evidence(&child.id).unwrap().validity.is_active());
     }
 
     #[test]
