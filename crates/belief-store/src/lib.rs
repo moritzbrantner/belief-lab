@@ -154,16 +154,16 @@ impl InMemoryBeliefStore {
         if self.judgments.contains_key(&judgment.id) {
             return Err(StoreError::Duplicate {
                 kind: "judgment",
-                id: judgment.id.to_string(),
+                id: judgment.id().to_string(),
             });
         }
 
-        for evidence in &judgment.evidence {
+        for evidence in judgment.evidence() {
             self.require_active_evidence(evidence)?;
         }
 
         self.judgments
-            .insert(judgment.id.clone(), Stored::active(judgment));
+            .insert(judgment.id().clone(), Stored::active(judgment));
         Ok(())
     }
 
@@ -175,18 +175,18 @@ impl InMemoryBeliefStore {
         if self.judgments.contains_key(&judgment.id) {
             return Err(StoreError::Duplicate {
                 kind: "judgment",
-                id: judgment.id.to_string(),
+                id: judgment.id().to_string(),
             });
         }
 
-        for evidence in &judgment.evidence {
+        for evidence in judgment.evidence() {
             self.require_active_evidence(evidence)?;
         }
 
         self.semantic_judgments
-            .insert(judgment.id.clone(), provenance);
+            .insert(judgment.id().clone(), provenance);
         self.judgments
-            .insert(judgment.id.clone(), Stored::active(judgment));
+            .insert(judgment.id().clone(), Stored::active(judgment));
         Ok(())
     }
 
@@ -226,32 +226,32 @@ impl InMemoryBeliefStore {
         if self.beliefs.contains_key(&belief.id) {
             return Err(StoreError::Duplicate {
                 kind: "belief",
-                id: belief.id.to_string(),
+                id: belief.id().to_string(),
             });
         }
 
-        self.require_active_claim(&belief.claim)?;
+        self.require_active_claim(&belief.claim())?;
 
-        if derivation.belief != belief.id {
+        if derivation.belief() != belief.id {
             return Err(StoreError::InconsistentResult(
                 "derivation belief id does not match belief".into(),
             ));
         }
-        if derivation.inference_run != belief.inference_run {
+        if derivation.inference_run() != belief.inference_run() {
             return Err(StoreError::InconsistentResult(
                 "derivation inference run does not match belief".into(),
             ));
         }
-        if derivation.judgments != selected_judgments {
+        if derivation.judgments() != selected_judgments {
             return Err(StoreError::InconsistentResult(
                 "derivation judgments do not match selected judgments".into(),
             ));
         }
 
-        for evidence in &derivation.evidence {
+        for evidence in &derivation.evidence() {
             self.require_active_evidence(evidence)?;
         }
-        for judgment in &derivation.judgments {
+        for judgment in &derivation.judgments() {
             self.require_active_judgment(judgment)?;
             let stored = self
                 .judgments
@@ -268,14 +268,14 @@ impl InMemoryBeliefStore {
                 )));
             }
         }
-        for claim in &derivation.claims {
+        for claim in &derivation.claims() {
             self.require_active_claim(claim)?;
         }
 
-        self.authorizations.insert(belief.id.clone(), authorization);
-        self.derivations.insert(belief.id.clone(), derivation);
+        self.authorizations.insert(belief.id().clone(), authorization);
+        self.derivations.insert(belief.id().clone(), derivation);
         self.beliefs
-            .insert(belief.id.clone(), Stored::active(belief));
+            .insert(belief.id().clone(), Stored::active(belief));
         Ok(())
     }
 
@@ -318,11 +318,11 @@ impl InMemoryBeliefStore {
                 })?;
         let claim = self
             .claims
-            .get(&stored_belief.value.claim)
+            .get(&stored_belief.value.claim())
             .cloned()
             .ok_or_else(|| StoreError::Missing {
                 kind: "claim",
-                id: stored_belief.value.claim.to_string(),
+                id: stored_belief.value.claim().to_string(),
             })?;
         let derivation =
             self.derivations
@@ -498,8 +498,8 @@ impl InMemoryBeliefStore {
     }
 
     fn invalid_belief_dependency(&self, id: &BeliefId, belief: &Belief) -> Option<String> {
-        if self.is_invalid_claim(&belief.claim) {
-            return Some(format!("claim dependency {} was invalidated", belief.claim));
+        if self.is_invalid_claim(&belief.claim()) {
+            return Some(format!("claim dependency {} was invalidated", belief.claim()));
         }
 
         let derivation = self.derivations.get(id)?;
@@ -893,7 +893,7 @@ mod tests {
         let claim = Claim::from_judgment(
             ClaimId::new("claim:1").unwrap(),
             proposition(),
-            judgment.id.clone(),
+            judgment.id().clone(),
         );
         let result = inference_result(&evidence, &judgment, claim.clone());
 
@@ -909,11 +909,11 @@ mod tests {
 
         assert_eq!(explanation.evidence.len(), 1);
         assert_eq!(
-            explanation.evidence[0].value.provenance.producer.name,
+            explanation.evidence[0].value.provenance.producer.name(),
             "audio-analysis"
         );
         assert_eq!(
-            explanation.evidence[0].value.provenance.producer.revision,
+            explanation.evidence[0].value.provenance.producer.revision(),
             "commit:abc"
         );
         assert_eq!(explanation.belief.validity, Validity::Active);
@@ -971,7 +971,7 @@ mod tests {
             )
             .unwrap();
         let judgment = semantic.judgment().clone();
-        let judgment_id = judgment.id.clone();
+        let judgment_id = judgment.id().clone();
         let claim = Claim::from_judgment(
             ClaimId::new("claim:1").unwrap(),
             proposition(),
@@ -1003,11 +1003,11 @@ mod tests {
         let evidence = evidence("evidence:1");
         let evidence_id = evidence.id.clone();
         let judgment = judgment(&evidence);
-        let judgment_id = judgment.id.clone();
+        let judgment_id = judgment.id().clone();
         let claim = Claim::from_judgment(
             ClaimId::new("claim:1").unwrap(),
             proposition(),
-            judgment.id.clone(),
+            judgment.id().clone(),
         );
         let claim_id = claim.id.clone();
         let result = inference_result(&evidence, &judgment, claim.clone());
