@@ -135,7 +135,7 @@ impl DecisionRequest {
         let mut evidence_uses = BTreeSet::new();
         for evidence_use in &self.evidence {
             let evidence = &evidence_use.evidence;
-            if !policy.allows_evidence(evidence.class, evidence_use.purpose) {
+            if !policy.allows_evidence_ref(evidence, evidence_use.purpose) {
                 return Err(DecisionAuthorizationError::EvidenceDenied {
                     evidence: evidence.id.clone(),
                     class: evidence.class,
@@ -154,7 +154,7 @@ impl DecisionRequest {
         }
 
         let authorization = DecisionAuthorizationReceipt {
-            profile: policy.profile,
+            profile: policy.profile(),
             inference_class: self.class,
             source_scopes: source_scopes.clone(),
             evidence_uses,
