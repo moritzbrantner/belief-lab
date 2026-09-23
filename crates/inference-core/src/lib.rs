@@ -108,9 +108,7 @@ impl InferenceRequest {
                 });
             }
             if !judgment_ids.insert(basis.judgment.id.clone()) {
-                return Err(RequestError::DuplicateJudgmentId(
-                    basis.judgment.id.clone(),
-                ));
+                return Err(RequestError::DuplicateJudgmentId(basis.judgment.id.clone()));
             }
         }
 
