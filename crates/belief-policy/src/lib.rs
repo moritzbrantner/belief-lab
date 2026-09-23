@@ -210,6 +210,11 @@ impl PolicyConfig {
             && self.allows_evidence(evidence.class, purpose)
     }
 
+    pub fn allows_cross_source_join(&self) -> bool {
+        self.allow_cross_source_join
+            && ProfileMaximum::for_profile(self.profile).allow_cross_source_join
+    }
+
     pub fn allows_inference(&self, class: InferenceClass) -> bool {
         let maximum = ProfileMaximum::for_profile(self.profile);
         if !maximum.inferences.contains(&class) || !self.allowed_inferences.contains(&class) {
