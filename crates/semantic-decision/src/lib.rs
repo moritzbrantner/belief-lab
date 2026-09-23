@@ -221,10 +221,9 @@ impl AuthorizedDecisionRequest {
         proposition: Proposition,
         spec: JudgmentSpecRef,
     ) -> Result<SemanticJudgment, SemanticDecisionError> {
-        if receipt.request_id != self.request.id {
+        if receipt.request != self.request {
             return Err(SemanticDecisionError::ReceiptRequestMismatch {
-                expected: self.request.id,
-                actual: receipt.request_id,
+                request_id: self.request.id.clone(),
             });
         }
 
@@ -293,7 +292,7 @@ pub trait SemanticDecisionEngine {
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct SemanticDecisionReceipt {
-    request_id: String,
+    request: DecisionRequest,
     provider: String,
     provider_revision: String,
     model: String,
@@ -351,7 +350,7 @@ impl SemanticDecisionReceipt {
         }
 
         Ok(Self {
-            request_id: request.id.clone(),
+            request: request.clone(),
             provider: semantic_required("decision.provider", provider.into())?,
             provider_revision: semantic_required(
                 "decision.provider_revision",
@@ -368,7 +367,11 @@ impl SemanticDecisionReceipt {
     }
 
     pub fn request_id(&self) -> &str {
-        &self.request_id
+        &self.request.id
+    }
+
+    pub fn request(&self) -> &DecisionRequest {
+        &self.request
     }
 
     pub fn provider(&self) -> &str {
@@ -547,8 +550,7 @@ pub enum SemanticDecisionError {
     InvalidOptionScore,
     ScoresNotNormalized(f64),
     ReceiptRequestMismatch {
-        expected: String,
-        actual: String,
+        request_id: String,
     },
     NotThreeWaySupportDecision,
     Model(ModelError),
@@ -573,9 +575,9 @@ impl fmt::Display for SemanticDecisionError {
                     "decision option scores must sum to 1, got {total}"
                 )
             }
-            Self::ReceiptRequestMismatch { expected, actual } => write!(
+            Self::ReceiptRequestMismatch { request_id } => write!(
                 f,
-                "decision receipt belongs to request {actual:?}, expected {expected:?}"
+                "decision receipt does not match the full authorized request {request_id:?}"
             ),
             Self::NotThreeWaySupportDecision => write!(
                 f,
@@ -730,6 +732,62 @@ mod tests {
         assert!(matches!(
             request.authorize(&policy()),
             Err(DecisionAuthorizationError::CrossSourceJoinDenied { .. })
+        ));
+    }
+
+    #[test]
+    fn receipt_cannot_be_reused_for_a_different_request_with_the_same_id() {
+        let evidence = evidence("transcript:1", "video:1", EvidenceClass::Transcript);
+        let authorized = request(vec![DecisionEvidenceUse::new(
+            evidence.clone(),
+            EvidencePurpose::Corroboration,
+        )])
+        .authorize(&policy())
+        .unwrap();
+        let receipt = SemanticDecisionReceipt::new(
+            authorized.request(),
+            "semif",
+            "git:semif-1",
+            "Qwen/Qwen3.5-4B",
+            "model:1",
+            "llamacpp",
+            "sha256:prompt",
+            "native-option-logits",
+            BTreeMap::from([
+                (SUPPORTS_OPTION_ID.into(), 0.7),
+                (CONTRADICTS_OPTION_ID.into(), 0.2),
+                (UNKNOWN_OPTION_ID.into(), 0.1),
+            ]),
+        )
+        .unwrap();
+
+        let different = DecisionRequest::new(
+            "decision:1",
+            Value::String("different bounded evidence text".into()),
+            "Does the evidence support the proposition?",
+            options(),
+            InferenceClass::Descriptive,
+            vec![DecisionEvidenceUse::new(
+                evidence,
+                EvidencePurpose::Corroboration,
+            )],
+        )
+        .unwrap()
+        .authorize(&policy())
+        .unwrap();
+
+        assert!(matches!(
+            different.into_three_way_judgment(
+                receipt,
+                JudgmentId::new("judgment:1").unwrap(),
+                Proposition::new(
+                    EntityId::new("person:alice").unwrap(),
+                    belief_core::Predicate::new("uses").unwrap(),
+                    belief_core::ObjectValue::text("Linux").unwrap(),
+                ),
+                JudgmentSpecRef::new("support-check", "v1").unwrap(),
+            ),
+            Err(SemanticDecisionError::ReceiptRequestMismatch { .. })
         ));
     }
 
