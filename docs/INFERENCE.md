@@ -44,11 +44,19 @@ The deterministic baseline engine allows at most one non-unknown judgment from e
 
 This is a conservative double-counting defense, not a claim of statistical independence between the remaining groups.
 
+## Semantic judgments
+
+Before inference, an optional semantic-decision provider may assess a bounded question over admitted evidence. The provider boundary uses the same inference/evidence policy checks as the inference boundary, including cross-source restrictions.
+
+A semantic provider emits a `Judgment`, not a `Belief`. Its selected-option score is tagged `conditional_option_probability`; this preserves SemIf-style direct option-score semantics without relabeling them as calibrated model confidence, soft truth, or a posterior probability.
+
+The store retains the semantic-decision authorization and provider receipt for any such judgment selected by a later belief derivation.
+
 ## Baseline semantics
 
 The baseline engine intentionally produces `ScoreSemantics::SoftTruth`, never `PosteriorProbability`.
 
-For each selected supporting or contradicting judgment it uses the model confidence as a signed heuristic signal, averages the selected signals, and maps the result to `[0, 1]` around a neutral value of `0.5`.
+For each selected supporting or contradicting judgment it uses the judgment score (either model confidence or a conditional option probability) as a signed heuristic signal, averages the selected signals, and maps the result to `[0, 1]` around a neutral value of `0.5`. The resulting value is still soft truth; it is not a calibration claim about the input scores.
 
 This gives the project a deterministic reference implementation for tests and explanations without pretending that model confidence is a Bayesian likelihood.
 
