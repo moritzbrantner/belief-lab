@@ -1,0 +1,18 @@
+[package]
+name = "belief-cli"
+version.workspace = true
+edition.workspace = true
+
+[[bin]]
+name = "belief"
+path = "src/main.rs"
+
+[dependencies]
+belief-core = { path = "../../crates/belief-core" }
+belief-policy = { path = "../../crates/belief-policy" }
+belief-store = { path = "../../crates/belief-store" }
+inference-core = { path = "../../crates/inference-core" }
+inference-baseline = { path = "../../crates/inference-baseline" }
+semantic-decision = { path = "../../crates/semantic-decision" }
+semif-provider = { path = "../../crates/semif-provider" }
+serde_json = "1"
