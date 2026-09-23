@@ -4,6 +4,7 @@ use semantic_decision::{
 use serde::Deserialize;
 use serde_json::json;
 use std::collections::BTreeMap;
+use std::env;
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::process::Command;
@@ -347,6 +348,414 @@ pub fn semif_score_path(root: &Path) -> PathBuf {
     }
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum SemifInstallBackend {
+    Torch,
+    Mlx,
+    LlamaCpp,
+}
+
+impl SemifInstallBackend {
+    pub fn parse(value: &str) -> Option<Self> {
+        match value {
+            "torch" => Some(Self::Torch),
+            "mlx" => Some(Self::Mlx),
+            "llamacpp" => Some(Self::LlamaCpp),
+            _ => None,
+        }
+    }
+
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::Torch => "torch",
+            Self::Mlx => "mlx",
+            Self::LlamaCpp => "llamacpp",
+        }
+    }
+
+    fn pip_extra(self) -> &'static str {
+        match self {
+            Self::Torch => ".",
+            Self::Mlx => ".[mlx]",
+            Self::LlamaCpp => ".[llamacpp]",
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct SemifSetupOutcome {
+    pub cloned: bool,
+    pub venv_created: bool,
+    pub executable: PathBuf,
+}
+
+pub fn bootstrap_semif(
+    directory: &Path,
+    backend: SemifInstallBackend,
+) -> Result<SemifSetupOutcome, SemifSetupError> {
+    let cloned = if directory.exists() {
+        if !directory.join(".git").is_dir() {
+            return Err(SemifSetupError::ExistingPathIsNotRepository(
+                directory.to_path_buf(),
+            ));
+        }
+        let origin = command_output(
+            Command::new("git")
+                .arg("-C")
+                .arg(directory)
+                .arg("remote")
+                .arg("get-url")
+                .arg("origin"),
+            "read SemIf origin",
+        )?;
+        if normalize_repository_url(&origin) != normalize_repository_url(SEMIF_REPOSITORY) {
+            return Err(SemifSetupError::UnexpectedRepositoryOrigin {
+                directory: directory.to_path_buf(),
+                origin,
+            });
+        }
+        false
+    } else {
+        if let Some(parent) = directory.parent() {
+            if !parent.as_os_str().is_empty() {
+                fs::create_dir_all(parent).map_err(|error| SemifSetupError::Io {
+                    context: format!("create {}", parent.display()),
+                    message: error.to_string(),
+                })?;
+            }
+        }
+        run_command(
+            Command::new("git")
+                .arg("clone")
+                .arg("--no-checkout")
+                .arg(SEMIF_REPOSITORY)
+                .arg(directory),
+            "clone SemIf",
+        )?;
+        true
+    };
+
+    if !cloned {
+        ensure_clean_checkout(directory)?;
+    }
+
+    if !revision_exists(directory)? {
+        run_command(
+            Command::new("git")
+                .arg("-C")
+                .arg(directory)
+                .arg("fetch")
+                .arg("origin")
+                .arg("master"),
+            "fetch pinned SemIf revision",
+        )?;
+    }
+
+    run_command(
+        Command::new("git")
+            .arg("-C")
+            .arg(directory)
+            .arg("checkout")
+            .arg("--detach")
+            .arg(SEMIF_SOURCE_REVISION),
+        "check out pinned SemIf revision",
+    )?;
+    ensure_clean_checkout(directory)?;
+
+    let interpreter = venv_python(directory);
+    let venv_created = if venv_is_usable(&interpreter) {
+        false
+    } else {
+        let python = env::var("BELIEF_SEMIF_PYTHON").unwrap_or_else(|_| "python3".into());
+        let venv = directory.join(".venv");
+        let mut command = Command::new(&python);
+        command.arg("-m").arg("venv");
+        if venv.exists() {
+            command.arg("--clear");
+        }
+        command.arg(&venv);
+        run_command(&mut command, "create or repair SemIf virtual environment")?;
+        true
+    };
+
+    let interpreter =
+        fs::canonicalize(venv_python(directory)).map_err(|error| SemifSetupError::Io {
+            context: "resolve SemIf virtual-environment interpreter".into(),
+            message: error.to_string(),
+        })?;
+
+    run_command(
+        Command::new(&interpreter)
+            .current_dir(directory)
+            .arg("-m")
+            .arg("pip")
+            .arg("install")
+            .arg("-e")
+            .arg(backend.pip_extra()),
+        "install pinned SemIf",
+    )?;
+
+    let executable = semif_score_path(directory);
+    if !executable.is_file() {
+        return Err(SemifSetupError::MissingExecutable(executable));
+    }
+
+    Ok(SemifSetupOutcome {
+        cloned,
+        venv_created,
+        executable,
+    })
+}
+
+pub fn model_path(tier: SemifModelTier, directory: &Path) -> PathBuf {
+    directory.join(tier.pin().gguf_file)
+}
+
+pub fn model_is_ready(tier: SemifModelTier, directory: &Path) -> Result<bool, SemifSetupError> {
+    let target = model_path(tier, directory);
+    if !target.exists() {
+        return Ok(false);
+    }
+    verify_size(&target, tier.pin().gguf_bytes)?;
+    Ok(true)
+}
+
+pub fn download_model(tier: SemifModelTier, directory: &Path) -> Result<PathBuf, SemifSetupError> {
+    let pin = tier.pin();
+    fs::create_dir_all(directory).map_err(|error| SemifSetupError::Io {
+        context: format!("create {}", directory.display()),
+        message: error.to_string(),
+    })?;
+
+    let target = model_path(tier, directory);
+    if target.exists() {
+        match verify_size(&target, pin.gguf_bytes) {
+            Ok(()) => return Ok(target),
+            Err(_) => {
+                let partial = partial_model_path(tier, directory);
+                if partial.exists() {
+                    fs::remove_file(&target).map_err(|error| SemifSetupError::Io {
+                        context: format!("remove incomplete {}", target.display()),
+                        message: error.to_string(),
+                    })?;
+                } else {
+                    fs::rename(&target, &partial).map_err(|error| SemifSetupError::Io {
+                        context: format!(
+                            "move incomplete {} to {}",
+                            target.display(),
+                            partial.display()
+                        ),
+                        message: error.to_string(),
+                    })?;
+                }
+            }
+        }
+    }
+
+    let partial = partial_model_path(tier, directory);
+    run_command(
+        Command::new("curl")
+            .arg("--fail")
+            .arg("--location")
+            .arg("--continue-at")
+            .arg("-")
+            .arg("--output")
+            .arg(&partial)
+            .arg(pin.gguf_url()),
+        "download pinned GGUF",
+    )?;
+
+    verify_size(&partial, pin.gguf_bytes)?;
+    fs::rename(&partial, &target).map_err(|error| SemifSetupError::Io {
+        context: format!("move {} to {}", partial.display(), target.display()),
+        message: error.to_string(),
+    })?;
+
+    Ok(target)
+}
+
+fn partial_model_path(tier: SemifModelTier, directory: &Path) -> PathBuf {
+    let pin = tier.pin();
+    directory.join(format!("{}.part", pin.gguf_file))
+}
+
+fn verify_size(path: &Path, expected: u64) -> Result<(), SemifSetupError> {
+    let actual = fs::metadata(path)
+        .map_err(|error| SemifSetupError::Io {
+            context: format!("stat {}", path.display()),
+            message: error.to_string(),
+        })?
+        .len();
+
+    if actual != expected {
+        return Err(SemifSetupError::UnexpectedModelSize {
+            path: path.to_path_buf(),
+            expected,
+            actual,
+        });
+    }
+    Ok(())
+}
+
+fn ensure_clean_checkout(directory: &Path) -> Result<(), SemifSetupError> {
+    let status = command_output(
+        Command::new("git")
+            .arg("-C")
+            .arg(directory)
+            .arg("status")
+            .arg("--porcelain")
+            .arg("--untracked-files=all"),
+        "inspect SemIf working tree",
+    )?;
+    if status.is_empty() {
+        Ok(())
+    } else {
+        Err(SemifSetupError::DirtyCheckout {
+            directory: directory.to_path_buf(),
+            status,
+        })
+    }
+}
+
+fn venv_is_usable(interpreter: &Path) -> bool {
+    interpreter.is_file()
+        && Command::new(interpreter)
+            .arg("-m")
+            .arg("pip")
+            .arg("--version")
+            .output()
+            .is_ok_and(|output| output.status.success())
+}
+
+fn revision_exists(directory: &Path) -> Result<bool, SemifSetupError> {
+    let status = Command::new("git")
+        .arg("-C")
+        .arg(directory)
+        .arg("cat-file")
+        .arg("-e")
+        .arg(format!("{SEMIF_SOURCE_REVISION}^{{commit}}"))
+        .status()
+        .map_err(|error| SemifSetupError::Command {
+            context: "check pinned SemIf revision".into(),
+            message: error.to_string(),
+        })?;
+    Ok(status.success())
+}
+
+fn run_command(command: &mut Command, purpose: &str) -> Result<(), SemifSetupError> {
+    let status = command.status().map_err(|error| SemifSetupError::Command {
+        context: purpose.into(),
+        message: error.to_string(),
+    })?;
+    if !status.success() {
+        return Err(SemifSetupError::Command {
+            context: purpose.into(),
+            message: format!("process exited with {status}"),
+        });
+    }
+    Ok(())
+}
+
+fn command_output(command: &mut Command, purpose: &str) -> Result<String, SemifSetupError> {
+    let output = command.output().map_err(|error| SemifSetupError::Command {
+        context: purpose.into(),
+        message: error.to_string(),
+    })?;
+    if !output.status.success() {
+        return Err(SemifSetupError::Command {
+            context: purpose.into(),
+            message: String::from_utf8_lossy(&output.stderr).trim().to_string(),
+        });
+    }
+    Ok(String::from_utf8_lossy(&output.stdout).trim().to_string())
+}
+
+fn normalize_repository_url(value: &str) -> String {
+    value
+        .trim()
+        .trim_end_matches('/')
+        .trim_end_matches(".git")
+        .to_ascii_lowercase()
+}
+
+fn venv_python(root: &Path) -> PathBuf {
+    if cfg!(windows) {
+        root.join(".venv").join("Scripts").join("python.exe")
+    } else {
+        root.join(".venv").join("bin").join("python")
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum SemifSetupError {
+    ExistingPathIsNotRepository(PathBuf),
+    DirtyCheckout {
+        directory: PathBuf,
+        status: String,
+    },
+    UnexpectedRepositoryOrigin {
+        directory: PathBuf,
+        origin: String,
+    },
+    MissingExecutable(PathBuf),
+    UnexpectedModelSize {
+        path: PathBuf,
+        expected: u64,
+        actual: u64,
+    },
+    Command {
+        context: String,
+        message: String,
+    },
+    Io {
+        context: String,
+        message: String,
+    },
+}
+
+impl std::fmt::Display for SemifSetupError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::ExistingPathIsNotRepository(path) => write!(
+                f,
+                "{} exists but is not a SemIf git checkout",
+                path.display()
+            ),
+            Self::DirtyCheckout { directory, status } => write!(
+                f,
+                "{} contains local modifications; refusing to install modified code as pinned SemIf: {}",
+                directory.display(),
+                status.replace('\n', "; ")
+            ),
+            Self::UnexpectedRepositoryOrigin { directory, origin } => write!(
+                f,
+                "{} points to unexpected git origin {origin:?}",
+                directory.display()
+            ),
+            Self::MissingExecutable(path) => {
+                write!(f, "SemIf installation did not create {}", path.display())
+            }
+            Self::UnexpectedModelSize {
+                path,
+                expected,
+                actual,
+            } => write!(
+                f,
+                "{} has {actual} bytes; expected {expected}",
+                path.display()
+            ),
+            Self::Command { context, message } => {
+                write!(f, "could not {context}: {message}")
+            }
+            Self::Io { context, message } => {
+                write!(f, "could not {context}: {message}")
+            }
+        }
+    }
+}
+
+impl std::error::Error for SemifSetupError {}
+
 fn engine_error(context: &str, error: impl std::fmt::Display) -> DecisionEngineError {
     DecisionEngineError::new(format!("could not {context}: {error}"))
 }
@@ -488,6 +897,51 @@ mod tests {
                     .unwrap(),
             )
             .unwrap()
+    }
+
+    #[test]
+    fn unusable_venv_is_not_treated_as_complete() {
+        let temp = tempfile::tempdir().unwrap();
+        let fake = temp.path().join("python");
+        fs::write(&fake, b"not an executable").unwrap();
+
+        assert!(!venv_is_usable(&fake));
+    }
+
+    #[test]
+    fn dirty_checkout_status_is_reported() {
+        let temp = tempfile::tempdir().unwrap();
+        run_command(
+            Command::new("git").arg("init").arg(temp.path()),
+            "initialize test repository",
+        )
+        .unwrap();
+        fs::write(temp.path().join("untracked.txt"), b"change").unwrap();
+
+        let error = ensure_clean_checkout(temp.path()).unwrap_err();
+        assert!(matches!(error, SemifSetupError::DirtyCheckout { .. }));
+    }
+
+    #[test]
+    fn install_backend_parsing_is_stable() {
+        assert_eq!(
+            SemifInstallBackend::parse("llamacpp"),
+            Some(SemifInstallBackend::LlamaCpp)
+        );
+        assert_eq!(SemifInstallBackend::parse("unknown"), None);
+    }
+
+    #[test]
+    fn model_paths_are_deterministic() {
+        let root = Path::new(".local/models");
+        assert_eq!(
+            model_path(SemifModelTier::Phone, root),
+            root.join("Qwen3-0.6B-Q8_0.gguf")
+        );
+        assert_eq!(
+            partial_model_path(SemifModelTier::Phone, root),
+            root.join("Qwen3-0.6B-Q8_0.gguf.part")
+        );
     }
 
     #[test]

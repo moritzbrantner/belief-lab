@@ -46,20 +46,11 @@ The adapter pins SemIf source revision:
 It also pins the source-model and GGUF revisions used by SemIf's published local model ladder.
 
 ```bash
-cargo run -p semif-provider --bin belief-semif -- catalog
+cargo run -- setup
+cargo run -- semantic-demo
 ```
 
-For a CPU-local installation:
-
-```bash
-cargo run -p semif-provider --bin belief-semif -- \
-  bootstrap .local/semif llamacpp
-
-cargo run -p semif-provider --bin belief-semif -- \
-  download-model phone .local/models
-```
-
-`bootstrap` is create-only: it clones SemIf, checks out the exact revision detached, creates a virtual environment, and installs the selected backend. `download-model` downloads from an immutable Hugging Face revision, supports resumable downloads, checks the exact expected byte length, and atomically promotes the completed `.part` file.
+The default setup uses the CPU-local `llama.cpp` backend and phone-tier model. It is idempotent and retry-safe: an existing SemIf checkout must point at the expected upstream repository, the exact pinned revision is restored, an existing virtual environment is reused, and incomplete GGUF downloads are resumed before exact-size validation and atomic promotion. The lower-level `belief-semif` binary remains available for provider development.
 
 The model weights are not vendored into `belief-lab` or SemIf. Their upstream licenses remain authoritative.
 

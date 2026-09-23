@@ -19,9 +19,9 @@ jobs:
       node_version: ""
       bun_version: ""
       install_command: ""
-      format_command: cargo fmt --check
-      lint_command: cargo clippy --all-targets -- -D warnings
-      test_command: cargo test
+      format_command: cargo fmt --all -- --check
+      lint_command: cargo clippy --workspace --all-targets -- -D warnings
+      test_command: cargo test --workspace && cargo run --quiet
       cache_bun: false
       cache_cargo: true
       artifact_paths: ""

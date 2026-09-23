@@ -1,5 +1,6 @@
 [workspace]
 members = [
+    "apps/belief-cli",
     "crates/belief-core",
     "crates/belief-policy",
     "crates/inference-core",
@@ -9,6 +10,7 @@ members = [
     "crates/semantic-decision",
     "crates/semif-provider",
 ]
+default-members = ["apps/belief-cli"]
 resolver = "2"
 
 [workspace.package]
