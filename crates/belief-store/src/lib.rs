@@ -71,7 +71,7 @@ impl InMemoryBeliefStore {
         }
 
         let mut available = self
-            .evidence()
+            .evidence
             .iter()
             .filter(|(_, stored)| stored.validity.is_active())
             .map(|(id, _)| id.clone())
