@@ -2,8 +2,6 @@ use std::collections::BTreeMap;
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::process::Command;
-use std::sync::atomic::{AtomicU64, Ordering};
-
 use semantic_decision::{
     AuthorizedDecisionRequest, DecisionEngineError, SemanticDecisionEngine, SemanticDecisionReceipt,
 };
@@ -12,8 +10,6 @@ use serde_json::json;
 
 pub const SEMIF_REPOSITORY: &str = "https://github.com/TheoLeeCJ/SemIf.git";
 pub const SEMIF_SOURCE_REVISION: &str = "1f2dea3e25379f9dfc98cb83c324f00ab5deda37";
-
-static NEXT_TEMP_ID: AtomicU64 = AtomicU64::new(1);
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum SemifModelTier {
@@ -194,10 +190,12 @@ impl SemanticDecisionEngine for SemifProvider {
         authorized: &AuthorizedDecisionRequest,
     ) -> Result<SemanticDecisionReceipt, DecisionEngineError> {
         let request = authorized.request();
-        let temp_id = NEXT_TEMP_ID.fetch_add(1, Ordering::Relaxed);
-        let stem = format!("belief-lab-semif-{}-{temp_id}", std::process::id());
-        let input = std::env::temp_dir().join(format!("{stem}.input.jsonl"));
-        let output = std::env::temp_dir().join(format!("{stem}.output.jsonl"));
+        let exchange = tempfile::Builder::new()
+            .prefix("belief-lab-semif-")
+            .tempdir()
+            .map_err(|error| engine_error("create secure SemIf exchange directory", error))?;
+        let input = exchange.path().join("input.jsonl");
+        let output = exchange.path().join("output.jsonl");
 
         let row = json!({
             "id": request.id(),
@@ -216,10 +214,8 @@ impl SemanticDecisionEngine for SemifProvider {
             .map_err(|error| engine_error("write SemIf request", error))?;
 
         let process = self.command(&input, &output).output();
-        let _ = fs::remove_file(&input);
         let process = process.map_err(|error| engine_error("start SemIf", error))?;
         if !process.status.success() {
-            let _ = fs::remove_file(&output);
             return Err(DecisionEngineError::new(format!(
                 "SemIf exited with {}: {}",
                 process.status,
@@ -229,7 +225,6 @@ impl SemanticDecisionEngine for SemifProvider {
 
         let output_json =
             fs::read_to_string(&output).map_err(|error| engine_error("read SemIf output", error));
-        let _ = fs::remove_file(&output);
 
         parse_semif_output(
             request,
