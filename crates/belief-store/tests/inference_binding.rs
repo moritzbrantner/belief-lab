@@ -138,7 +138,7 @@ fn request_rejects_conflicting_same_id_evidence_within_one_basis() {
     let claim = claim(&judgment);
     let mut basis = basis(judgment, original.clone());
     let mut changed = original;
-    changed.class = EvidenceClass::OcrText;
+    changed.class = EvidenceClass::Ocr;
     basis
         .evidence
         .push(EvidenceUse::new(changed, EvidencePurpose::Corroboration));
@@ -253,11 +253,8 @@ fn store_rejects_same_id_claim_origin_drift() {
         original.clone(),
         vec![basis(judgment.clone(), evidence.clone())],
     );
-    let changed = Claim::from_user_assertion(
-        original.id,
-        original.proposition,
-        evidence.id.clone(),
-    );
+    let changed =
+        Claim::from_user_assertion(original.id, original.proposition, evidence.id.clone());
     let mut store = seed_store(evidence, judgment, changed);
     assert_rejected_atomically(&mut store, result);
 }
@@ -273,7 +270,9 @@ fn unchanged_authorized_inputs_remain_explainable_after_revocation() {
     );
     let mut store = seed_store(evidence.clone(), judgment, claim.clone());
     store.insert_inference_result(result).unwrap();
-    store.revoke_evidence(&evidence.id, "source withdrawn").unwrap();
+    store
+        .revoke_evidence(&evidence.id, "source withdrawn")
+        .unwrap();
     let explanation = store
         .explain_belief(&BeliefId::new("belief:1").unwrap())
         .unwrap();
