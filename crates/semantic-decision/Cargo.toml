@@ -1,0 +1,9 @@
+[package]
+name = "semantic-decision"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+belief-core = { path = "../belief-core" }
+belief-policy = { path = "../belief-policy" }
+serde_json = "1"
