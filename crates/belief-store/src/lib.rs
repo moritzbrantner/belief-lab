@@ -272,7 +272,8 @@ impl InMemoryBeliefStore {
             self.require_active_claim(claim)?;
         }
 
-        self.authorizations.insert(belief.id().clone(), authorization);
+        self.authorizations
+            .insert(belief.id().clone(), authorization);
         self.derivations.insert(belief.id().clone(), derivation);
         self.beliefs
             .insert(belief.id().clone(), Stored::active(belief));
@@ -499,7 +500,10 @@ impl InMemoryBeliefStore {
 
     fn invalid_belief_dependency(&self, id: &BeliefId, belief: &Belief) -> Option<String> {
         if self.is_invalid_claim(&belief.claim()) {
-            return Some(format!("claim dependency {} was invalidated", belief.claim()));
+            return Some(format!(
+                "claim dependency {} was invalidated",
+                belief.claim()
+            ));
         }
 
         let derivation = self.derivations.get(id)?;
