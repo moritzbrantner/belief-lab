@@ -8,6 +8,7 @@ use belief_core::{
 use belief_policy::AuthorizationProfile;
 use evidence_interchange::{AuthorizedEvidenceBatch, EvidenceImportReceipt};
 use inference_core::{AuthorizationReceipt, InferenceResult};
+use semantic_decision::{SemanticJudgment, SemanticJudgmentProvenance};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Validity {
@@ -40,6 +41,7 @@ impl<T> Stored<T> {
 pub struct InMemoryBeliefStore {
     evidence: BTreeMap<EvidenceId, Stored<EvidenceRef>>,
     judgments: BTreeMap<JudgmentId, Stored<Judgment>>,
+    semantic_judgments: BTreeMap<JudgmentId, SemanticJudgmentProvenance>,
     claims: BTreeMap<ClaimId, Stored<Claim>>,
     beliefs: BTreeMap<BeliefId, Stored<Belief>>,
     derivations: BTreeMap<BeliefId, Derivation>,
@@ -163,6 +165,36 @@ impl InMemoryBeliefStore {
         self.judgments
             .insert(judgment.id.clone(), Stored::active(judgment));
         Ok(())
+    }
+
+    pub fn insert_semantic_judgment(
+        &mut self,
+        semantic: SemanticJudgment,
+    ) -> Result<(), StoreError> {
+        let (judgment, provenance) = semantic.into_parts();
+        if self.judgments.contains_key(&judgment.id) {
+            return Err(StoreError::Duplicate {
+                kind: "judgment",
+                id: judgment.id.to_string(),
+            });
+        }
+
+        for evidence in &judgment.evidence {
+            self.require_active_evidence(evidence)?;
+        }
+
+        self.semantic_judgments
+            .insert(judgment.id.clone(), provenance);
+        self.judgments
+            .insert(judgment.id.clone(), Stored::active(judgment));
+        Ok(())
+    }
+
+    pub fn semantic_judgment_provenance(
+        &self,
+        id: &JudgmentId,
+    ) -> Option<&SemanticJudgmentProvenance> {
+        self.semantic_judgments.get(id)
     }
 
     pub fn insert_claim(&mut self, claim: Claim) -> Result<(), StoreError> {
@@ -301,6 +333,16 @@ impl InMemoryBeliefStore {
             .iter()
             .filter_map(|id| self.claims.get(id).cloned())
             .collect();
+        let semantic_judgments = derivation
+            .judgments
+            .iter()
+            .filter_map(|id| {
+                self.semantic_judgments
+                    .get(id)
+                    .cloned()
+                    .map(|provenance| (id.clone(), provenance))
+            })
+            .collect();
 
         let authorization =
             self.authorizations
@@ -317,6 +359,7 @@ impl InMemoryBeliefStore {
             derivation,
             authorization,
             judgments,
+            semantic_judgments,
             evidence,
             input_claims,
         })
@@ -511,6 +554,7 @@ pub struct BeliefExplanation {
     pub derivation: Derivation,
     pub authorization: AuthorizationReceipt,
     pub judgments: Vec<Stored<Judgment>>,
+    pub semantic_judgments: BTreeMap<JudgmentId, SemanticJudgmentProvenance>,
     pub evidence: Vec<Stored<EvidenceRef>>,
     pub input_claims: Vec<Stored<Claim>>,
 }
@@ -578,6 +622,9 @@ mod tests {
     use evidence_interchange::ValidatedEvidenceBatch;
     use inference_baseline::BaselineInferenceEngine;
     use inference_core::{EvidenceUse, InferenceEngine, InferenceRequest, JudgmentBasis};
+    use semantic_decision::{
+        DecisionEvidenceUse, DecisionOption, DecisionRequest, SemanticDecisionReceipt,
+    };
 
     use super::*;
 
@@ -838,6 +885,83 @@ mod tests {
             AuthorizationProfile::SemanticResearch
         );
         assert_eq!(explanation.authorization.evidence_uses().len(), 1);
+    }
+
+    #[test]
+    fn semantic_decision_provenance_is_reachable_from_belief_explanation() {
+        let evidence = evidence("evidence:1");
+        let decision = DecisionRequest::new(
+            "decision:1",
+            serde_json::Value::String("bounded transcript excerpt".into()),
+            "Does the evidence support the proposition?",
+            vec![
+                DecisionOption::new("supports", "Supports").unwrap(),
+                DecisionOption::new("contradicts", "Contradicts").unwrap(),
+                DecisionOption::new("unknown", "Unknown").unwrap(),
+            ],
+            InferenceClass::Preference,
+            vec![DecisionEvidenceUse::new(
+                evidence.clone(),
+                EvidencePurpose::Corroboration,
+            )],
+        )
+        .unwrap();
+        let policy =
+            PolicyConfig::from_pairs([("BELIEF_POLICY_PROFILE", "semantic_research")]).unwrap();
+        let authorized = decision.authorize(&policy).unwrap();
+        let receipt = SemanticDecisionReceipt::new(
+            authorized.request(),
+            "semif",
+            "git:semif-1",
+            "Qwen/Qwen3.5-4B",
+            "model:1+gguf-sha256:abc",
+            "llamacpp",
+            "sha256:prompt",
+            "native-option-logits",
+            BTreeMap::from([
+                ("supports".into(), 0.8),
+                ("contradicts".into(), 0.1),
+                ("unknown".into(), 0.1),
+            ]),
+        )
+        .unwrap();
+        let semantic = authorized
+            .into_three_way_judgment(
+                receipt,
+                JudgmentId::new("judgment:semantic").unwrap(),
+                proposition(),
+                JudgmentSpecRef::new("preference-evidence", "v2").unwrap(),
+            )
+            .unwrap();
+        let judgment = semantic.judgment().clone();
+        let judgment_id = judgment.id.clone();
+        let claim = Claim::from_judgment(
+            ClaimId::new("claim:1").unwrap(),
+            proposition(),
+            judgment_id.clone(),
+        );
+        let result = inference_result(&evidence, &judgment, claim.clone());
+
+        let mut store = InMemoryBeliefStore::default();
+        store.insert_evidence(evidence).unwrap();
+        store.insert_semantic_judgment(semantic).unwrap();
+        store.insert_claim(claim).unwrap();
+        store.insert_inference_result(result).unwrap();
+
+        let explanation = store
+            .explain_belief(&BeliefId::new("belief:1").unwrap())
+            .unwrap();
+        let provenance = explanation
+            .semantic_judgments
+            .get(&judgment_id)
+            .unwrap();
+
+        assert_eq!(provenance.decision().provider(), "semif");
+        assert_eq!(provenance.decision().prompt_sha256(), "sha256:prompt");
+        assert_eq!(
+            provenance.authorization().profile(),
+            AuthorizationProfile::SemanticResearch
+        );
     }
 
     #[test]
