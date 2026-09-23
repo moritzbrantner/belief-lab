@@ -71,7 +71,7 @@ impl InMemoryBeliefStore {
         }
 
         let mut available = self
-            .evidence
+            .evidence()
             .iter()
             .filter(|(_, stored)| stored.validity.is_active())
             .map(|(id, _)| id.clone())
@@ -151,7 +151,7 @@ impl InMemoryBeliefStore {
     }
 
     pub fn insert_judgment(&mut self, judgment: Judgment) -> Result<(), StoreError> {
-        if self.judgments.contains_key(&judgment.id) {
+        if self.judgments.contains_key(judgment.id()) {
             return Err(StoreError::Duplicate {
                 kind: "judgment",
                 id: judgment.id().to_string(),
@@ -172,7 +172,7 @@ impl InMemoryBeliefStore {
         semantic: SemanticJudgment,
     ) -> Result<(), StoreError> {
         let (judgment, provenance) = semantic.into_parts();
-        if self.judgments.contains_key(&judgment.id) {
+        if self.judgments.contains_key(judgment.id()) {
             return Err(StoreError::Duplicate {
                 kind: "judgment",
                 id: judgment.id().to_string(),
@@ -223,7 +223,7 @@ impl InMemoryBeliefStore {
         let (belief, derivation, selected_judgments, selected_judgment_values, _, authorization) =
             result.into_parts();
 
-        if self.beliefs.contains_key(&belief.id) {
+        if self.beliefs.contains_key(belief.id()) {
             return Err(StoreError::Duplicate {
                 kind: "belief",
                 id: belief.id().to_string(),
@@ -232,7 +232,7 @@ impl InMemoryBeliefStore {
 
         self.require_active_claim(&belief.claim())?;
 
-        if derivation.belief() != belief.id {
+        if derivation.belief() != belief.id() {
             return Err(StoreError::InconsistentResult(
                 "derivation belief id does not match belief".into(),
             ));
@@ -242,16 +242,16 @@ impl InMemoryBeliefStore {
                 "derivation inference run does not match belief".into(),
             ));
         }
-        if derivation.judgments() != selected_judgments {
+        if derivation.judgments() != &selected_judgments {
             return Err(StoreError::InconsistentResult(
                 "derivation judgments do not match selected judgments".into(),
             ));
         }
 
-        for evidence in &derivation.evidence() {
+        for evidence in derivation.evidence() {
             self.require_active_evidence(evidence)?;
         }
-        for judgment in &derivation.judgments() {
+        for judgment in derivation.judgments() {
             self.require_active_judgment(judgment)?;
             let stored = self
                 .judgments
@@ -268,7 +268,7 @@ impl InMemoryBeliefStore {
                 )));
             }
         }
-        for claim in &derivation.claims() {
+        for claim in derivation.claims() {
             self.require_active_claim(claim)?;
         }
 
@@ -335,22 +335,22 @@ impl InMemoryBeliefStore {
                 })?;
 
         let judgments = derivation
-            .judgments
+            .judgments()
             .iter()
             .filter_map(|id| self.judgments.get(id).cloned())
             .collect();
         let evidence = derivation
-            .evidence
+            .evidence()
             .iter()
             .filter_map(|id| self.evidence.get(id).cloned())
             .collect();
         let input_claims = derivation
-            .claims
+            .claims()
             .iter()
             .filter_map(|id| self.claims.get(id).cloned())
             .collect();
         let semantic_judgments = derivation
-            .judgments
+            .judgments()
             .iter()
             .filter_map(|id| {
                 self.semantic_judgments
@@ -441,7 +441,7 @@ impl InMemoryBeliefStore {
                 .filter_map(|(id, stored)| {
                     stored
                         .value
-                        .evidence
+                        .evidence()
                         .iter()
                         .find(|evidence| self.is_invalid_evidence(evidence))
                         .map(|evidence| {
@@ -508,21 +508,21 @@ impl InMemoryBeliefStore {
 
         let derivation = self.derivations.get(id)?;
         if let Some(evidence) = derivation
-            .evidence
+            .evidence()
             .iter()
             .find(|evidence| self.is_invalid_evidence(evidence))
         {
             return Some(format!("evidence dependency {evidence} was invalidated"));
         }
         if let Some(judgment) = derivation
-            .judgments
+            .judgments()
             .iter()
             .find(|judgment| self.is_invalid_judgment(judgment))
         {
             return Some(format!("judgment dependency {judgment} was invalidated"));
         }
         if let Some(claim) = derivation
-            .claims
+            .claims()
             .iter()
             .find(|claim| self.is_invalid_claim(claim))
         {
