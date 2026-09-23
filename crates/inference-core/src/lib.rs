@@ -32,7 +32,7 @@ impl JudgmentBasis {
         correlation_group: EvidenceFamilyId,
         evidence: Vec<EvidenceUse>,
     ) -> Result<Self, RequestError> {
-        let expected = judgment.evidence.clone();
+        let expected = judgment.evidence().clone();
         let actual = evidence
             .iter()
             .map(|item| item.evidence.id.clone())
@@ -40,7 +40,7 @@ impl JudgmentBasis {
 
         if expected != actual {
             return Err(RequestError::BasisEvidenceMismatch {
-                judgment: judgment.id.clone(),
+                judgment: judgment.id().clone(),
                 expected,
                 actual,
             });
@@ -102,13 +102,13 @@ impl InferenceRequest {
 
         let mut judgment_ids = BTreeSet::new();
         for basis in &bases {
-            if basis.judgment.proposition != claim.proposition {
+            if basis.judgment.proposition() != &claim.proposition {
                 return Err(RequestError::JudgmentPropositionMismatch {
-                    judgment: basis.judgment.id.clone(),
+                    judgment: basis.judgment.id().clone(),
                 });
             }
-            if !judgment_ids.insert(basis.judgment.id.clone()) {
-                return Err(RequestError::DuplicateJudgmentId(basis.judgment.id.clone()));
+            if !judgment_ids.insert(basis.judgment.id().clone()) {
+                return Err(RequestError::DuplicateJudgmentId(basis.judgment.id().clone()));
             }
         }
 
@@ -167,8 +167,8 @@ impl InferenceRequest {
                     });
                 }
                 source_scopes.insert((
-                    evidence.provenance.source.repository.clone(),
-                    evidence.provenance.source.scope_id.clone(),
+                    evidence.provenance.source.repository().to_string(),
+                    evidence.provenance.source.scope_id().to_string(),
                 ));
                 evidence_uses.insert((evidence.id.clone(), evidence_use.purpose));
             }
@@ -260,25 +260,25 @@ impl InferenceResult {
     ) -> Result<Self, InferenceError> {
         let expected = request.request();
 
-        if belief.id != expected.belief_id || belief.claim != expected.claim.id {
+        if belief.id() != &expected.belief_id || belief.claim() != &expected.claim.id {
             return Err(InferenceError::InconsistentResult(
                 "belief does not match authorized request".into(),
             ));
         }
-        if belief.inference_run != expected.run_id {
+        if belief.inference_run() != &expected.run_id {
             return Err(InferenceError::InconsistentResult(
                 "belief inference run does not match authorized request".into(),
             ));
         }
-        if derivation.belief != belief.id
-            || derivation.inference_run != expected.run_id
-            || derivation.rule_id != expected.rule_id
+        if derivation.belief() != belief.id()
+            || derivation.inference_run() != &expected.run_id
+            || derivation.rule_id() != expected.rule_id
         {
             return Err(InferenceError::InconsistentResult(
                 "derivation does not match authorized request".into(),
             ));
         }
-        if derivation.judgments != selected_judgments {
+        if derivation.judgments() != &selected_judgments {
             return Err(InferenceError::InconsistentResult(
                 "derivation judgments do not match selected judgments".into(),
             ));
@@ -287,7 +287,7 @@ impl InferenceResult {
         let available_judgments = expected
             .bases
             .iter()
-            .map(|basis| basis.judgment.id.clone())
+            .map(|basis| basis.judgment.id().clone())
             .collect::<BTreeSet<_>>();
         if !selected_judgments.is_subset(&available_judgments)
             || !ignored_correlated_judgments.is_subset(&available_judgments)
@@ -305,7 +305,7 @@ impl InferenceResult {
             .flat_map(|basis| basis.evidence.iter())
             .map(|evidence_use| evidence_use.evidence.id.clone())
             .collect::<BTreeSet<_>>();
-        if derivation.evidence != expected_evidence {
+        if derivation.evidence() != &expected_evidence {
             return Err(InferenceError::InconsistentResult(
                 "derivation evidence does not match selected authorized judgments".into(),
             ));
@@ -315,7 +315,7 @@ impl InferenceResult {
             .bases
             .iter()
             .filter(|basis| selected_judgments.contains(&basis.judgment.id))
-            .map(|basis| (basis.judgment.id.clone(), basis.judgment.clone()))
+            .map(|basis| (basis.judgment.id().clone(), basis.judgment.clone()))
             .collect::<BTreeMap<_, _>>();
 
         Ok(Self {
