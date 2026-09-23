@@ -227,7 +227,7 @@ impl PolicyConfig {
             }
             InferenceClass::CrossSourceAssociation => {
                 self.allow_cross_source_join && maximum.allow_cross_source_join
-            },
+            }
             InferenceClass::SensitiveTrait | InferenceClass::RealWorldIdentity => false,
             InferenceClass::Descriptive | InferenceClass::Preference => true,
         }
