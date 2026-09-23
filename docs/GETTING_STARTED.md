@@ -73,8 +73,9 @@ Setup is designed to be rerun safely:
 
 - a valid existing SemIf checkout is reused;
 - its origin must still be the expected upstream repository;
+- a dirty checkout is rejected rather than silently installing modified code under the pinned revision;
 - the checkout is returned to the exact pinned revision;
-- an existing virtual environment is reused;
+- a usable virtual environment is reused, while a partial/broken virtual environment is recreated with `venv --clear`;
 - a completed model is reused after exact-size validation;
 - a partial model download is resumed;
 - an incomplete final model file is moved back to the partial-download path and resumed.
