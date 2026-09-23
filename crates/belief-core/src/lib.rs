@@ -181,10 +181,10 @@ impl Score {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct SourceRef {
-    pub repository: String,
-    pub scope_id: String,
-    pub record_id: String,
-    pub revision: String,
+    repository: String,
+    scope_id: String,
+    record_id: String,
+    revision: String,
 }
 
 impl SourceRef {
@@ -201,14 +201,30 @@ impl SourceRef {
             revision: immutable_revision("source.revision", revision.into())?,
         })
     }
+
+    pub fn repository(&self) -> &str {
+        &self.repository
+    }
+
+    pub fn scope_id(&self) -> &str {
+        &self.scope_id
+    }
+
+    pub fn record_id(&self) -> &str {
+        &self.record_id
+    }
+
+    pub fn revision(&self) -> &str {
+        &self.revision
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ProducerRef {
-    pub name: String,
-    pub revision: String,
-    pub model: Option<String>,
-    pub config_hash: Option<String>,
+    name: String,
+    revision: String,
+    model: Option<String>,
+    config_hash: Option<String>,
 }
 
 impl ProducerRef {
@@ -227,6 +243,22 @@ impl ProducerRef {
             model,
             config_hash,
         })
+    }
+
+    pub fn name(&self) -> &str {
+        &self.name
+    }
+
+    pub fn revision(&self) -> &str {
+        &self.revision
+    }
+
+    pub fn model(&self) -> Option<&str> {
+        self.model.as_deref()
+    }
+
+    pub fn config_hash(&self) -> Option<&str> {
+        self.config_hash.as_deref()
     }
 }
 
@@ -357,13 +389,13 @@ pub enum JudgmentOutcome {
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Judgment {
-    pub id: JudgmentId,
-    pub proposition: Proposition,
-    pub outcome: JudgmentOutcome,
-    pub confidence: Score,
-    pub evidence: BTreeSet<EvidenceId>,
-    pub spec: JudgmentSpecRef,
-    pub model_revision: String,
+    id: JudgmentId,
+    proposition: Proposition,
+    outcome: JudgmentOutcome,
+    confidence: Score,
+    evidence: BTreeSet<EvidenceId>,
+    spec: JudgmentSpecRef,
+    model_revision: String,
 }
 
 impl Judgment {
@@ -401,6 +433,34 @@ impl Judgment {
             spec,
             model_revision: non_empty("judgment.model_revision", model_revision.into())?,
         })
+    }
+
+    pub fn id(&self) -> &JudgmentId {
+        &self.id
+    }
+
+    pub fn proposition(&self) -> &Proposition {
+        &self.proposition
+    }
+
+    pub fn outcome(&self) -> JudgmentOutcome {
+        self.outcome
+    }
+
+    pub fn confidence(&self) -> Score {
+        self.confidence
+    }
+
+    pub fn evidence(&self) -> &BTreeSet<EvidenceId> {
+        &self.evidence
+    }
+
+    pub fn spec(&self) -> &JudgmentSpecRef {
+        &self.spec
+    }
+
+    pub fn model_revision(&self) -> &str {
+        &self.model_revision
     }
 }
 
@@ -466,10 +526,10 @@ impl Claim {
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Belief {
-    pub id: BeliefId,
-    pub claim: ClaimId,
-    pub value: Score,
-    pub inference_run: InferenceRunId,
+    id: BeliefId,
+    claim: ClaimId,
+    value: Score,
+    inference_run: InferenceRunId,
 }
 
 impl Belief {
@@ -497,16 +557,32 @@ impl Belief {
             inference_run,
         })
     }
+
+    pub fn id(&self) -> &BeliefId {
+        &self.id
+    }
+
+    pub fn claim(&self) -> &ClaimId {
+        &self.claim
+    }
+
+    pub fn value(&self) -> Score {
+        self.value
+    }
+
+    pub fn inference_run(&self) -> &InferenceRunId {
+        &self.inference_run
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Derivation {
-    pub belief: BeliefId,
-    pub rule_id: String,
-    pub evidence: BTreeSet<EvidenceId>,
-    pub judgments: BTreeSet<JudgmentId>,
-    pub claims: BTreeSet<ClaimId>,
-    pub inference_run: InferenceRunId,
+    belief: BeliefId,
+    rule_id: String,
+    evidence: BTreeSet<EvidenceId>,
+    judgments: BTreeSet<JudgmentId>,
+    claims: BTreeSet<ClaimId>,
+    inference_run: InferenceRunId,
 }
 
 impl Derivation {
@@ -534,6 +610,30 @@ impl Derivation {
             claims,
             inference_run,
         })
+    }
+
+    pub fn belief(&self) -> &BeliefId {
+        &self.belief
+    }
+
+    pub fn rule_id(&self) -> &str {
+        &self.rule_id
+    }
+
+    pub fn evidence(&self) -> &BTreeSet<EvidenceId> {
+        &self.evidence
+    }
+
+    pub fn judgments(&self) -> &BTreeSet<JudgmentId> {
+        &self.judgments
+    }
+
+    pub fn claims(&self) -> &BTreeSet<ClaimId> {
+        &self.claims
+    }
+
+    pub fn inference_run(&self) -> &InferenceRunId {
+        &self.inference_run
     }
 }
 
@@ -697,7 +797,7 @@ mod tests {
             provenance,
         );
 
-        assert_eq!(evidence.provenance.producer.name, "visual-analysis");
+        assert_eq!(evidence.provenance.producer.name(), "visual-analysis");
         assert_eq!(evidence.family.as_str(), "family:frame:42");
     }
 
@@ -737,7 +837,7 @@ mod tests {
         .unwrap();
 
         assert_eq!(
-            judgment.confidence.semantics(),
+            judgment.confidence().semantics(),
             ScoreSemantics::ConditionalOptionProbability
         );
 
