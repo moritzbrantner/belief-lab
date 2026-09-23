@@ -3,10 +3,7 @@ use std::fs;
 use std::path::{Path, PathBuf};
 use std::process::{Command, ExitCode};
 
-use semif_provider::{
-    model_catalog, SemifModelTier, SEMIF_REPOSITORY,
-    SEMIF_SOURCE_REVISION,
-};
+use semif_provider::{model_catalog, SemifModelTier, SEMIF_REPOSITORY, SEMIF_SOURCE_REVISION};
 
 fn main() -> ExitCode {
     match run(env::args().skip(1).collect()) {
@@ -27,33 +24,21 @@ fn run(args: Vec<String>) -> Result<(), String> {
         [command, directory] if command == "bootstrap" => {
             bootstrap(Path::new(directory), "llamacpp")
         }
-        [command, directory, backend]
-            if command == "bootstrap" =>
-        {
+        [command, directory, backend] if command == "bootstrap" => {
             bootstrap(Path::new(directory), backend)
         }
-        [command, tier, directory]
-            if command == "download-model" =>
-        {
-            let tier = SemifModelTier::parse(tier)
-                .ok_or_else(|| {
-                    format!(
-                        "unknown model tier {tier:?}; use phone, desktop, or high-memory"
-                    )
-                })?;
-            download_model(
-                tier,
-                Path::new(directory),
-            )
+        [command, tier, directory] if command == "download-model" => {
+            let tier = SemifModelTier::parse(tier).ok_or_else(|| {
+                format!("unknown model tier {tier:?}; use phone, desktop, or high-memory")
+            })?;
+            download_model(tier, Path::new(directory))
         }
         _ => Err(usage().into()),
     }
 }
 
 fn print_catalog() {
-    println!(
-        "tier\tmodel\tmodel_revision\tgguf_repository\tgguf_revision\tbytes"
-    );
+    println!("tier\tmodel\tmodel_revision\tgguf_repository\tgguf_revision\tbytes");
     for pin in model_catalog() {
         println!(
             "{}\t{}\t{}\t{}\t{}\t{}",
@@ -67,10 +52,7 @@ fn print_catalog() {
     }
 }
 
-fn bootstrap(
-    directory: &Path,
-    backend: &str,
-) -> Result<(), String> {
+fn bootstrap(directory: &Path, backend: &str) -> Result<(), String> {
     let extra = match backend {
         "torch" => ".",
         "mlx" => ".[mlx]",
@@ -107,8 +89,7 @@ fn bootstrap(
         "check out pinned SemIf revision",
     )?;
 
-    let python = env::var("BELIEF_SEMIF_PYTHON")
-        .unwrap_or_else(|_| "python3".into());
+    let python = env::var("BELIEF_SEMIF_PYTHON").unwrap_or_else(|_| "python3".into());
     run_command(
         Command::new(&python)
             .arg("-m")
@@ -137,17 +118,10 @@ fn bootstrap(
     Ok(())
 }
 
-fn download_model(
-    tier: SemifModelTier,
-    directory: &Path,
-) -> Result<(), String> {
+fn download_model(tier: SemifModelTier, directory: &Path) -> Result<(), String> {
     let pin = tier.pin();
-    fs::create_dir_all(directory).map_err(|error| {
-        format!(
-            "could not create {}: {error}",
-            directory.display()
-        )
-    })?;
+    fs::create_dir_all(directory)
+        .map_err(|error| format!("could not create {}: {error}", directory.display()))?;
 
     let target = directory.join(pin.gguf_file);
     if target.exists() {
@@ -159,8 +133,7 @@ fn download_model(
         return Ok(());
     }
 
-    let partial =
-        directory.join(format!("{}.part", pin.gguf_file));
+    let partial = directory.join(format!("{}.part", pin.gguf_file));
     run_command(
         Command::new("curl")
             .arg("--fail")
@@ -192,17 +165,9 @@ fn download_model(
     Ok(())
 }
 
-fn verify_size(
-    path: &Path,
-    expected: u64,
-) -> Result<(), String> {
+fn verify_size(path: &Path, expected: u64) -> Result<(), String> {
     let actual = fs::metadata(path)
-        .map_err(|error| {
-            format!(
-                "could not stat {}: {error}",
-                path.display()
-            )
-        })?
+        .map_err(|error| format!("could not stat {}: {error}", path.display()))?
         .len();
 
     if actual != expected {
@@ -215,30 +180,21 @@ fn verify_size(
     Ok(())
 }
 
-fn run_command(
-    command: &mut Command,
-    purpose: &str,
-) -> Result<(), String> {
-    let status = command.status().map_err(|error| {
-        format!("could not {purpose}: {error}")
-    })?;
+fn run_command(command: &mut Command, purpose: &str) -> Result<(), String> {
+    let status = command
+        .status()
+        .map_err(|error| format!("could not {purpose}: {error}"))?;
     if !status.success() {
-        return Err(format!(
-            "could not {purpose}: process exited with {status}"
-        ));
+        return Err(format!("could not {purpose}: process exited with {status}"));
     }
     Ok(())
 }
 
 fn venv_python(root: &Path) -> PathBuf {
     if cfg!(windows) {
-        root.join(".venv")
-            .join("Scripts")
-            .join("python.exe")
+        root.join(".venv").join("Scripts").join("python.exe")
     } else {
-        root.join(".venv")
-            .join("bin")
-            .join("python")
+        root.join(".venv").join("bin").join("python")
     }
 }
 
