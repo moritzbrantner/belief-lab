@@ -84,7 +84,7 @@ impl InferenceEngine for BaselineInferenceEngine {
             evidence,
             selected_judgments.clone(),
             [],
-            request.run_id.clone(),
+            request.run_id().clone(),
         )?;
 
         InferenceResult::new(
