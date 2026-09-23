@@ -1,4 +1,4 @@
-use std::collections::BTreeSet;
+use std::collections::{BTreeMap, BTreeSet};
 use std::fmt;
 
 use belief_core::{
@@ -79,6 +79,20 @@ impl InferenceRequest {
         }
         if bases.is_empty() {
             return Err(RequestError::NoJudgmentBases);
+        }
+
+        let mut judgment_ids = BTreeSet::new();
+        for basis in &bases {
+            if basis.judgment.proposition != claim.proposition {
+                return Err(RequestError::JudgmentPropositionMismatch {
+                    judgment: basis.judgment.id.clone(),
+                });
+            }
+            if !judgment_ids.insert(basis.judgment.id.clone()) {
+                return Err(RequestError::DuplicateJudgmentId(
+                    basis.judgment.id.clone(),
+                ));
+            }
         }
 
         Ok(Self {
@@ -190,6 +204,7 @@ pub struct InferenceResult {
     belief: Belief,
     derivation: Derivation,
     selected_judgments: BTreeSet<JudgmentId>,
+    selected_judgment_values: BTreeMap<JudgmentId, Judgment>,
     ignored_correlated_judgments: BTreeSet<JudgmentId>,
     authorization: AuthorizationReceipt,
 }
@@ -255,10 +270,18 @@ impl InferenceResult {
             ));
         }
 
+        let selected_judgment_values = expected
+            .bases
+            .iter()
+            .filter(|basis| selected_judgments.contains(&basis.judgment.id))
+            .map(|basis| (basis.judgment.id.clone(), basis.judgment.clone()))
+            .collect::<BTreeMap<_, _>>();
+
         Ok(Self {
             belief,
             derivation,
             selected_judgments,
+            selected_judgment_values,
             ignored_correlated_judgments,
             authorization: request.authorization().clone(),
         })
@@ -276,6 +299,10 @@ impl InferenceResult {
         &self.selected_judgments
     }
 
+    pub fn selected_judgment_values(&self) -> &BTreeMap<JudgmentId, Judgment> {
+        &self.selected_judgment_values
+    }
+
     pub fn ignored_correlated_judgments(&self) -> &BTreeSet<JudgmentId> {
         &self.ignored_correlated_judgments
     }
@@ -290,6 +317,7 @@ impl InferenceResult {
         Belief,
         Derivation,
         BTreeSet<JudgmentId>,
+        BTreeMap<JudgmentId, Judgment>,
         BTreeSet<JudgmentId>,
         AuthorizationReceipt,
     ) {
@@ -297,6 +325,7 @@ impl InferenceResult {
             self.belief,
             self.derivation,
             self.selected_judgments,
+            self.selected_judgment_values,
             self.ignored_correlated_judgments,
             self.authorization,
         )
@@ -316,6 +345,10 @@ pub trait InferenceEngine {
 pub enum RequestError {
     EmptyRuleId,
     NoJudgmentBases,
+    JudgmentPropositionMismatch {
+        judgment: JudgmentId,
+    },
+    DuplicateJudgmentId(JudgmentId),
     BasisEvidenceMismatch {
         judgment: JudgmentId,
         expected: BTreeSet<EvidenceId>,
@@ -329,6 +362,13 @@ impl fmt::Display for RequestError {
             Self::EmptyRuleId => f.write_str("inference rule id cannot be empty"),
             Self::NoJudgmentBases => {
                 f.write_str("an inference request requires at least one judgment basis")
+            }
+            Self::JudgmentPropositionMismatch { judgment } => write!(
+                f,
+                "judgment {judgment} does not assess the target claim proposition"
+            ),
+            Self::DuplicateJudgmentId(judgment) => {
+                write!(f, "inference request contains duplicate judgment id {judgment}")
             }
             Self::BasisEvidenceMismatch {
                 judgment,
@@ -490,6 +530,72 @@ mod tests {
             bases,
         )
         .unwrap()
+    }
+
+    #[test]
+    fn request_rejects_judgments_about_an_unrelated_proposition() {
+        let evidence_ref = evidence("transcript:1", EvidenceClass::Transcript, "video:1");
+        let evidence_id = evidence_ref.id.clone();
+        let judgment = Judgment::new(
+            JudgmentId::new("judgment:other").unwrap(),
+            Proposition::new(
+                EntityId::new("person:alice").unwrap(),
+                Predicate::new("uses").unwrap(),
+                ObjectValue::text("Linux").unwrap(),
+            ),
+            JudgmentOutcome::Supports,
+            Score::new(0.8, ScoreSemantics::ModelConfidence).unwrap(),
+            [evidence_id],
+            JudgmentSpecRef::new("fixture", "v1").unwrap(),
+            "fixture-model:1",
+        )
+        .unwrap();
+        let basis = JudgmentBasis::new(
+            judgment,
+            EvidenceFamilyId::new("correlation:other").unwrap(),
+            vec![EvidenceUse::new(
+                evidence_ref,
+                EvidencePurpose::Corroboration,
+            )],
+        )
+        .unwrap();
+
+        assert!(matches!(
+            InferenceRequest::new(
+                InferenceRunId::new("run:1").unwrap(),
+                BeliefId::new("belief:1").unwrap(),
+                InferenceClass::Descriptive,
+                claim(),
+                "baseline:v1",
+                vec![basis],
+            ),
+            Err(RequestError::JudgmentPropositionMismatch { .. })
+        ));
+    }
+
+    #[test]
+    fn request_rejects_duplicate_judgment_ids_across_correlation_groups() {
+        let first = basis(
+            "judgment:duplicate",
+            evidence("transcript:1", EvidenceClass::Transcript, "video:1"),
+        );
+        let mut second = basis(
+            "judgment:duplicate",
+            evidence("transcript:2", EvidenceClass::Transcript, "video:1"),
+        );
+        second.correlation_group = EvidenceFamilyId::new("correlation:other").unwrap();
+
+        assert!(matches!(
+            InferenceRequest::new(
+                InferenceRunId::new("run:1").unwrap(),
+                BeliefId::new("belief:1").unwrap(),
+                InferenceClass::Descriptive,
+                claim(),
+                "baseline:v1",
+                vec![first, second],
+            ),
+            Err(RequestError::DuplicateJudgmentId(_))
+        ));
     }
 
     #[test]
