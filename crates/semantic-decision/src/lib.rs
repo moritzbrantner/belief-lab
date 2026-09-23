@@ -830,7 +830,7 @@ mod tests {
             )
             .unwrap();
 
-        assert_eq!(semantic.judgment().outcome()(), JudgmentOutcome::Supports);
+        assert_eq!(semantic.judgment().outcome(), JudgmentOutcome::Supports);
         assert_eq!(
             semantic.judgment().confidence().semantics(),
             ScoreSemantics::ConditionalOptionProbability
