@@ -40,6 +40,7 @@ Propagation reaches a fixed point so multi-step rule chains cannot remain active
 - the target claim;
 - the derivation;
 - selected judgments;
+- semantic-decision authorization/provider receipts for selected semantic judgments;
 - selected evidence with pinned source/producer provenance;
 - direct input claims.
 
@@ -53,3 +54,6 @@ A PostgreSQL implementation should match these semantics before becoming authori
 - allow a belief to omit its derivation;
 - physically cascade-delete the explanation chain by default;
 - treat an invalidated dependency as usable evidence for a new inference run.
+
+
+Semantic judgments are inserted through `insert_semantic_judgment`, which validates their evidence dependencies before storing the judgment and its provider provenance together. Revocation still propagates through the ordinary judgment dependency graph; semantic provenance is retained for audit.
