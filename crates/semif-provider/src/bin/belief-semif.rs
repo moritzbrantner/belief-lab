@@ -99,9 +99,7 @@ fn bootstrap(directory: &Path, backend: &str) -> Result<(), String> {
     )?;
 
     let interpreter = fs::canonicalize(venv_python(directory)).map_err(|error| {
-        format!(
-            "could not resolve SemIf virtual-environment interpreter: {error}"
-        )
+        format!("could not resolve SemIf virtual-environment interpreter: {error}")
     })?;
 
     run_command(
