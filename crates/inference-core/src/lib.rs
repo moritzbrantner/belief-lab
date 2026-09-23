@@ -1,5 +1,6 @@
 use std::collections::{BTreeMap, BTreeSet};
 use std::fmt;
+use std::sync::Arc;
 
 use belief_core::{
     Belief, BeliefId, Claim, Derivation, EvidenceFamilyId, EvidenceId, EvidencePurpose,
@@ -32,25 +33,32 @@ impl JudgmentBasis {
         correlation_group: EvidenceFamilyId,
         evidence: Vec<EvidenceUse>,
     ) -> Result<Self, RequestError> {
-        let expected = judgment.evidence().clone();
-        let actual = evidence
+        let basis = Self {
+            judgment,
+            correlation_group,
+            evidence,
+        };
+        basis.validate()?;
+        Ok(basis)
+    }
+
+    fn validate(&self) -> Result<(), RequestError> {
+        let expected = self.judgment.evidence();
+        let actual = self
+            .evidence
             .iter()
             .map(|item| item.evidence.id.clone())
             .collect::<BTreeSet<_>>();
 
-        if expected != actual {
+        if expected != &actual {
             return Err(RequestError::BasisEvidenceMismatch {
-                judgment: judgment.id().clone(),
-                expected,
+                judgment: self.judgment.id().clone(),
+                expected: expected.clone(),
                 actual,
             });
         }
 
-        Ok(Self {
-            judgment,
-            correlation_group,
-            evidence,
-        })
+        Ok(())
     }
 }
 
@@ -101,7 +109,10 @@ impl InferenceRequest {
         }
 
         let mut judgment_ids = BTreeSet::new();
+        let mut evidence_values = BTreeMap::new();
         for basis in &bases {
+            // Bases are public builder values; callers can bypass or mutate their constructor.
+            basis.validate()?;
             if basis.judgment.proposition() != &claim.proposition {
                 return Err(RequestError::JudgmentPropositionMismatch {
                     judgment: basis.judgment.id().clone(),
@@ -111,6 +122,14 @@ impl InferenceRequest {
                 return Err(RequestError::DuplicateJudgmentId(
                     basis.judgment.id().clone(),
                 ));
+            }
+            for evidence_use in &basis.evidence {
+                let evidence = &evidence_use.evidence;
+                if let Some(previous) = evidence_values.insert(&evidence.id, evidence) {
+                    if previous != evidence {
+                        return Err(RequestError::ConflictingEvidence(evidence.id.clone()));
+                    }
+                }
             }
         }
 
@@ -158,6 +177,7 @@ impl InferenceRequest {
 
         let mut source_scopes = BTreeSet::new();
         let mut evidence_uses = BTreeSet::new();
+        let mut evidence_values = BTreeMap::new();
         for basis in &self.bases {
             for evidence_use in &basis.evidence {
                 let evidence = &evidence_use.evidence;
@@ -173,6 +193,9 @@ impl InferenceRequest {
                     evidence.provenance.source.scope_id().to_string(),
                 ));
                 evidence_uses.insert((evidence.id.clone(), evidence_use.purpose));
+                evidence_values
+                    .entry(evidence.id.clone())
+                    .or_insert_with(|| evidence.clone());
             }
         }
 
@@ -186,6 +209,10 @@ impl InferenceRequest {
             source_scopes: source_scopes.clone(),
             evidence_uses,
             cross_source_join: source_scopes.len() > 1,
+            inputs: Arc::new(AuthorizedInputs {
+                claim: self.claim.clone(),
+                evidence: evidence_values,
+            }),
         };
 
         Ok(AuthorizedInferenceRequest {
@@ -195,13 +222,21 @@ impl InferenceRequest {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, PartialEq)]
+struct AuthorizedInputs {
+    claim: Claim,
+    evidence: BTreeMap<EvidenceId, EvidenceRef>,
+}
+
+#[derive(Debug, Clone, PartialEq)]
 pub struct AuthorizationReceipt {
     profile: AuthorizationProfile,
     inference_class: InferenceClass,
     source_scopes: BTreeSet<(String, String)>,
     evidence_uses: BTreeSet<(EvidenceId, EvidencePurpose)>,
     cross_source_join: bool,
+    // One immutable snapshot per authorization, shared by results and explanations.
+    inputs: Arc<AuthorizedInputs>,
 }
 
 impl AuthorizationReceipt {
@@ -223,6 +258,17 @@ impl AuthorizationReceipt {
 
     pub fn cross_source_join(&self) -> bool {
         self.cross_source_join
+    }
+
+    /// Exact target claim, including proposition and origin, supplied for authorization.
+    pub fn authorized_claim(&self) -> &Claim {
+        &self.inputs.claim
+    }
+
+    /// Canonical evidence values authorized by this receipt, not just their identifiers.
+    /// Stores must compare selected dependencies with these values before writing a belief.
+    pub fn authorized_evidence(&self) -> &BTreeMap<EvidenceId, EvidenceRef> {
+        &self.inputs.evidence
     }
 }
 
@@ -392,6 +438,7 @@ pub enum RequestError {
         judgment: JudgmentId,
     },
     DuplicateJudgmentId(JudgmentId),
+    ConflictingEvidence(EvidenceId),
     BasisEvidenceMismatch {
         judgment: JudgmentId,
         expected: BTreeSet<EvidenceId>,
@@ -412,6 +459,9 @@ impl fmt::Display for RequestError {
             ),
             Self::DuplicateJudgmentId(judgment) => {
                 write!(f, "inference request contains duplicate judgment id {judgment}")
+            }
+            Self::ConflictingEvidence(evidence) => {
+                write!(f, "inference request contains conflicting values for evidence {evidence}")
             }
             Self::BasisEvidenceMismatch {
                 judgment,
@@ -572,6 +622,25 @@ mod tests {
             bases,
         )
         .unwrap()
+    }
+
+    #[test]
+    fn authorization_snapshot_is_deduplicated_and_shared_across_receipt_clones() {
+        let policy =
+            PolicyConfig::from_pairs([("BELIEF_POLICY_PROFILE", "semantic_research")]).unwrap();
+        for count in [1, 16, 256] {
+            let shared = evidence("transcript:1", EvidenceClass::Transcript, "video:1");
+            let bases = (0..count)
+                .map(|index| basis(&format!("judgment:{index}"), shared.clone()))
+                .collect();
+            let authorized = request(bases).authorize(&policy).unwrap();
+            let receipt = authorized.authorization();
+            let cloned = receipt.clone();
+            assert_eq!(receipt.authorized_claim(), &claim());
+            assert_eq!(receipt.authorized_evidence().len(), 1);
+            assert_eq!(receipt.authorized_evidence().get(&shared.id), Some(&shared));
+            assert!(Arc::ptr_eq(&receipt.inputs, &cloned.inputs));
+        }
     }
 
     #[test]
