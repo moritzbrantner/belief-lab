@@ -472,12 +472,11 @@ pub fn bootstrap_semif(
         true
     };
 
-    let interpreter = fs::canonicalize(venv_python(directory)).map_err(|error| {
-        SemifSetupError::Io {
+    let interpreter =
+        fs::canonicalize(venv_python(directory)).map_err(|error| SemifSetupError::Io {
             context: "resolve SemIf virtual-environment interpreter".into(),
             message: error.to_string(),
-        }
-    })?;
+        })?;
 
     run_command(
         Command::new(&interpreter)
@@ -506,10 +505,7 @@ pub fn model_path(tier: SemifModelTier, directory: &Path) -> PathBuf {
     directory.join(tier.pin().gguf_file)
 }
 
-pub fn model_is_ready(
-    tier: SemifModelTier,
-    directory: &Path,
-) -> Result<bool, SemifSetupError> {
+pub fn model_is_ready(tier: SemifModelTier, directory: &Path) -> Result<bool, SemifSetupError> {
     let target = model_path(tier, directory);
     if !target.exists() {
         return Ok(false);
@@ -518,10 +514,7 @@ pub fn model_is_ready(
     Ok(true)
 }
 
-pub fn download_model(
-    tier: SemifModelTier,
-    directory: &Path,
-) -> Result<PathBuf, SemifSetupError> {
+pub fn download_model(tier: SemifModelTier, directory: &Path) -> Result<PathBuf, SemifSetupError> {
     let pin = tier.pin();
     fs::create_dir_all(directory).map_err(|error| SemifSetupError::Io {
         context: format!("create {}", directory.display()),
@@ -693,11 +686,9 @@ impl std::fmt::Display for SemifSetupError {
                 "{} points to unexpected git origin {origin:?}",
                 directory.display()
             ),
-            Self::MissingExecutable(path) => write!(
-                f,
-                "SemIf installation did not create {}",
-                path.display()
-            ),
+            Self::MissingExecutable(path) => {
+                write!(f, "SemIf installation did not create {}", path.display())
+            }
             Self::UnexpectedModelSize {
                 path,
                 expected,
