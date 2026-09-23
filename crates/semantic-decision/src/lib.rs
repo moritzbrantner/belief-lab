@@ -149,7 +149,7 @@ impl DecisionRequest {
             evidence_uses.insert((evidence.id.clone(), evidence_use.purpose));
         }
 
-        if source_scopes.len() > 1 && !policy.allow_cross_source_join {
+        if source_scopes.len() > 1 && !policy.allows_cross_source_join() {
             return Err(DecisionAuthorizationError::CrossSourceJoinDenied { source_scopes });
         }
 
