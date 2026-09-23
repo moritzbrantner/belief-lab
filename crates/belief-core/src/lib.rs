@@ -601,10 +601,7 @@ fn immutable_revision(field: &'static str, value: String) -> Result<String, Mode
     if is_immutable_revision(&value) {
         Ok(value)
     } else {
-        Err(ModelError::InvalidRevision {
-            field,
-            value,
-        })
+        Err(ModelError::InvalidRevision { field, value })
     }
 }
 
@@ -612,8 +609,7 @@ fn is_immutable_revision(value: &str) -> bool {
     let prefixed = ["sha256:", "git:", "commit:"]
         .into_iter()
         .any(|prefix| value.starts_with(prefix) && value.len() > prefix.len());
-    let hex = matches!(value.len(), 40 | 64)
-        && value.bytes().all(|byte| byte.is_ascii_hexdigit());
+    let hex = matches!(value.len(), 40 | 64) && value.bytes().all(|byte| byte.is_ascii_hexdigit());
     prefixed || hex
 }
 
