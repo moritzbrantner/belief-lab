@@ -220,14 +220,8 @@ impl InMemoryBeliefStore {
     }
 
     pub fn insert_inference_result(&mut self, result: InferenceResult) -> Result<(), StoreError> {
-        let (
-            belief,
-            derivation,
-            selected_judgments,
-            selected_judgment_values,
-            _,
-            authorization,
-        ) = result.into_parts();
+        let (belief, derivation, selected_judgments, selected_judgment_values, _, authorization) =
+            result.into_parts();
 
         if self.beliefs.contains_key(&belief.id) {
             return Err(StoreError::Duplicate {
