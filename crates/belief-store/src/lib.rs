@@ -663,7 +663,9 @@ mod tests {
     use belief_policy::PolicyConfig;
     use evidence_interchange::ValidatedEvidenceBatch;
     use inference_baseline::BaselineInferenceEngine;
-    use inference_core::{EvidenceUse, InferenceEngine, InferenceRequest, JudgmentBasis};
+    use inference_core::{
+        EvidenceUse, InferenceEngine, InferenceRequest, JudgmentBasis, TrustedInferenceRule,
+    };
     use semantic_decision::{
         DecisionEvidenceUse, DecisionOption, DecisionRequest, SemanticDecisionReceipt,
     };
@@ -735,9 +737,8 @@ mod tests {
         let request = InferenceRequest::new(
             InferenceRunId::new("run:1").unwrap(),
             BeliefId::new("belief:1").unwrap(),
-            InferenceClass::Preference,
+            TrustedInferenceRule::BaselinePreferenceV1,
             claim,
-            "baseline:preference:v1",
             vec![basis],
         )
         .unwrap();
