@@ -8,6 +8,7 @@ belief-core = { path = "../belief-core" }
 belief-policy = { path = "../belief-policy" }
 evidence-interchange = { path = "../evidence-interchange" }
 inference-core = { path = "../inference-core" }
+semantic-decision = { path = "../semantic-decision" }
 
 [dev-dependencies]
 inference-baseline = { path = "../inference-baseline" }
