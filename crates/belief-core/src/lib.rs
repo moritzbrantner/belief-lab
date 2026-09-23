@@ -198,7 +198,7 @@ impl SourceRef {
             repository: non_empty("source.repository", repository.into())?,
             scope_id: non_empty("source.scope_id", scope_id.into())?,
             record_id: non_empty("source.record_id", record_id.into())?,
-            revision: non_empty("source.revision", revision.into())?,
+            revision: immutable_revision("source.revision", revision.into())?,
         })
     }
 }
@@ -223,7 +223,7 @@ impl ProducerRef {
 
         Ok(Self {
             name: non_empty("producer.name", name.into())?,
-            revision: non_empty("producer.revision", revision.into())?,
+            revision: immutable_revision("producer.revision", revision.into())?,
             model,
             config_hash,
         })
@@ -278,6 +278,15 @@ impl EvidenceRef {
             score,
             provenance,
         }
+    }
+
+    pub fn has_complete_provenance(&self) -> bool {
+        !self.provenance.source.repository.trim().is_empty()
+            && !self.provenance.source.scope_id.trim().is_empty()
+            && !self.provenance.source.record_id.trim().is_empty()
+            && is_immutable_revision(&self.provenance.source.revision)
+            && !self.provenance.producer.name.trim().is_empty()
+            && is_immutable_revision(&self.provenance.producer.revision)
     }
 }
 
@@ -533,6 +542,10 @@ pub enum ModelError {
     EmptyIdentifier(&'static str),
     EmptyField(&'static str),
     InvalidScore(f64),
+    InvalidRevision {
+        field: &'static str,
+        value: String,
+    },
     MissingEvidence(&'static str),
     WrongScoreSemantics {
         context: &'static str,
@@ -549,6 +562,10 @@ impl fmt::Display for ModelError {
             Self::InvalidScore(value) => {
                 write!(f, "score must be finite and in [0, 1], got {value}")
             }
+            Self::InvalidRevision { field, value } => write!(
+                f,
+                "{field} must be an immutable revision (sha256:, git:, commit:, or a full hex digest), got {value:?}"
+            ),
             Self::MissingEvidence(context) => write!(f, "{context} requires at least one input"),
             Self::WrongScoreSemantics {
                 context,
@@ -577,6 +594,27 @@ fn optional_non_empty(
     value: Option<String>,
 ) -> Result<Option<String>, ModelError> {
     value.map(|value| non_empty(field, value)).transpose()
+}
+
+fn immutable_revision(field: &'static str, value: String) -> Result<String, ModelError> {
+    let value = non_empty(field, value)?;
+    if is_immutable_revision(&value) {
+        Ok(value)
+    } else {
+        Err(ModelError::InvalidRevision {
+            field,
+            value,
+        })
+    }
+}
+
+fn is_immutable_revision(value: &str) -> bool {
+    let prefixed = ["sha256:", "git:", "commit:"]
+        .into_iter()
+        .any(|prefix| value.starts_with(prefix) && value.len() > prefix.len());
+    let hex = matches!(value.len(), 40 | 64)
+        && value.bytes().all(|byte| byte.is_ascii_hexdigit());
+    prefixed || hex
 }
 
 #[cfg(test)]
@@ -617,6 +655,18 @@ mod tests {
         assert!(matches!(
             Score::new(f64::NAN, ScoreSemantics::ModelConfidence),
             Err(ModelError::InvalidScore(_))
+        ));
+    }
+
+    #[test]
+    fn movable_source_and_producer_revisions_are_rejected() {
+        assert!(matches!(
+            SourceRef::new("youtube-corpus", "video:1", "frame:42", "main"),
+            Err(ModelError::InvalidRevision { .. })
+        ));
+        assert!(matches!(
+            ProducerRef::new("visual-analysis", "latest", None, None),
+            Err(ModelError::InvalidRevision { .. })
         ));
     }
 
