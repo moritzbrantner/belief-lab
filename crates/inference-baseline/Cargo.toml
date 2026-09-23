@@ -1,0 +1,11 @@
+[package]
+name = "inference-baseline"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+belief-core = { path = "../belief-core" }
+inference-core = { path = "../inference-core" }
+
+[dev-dependencies]
+belief-policy = { path = "../belief-policy" }

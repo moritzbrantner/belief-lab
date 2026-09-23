@@ -1,0 +1,7 @@
+[package]
+name = "belief-policy"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+belief-core = { path = "../belief-core" }
