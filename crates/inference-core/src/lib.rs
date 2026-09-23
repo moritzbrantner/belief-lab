@@ -54,29 +54,48 @@ impl JudgmentBasis {
     }
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum TrustedInferenceRule {
+    BaselineDescriptiveV1,
+    BaselinePreferenceV1,
+}
+
+impl TrustedInferenceRule {
+    pub fn class(self) -> InferenceClass {
+        match self {
+            Self::BaselineDescriptiveV1 => InferenceClass::Descriptive,
+            Self::BaselinePreferenceV1 => InferenceClass::Preference,
+        }
+    }
+
+    pub fn rule_id(self) -> &'static str {
+        match self {
+            Self::BaselineDescriptiveV1 => "baseline:descriptive:v1",
+            Self::BaselinePreferenceV1 => "baseline:preference:v1",
+        }
+    }
+}
+
 #[derive(Debug, Clone, PartialEq)]
 pub struct InferenceRequest {
-    pub run_id: InferenceRunId,
-    pub belief_id: BeliefId,
-    pub class: InferenceClass,
-    pub claim: Claim,
-    pub rule_id: String,
-    pub bases: Vec<JudgmentBasis>,
+    run_id: InferenceRunId,
+    belief_id: BeliefId,
+    class: InferenceClass,
+    claim: Claim,
+    rule_id: String,
+    bases: Vec<JudgmentBasis>,
 }
 
 impl InferenceRequest {
     pub fn new(
         run_id: InferenceRunId,
         belief_id: BeliefId,
-        class: InferenceClass,
+        rule: TrustedInferenceRule,
         claim: Claim,
-        rule_id: impl Into<String>,
         bases: Vec<JudgmentBasis>,
     ) -> Result<Self, RequestError> {
-        let rule_id = rule_id.into();
-        if rule_id.trim().is_empty() {
-            return Err(RequestError::EmptyRuleId);
-        }
+        let class = rule.class();
+        let rule_id = rule.rule_id().to_string();
         if bases.is_empty() {
             return Err(RequestError::NoJudgmentBases);
         }
@@ -103,6 +122,30 @@ impl InferenceRequest {
             rule_id,
             bases,
         })
+    }
+
+    pub fn run_id(&self) -> &InferenceRunId {
+        &self.run_id
+    }
+
+    pub fn belief_id(&self) -> &BeliefId {
+        &self.belief_id
+    }
+
+    pub fn class(&self) -> InferenceClass {
+        self.class
+    }
+
+    pub fn claim(&self) -> &Claim {
+        &self.claim
+    }
+
+    pub fn rule_id(&self) -> &str {
+        &self.rule_id
+    }
+
+    pub fn bases(&self) -> &[JudgmentBasis] {
+        &self.bases
     }
 
     pub fn authorize(
@@ -524,9 +567,8 @@ mod tests {
         InferenceRequest::new(
             InferenceRunId::new("run:1").unwrap(),
             BeliefId::new("belief:1").unwrap(),
-            InferenceClass::Descriptive,
+            TrustedInferenceRule::BaselineDescriptiveV1,
             claim(),
-            "baseline:v1",
             bases,
         )
         .unwrap()
@@ -564,9 +606,8 @@ mod tests {
             InferenceRequest::new(
                 InferenceRunId::new("run:1").unwrap(),
                 BeliefId::new("belief:1").unwrap(),
-                InferenceClass::Descriptive,
+                TrustedInferenceRule::BaselineDescriptiveV1,
                 claim(),
-                "baseline:v1",
                 vec![basis],
             ),
             Err(RequestError::JudgmentPropositionMismatch { .. })
@@ -589,9 +630,8 @@ mod tests {
             InferenceRequest::new(
                 InferenceRunId::new("run:1").unwrap(),
                 BeliefId::new("belief:1").unwrap(),
-                InferenceClass::Descriptive,
+                TrustedInferenceRule::BaselineDescriptiveV1,
                 claim(),
-                "baseline:v1",
                 vec![first, second],
             ),
             Err(RequestError::DuplicateJudgmentId(_))
