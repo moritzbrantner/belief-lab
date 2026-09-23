@@ -88,12 +88,7 @@ fn run_core_demo() -> Result<DemoSummary, Box<dyn Error>> {
                 "statement:1",
                 "sha256:demo-source-v1",
             )?,
-            ProducerRef::new(
-                "belief-cli-demo",
-                "commit:demo-producer-v1",
-                None,
-                None,
-            )?,
+            ProducerRef::new("belief-cli-demo", "commit:demo-producer-v1", None, None)?,
             [],
         ),
     );
@@ -126,8 +121,7 @@ fn run_core_demo() -> Result<DemoSummary, Box<dyn Error>> {
         claim.clone(),
         vec![basis],
     )?;
-    let policy =
-        PolicyConfig::from_pairs([("BELIEF_POLICY_PROFILE", "semantic_research")])?;
+    let policy = PolicyConfig::from_pairs([("BELIEF_POLICY_PROFILE", "semantic_research")])?;
     let authorized = request.authorize(&policy)?;
     let result = BaselineInferenceEngine.infer(&authorized)?;
     let belief_id = result.belief().id().clone();
@@ -199,7 +193,11 @@ fn doctor(tier: SemifModelTier) -> Result<(), Box<dyn Error>> {
     let executable = semif_score_path(&paths.semif);
     println!(
         "  SemIf: {} ({})",
-        if executable.is_file() { "ready" } else { "not installed" },
+        if executable.is_file() {
+            "ready"
+        } else {
+            "not installed"
+        },
         executable.display()
     );
     match model_is_ready(tier, &paths.models) {
@@ -263,23 +261,16 @@ fn semantic_demo(tier: SemifModelTier) -> Result<(), Box<dyn Error>> {
     let decision = DecisionRequest::new(
         "decision:semantic-demo:1",
         serde_json::Value::String(
-            "Alice explicitly says: I prefer software that lets me customize how it works."
-                .into(),
+            "Alice explicitly says: I prefer software that lets me customize how it works.".into(),
         ),
         "Does this evidence support the proposition that Alice prefers customization?",
         vec![
-            DecisionOption::new(
-                SUPPORTS_OPTION_ID,
-                "The evidence supports the proposition.",
-            )?,
+            DecisionOption::new(SUPPORTS_OPTION_ID, "The evidence supports the proposition.")?,
             DecisionOption::new(
                 CONTRADICTS_OPTION_ID,
                 "The evidence contradicts the proposition.",
             )?,
-            DecisionOption::new(
-                UNKNOWN_OPTION_ID,
-                "The evidence is insufficient to decide.",
-            )?,
+            DecisionOption::new(UNKNOWN_OPTION_ID, "The evidence is insufficient to decide.")?,
         ],
         belief_core::InferenceClass::Preference,
         vec![DecisionEvidenceUse::new(
@@ -287,8 +278,7 @@ fn semantic_demo(tier: SemifModelTier) -> Result<(), Box<dyn Error>> {
             EvidencePurpose::Corroboration,
         )],
     )?;
-    let policy =
-        PolicyConfig::from_pairs([("BELIEF_POLICY_PROFILE", "semantic_research")])?;
+    let policy = PolicyConfig::from_pairs([("BELIEF_POLICY_PROFILE", "semantic_research")])?;
     let authorized_decision = decision.authorize(&policy)?;
     let pin = tier.pin();
     let provider = SemifProvider::from_bootstrap(
