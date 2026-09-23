@@ -98,8 +98,14 @@ fn bootstrap(directory: &Path, backend: &str) -> Result<(), String> {
         "create SemIf virtual environment",
     )?;
 
+    let interpreter = fs::canonicalize(venv_python(directory)).map_err(|error| {
+        format!(
+            "could not resolve SemIf virtual-environment interpreter: {error}"
+        )
+    })?;
+
     run_command(
-        Command::new(venv_python(directory))
+        Command::new(interpreter)
             .current_dir(directory)
             .arg("-m")
             .arg("pip")
