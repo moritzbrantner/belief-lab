@@ -51,6 +51,7 @@ impl SemifModelTier {
                 gguf_revision: "23749fefcc72300e3a2ad315e1317431b06b590a",
                 gguf_file: "Qwen3-0.6B-Q8_0.gguf",
                 gguf_bytes: 639_446_688,
+                gguf_sha256: "9465e63a22add5354d9bb4b99e90117043c7124007664907259bd16d043bb031",
             },
             Self::Desktop => SemifModelPin {
                 tier: self,
@@ -60,6 +61,7 @@ impl SemifModelTier {
                 gguf_revision: "2079a22f3beaa4e306449978533478fe0522f4b3",
                 gguf_file: "MiniCPM5-2B-Q4_K_M.gguf",
                 gguf_bytes: 1_561_318_368,
+                gguf_sha256: "ec2d5801640099e97d8d7e8003ad4d81f336e757811f03a26173dddf386602fd",
             },
             Self::HighMemory => SemifModelPin {
                 tier: self,
@@ -69,6 +71,7 @@ impl SemifModelTier {
                 gguf_revision: "4168f45a16a1290d65a4ec0fa312ae917a4c15d6",
                 gguf_file: "Qwen_Qwen3.5-4B-Q4_K_M.gguf",
                 gguf_bytes: 3_013_027_808,
+                gguf_sha256: "13c16f426047e2de38cd075bdade4a7bcbc8c774384876f677740cda65f8a983",
             },
         }
     }
@@ -83,6 +86,7 @@ pub struct SemifModelPin {
     pub gguf_revision: &'static str,
     pub gguf_file: &'static str,
     pub gguf_bytes: u64,
+    pub gguf_sha256: &'static str,
 }
 
 impl SemifModelPin {
@@ -315,11 +319,16 @@ fn parse_semif_output(
             .model
             .gguf
             .ok_or(SemifProviderError::MissingGgufIdentity)?;
-        if gguf.file != model.gguf_file || gguf.bytes != model.gguf_bytes || gguf.sha256.len() != 64
+        if gguf.file != model.gguf_file
+            || gguf.bytes != model.gguf_bytes
+            || gguf.sha256 != model.gguf_sha256
         {
             return Err(SemifProviderError::GgufIdentityMismatch);
         }
-        format!("{}+gguf-sha256:{}", model.source_revision, gguf.sha256)
+        format!(
+            "{}+gguf-sha256:{}",
+            model.source_revision, model.gguf_sha256
+        )
     } else {
         model.source_revision.to_string()
     };
@@ -1091,6 +1100,8 @@ mod tests {
             assert_eq!(pin.source_revision.len(), 40);
             assert_eq!(pin.gguf_revision.len(), 40);
             assert!(pin.gguf_bytes > 0);
+            assert_eq!(pin.gguf_sha256.len(), 64);
+            assert!(pin.gguf_sha256.chars().all(|character| character.is_ascii_hexdigit()));
             assert!(pin.gguf_url().contains(pin.gguf_revision));
         }
     }
@@ -1100,8 +1111,12 @@ mod tests {
         let authorized = request();
         let pin = SemifModelTier::Phone.pin();
         let output = format!(
-            r#"{{"id":"decision:1","option_ids":["supports","contradicts","unknown"],"probabilities":[0.7,0.2,0.1],"prompt_sha256":"abc123","model":{{"source":"{}","revision":"{}","gguf":{{"file":"{}","bytes":{},"sha256":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"}}}},"readout":"native-full-vocabulary-last-position"}}"#,
-            pin.source, pin.source_revision, pin.gguf_file, pin.gguf_bytes
+            r#"{{"id":"decision:1","option_ids":["supports","contradicts","unknown"],"probabilities":[0.7,0.2,0.1],"prompt_sha256":"abc123","model":{{"source":"{}","revision":"{}","gguf":{{"file":"{}","bytes":{},"sha256":"{}"}}}},"readout":"native-full-vocabulary-last-position"}}"#,
+            pin.source,
+            pin.source_revision,
+            pin.gguf_file,
+            pin.gguf_bytes,
+            pin.gguf_sha256
         );
 
         let receipt = parse_semif_output(authorized.request(), pin, "llamacpp", &output).unwrap();
@@ -1112,6 +1127,21 @@ mod tests {
         assert_eq!(receipt.runtime(), "llamacpp");
         assert_eq!(receipt.selected_option(), "supports");
         assert!(receipt.model_revision().contains("gguf-sha256:"));
+    }
+
+    #[test]
+    fn rejects_gguf_digest_drift_even_when_file_and_size_match() {
+        let authorized = request();
+        let pin = SemifModelTier::Phone.pin();
+        let output = format!(
+            r#"{{"id":"decision:1","option_ids":["supports","contradicts","unknown"],"probabilities":[0.7,0.2,0.1],"prompt_sha256":"abc123","model":{{"source":"{}","revision":"{}","gguf":{{"file":"{}","bytes":{},"sha256":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"}}}},"readout":"native-full-vocabulary-last-position"}}"#,
+            pin.source, pin.source_revision, pin.gguf_file, pin.gguf_bytes
+        );
+
+        assert_eq!(
+            parse_semif_output(authorized.request(), pin, "llamacpp", &output),
+            Err(SemifProviderError::GgufIdentityMismatch)
+        );
     }
 
     #[test]
