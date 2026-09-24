@@ -393,6 +393,14 @@ impl SemifInstallBackend {
             Self::LlamaCpp => ".[llamacpp]",
         }
     }
+
+    fn import_probe(self) -> &'static str {
+        match self {
+            Self::Torch => "import torch",
+            Self::Mlx => "import mlx.core; import mlx_lm",
+            Self::LlamaCpp => "import llama_cpp",
+        }
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -477,7 +485,10 @@ fn write_setup_receipt(
 }
 
 pub fn semif_install_is_ready(directory: &Path, backend: SemifInstallBackend) -> bool {
-    venv_is_usable(&venv_python(directory))
+    let interpreter = venv_python(directory);
+    checkout_matches_pin(directory)
+        && venv_is_usable(&interpreter)
+        && backend_is_usable(&interpreter, backend)
         && semif_score_path(directory).is_file()
         && setup_receipt_matches(directory, backend)
 }
@@ -733,6 +744,64 @@ fn venv_is_usable(interpreter: &Path) -> bool {
         .is_ok_and(|output| output.status.success());
 
     pip_available && dependencies_consistent
+}
+
+fn backend_is_usable(interpreter: &Path, backend: SemifInstallBackend) -> bool {
+    Command::new(interpreter)
+        .arg("-c")
+        .arg(backend.import_probe())
+        .output()
+        .is_ok_and(|output| output.status.success())
+}
+
+fn checkout_matches_pin(directory: &Path) -> bool {
+    if !directory.join(".git").is_dir() {
+        return false;
+    }
+
+    let origin = local_command_output(
+        Command::new("git")
+            .arg("-C")
+            .arg(directory)
+            .arg("remote")
+            .arg("get-url")
+            .arg("origin"),
+    );
+    let head = local_command_output(
+        Command::new("git")
+            .arg("-C")
+            .arg(directory)
+            .arg("rev-parse")
+            .arg("HEAD"),
+    );
+    let status = local_command_output(
+        Command::new("git")
+            .arg("-C")
+            .arg(directory)
+            .arg("status")
+            .arg("--porcelain")
+            .arg("--untracked-files=all"),
+    );
+
+    match (origin, head, status) {
+        (Some(origin), Some(head), Some(status)) => checkout_state_matches_pin(&origin, &head, &status),
+        _ => false,
+    }
+}
+
+fn checkout_state_matches_pin(origin: &str, head: &str, status: &str) -> bool {
+    normalize_repository_url(origin) == normalize_repository_url(SEMIF_REPOSITORY)
+        && head.trim() == SEMIF_SOURCE_REVISION
+        && status.trim().is_empty()
+}
+
+fn local_command_output(command: &mut Command) -> Option<String> {
+    let output = command.output().ok()?;
+    output.status.success().then(|| {
+        String::from_utf8_lossy(&output.stdout)
+            .trim()
+            .to_string()
+    })
 }
 
 fn revision_exists(directory: &Path) -> Result<bool, SemifSetupError> {
@@ -1049,6 +1118,43 @@ mod tests {
         assert_eq!(
             partial_model_path(SemifModelTier::Phone, root),
             root.join("Qwen3-0.6B-Q8_0.gguf.part")
+        );
+    }
+
+    #[test]
+    fn checkout_readiness_requires_exact_clean_pinned_state() {
+        assert!(checkout_state_matches_pin(
+            SEMIF_REPOSITORY,
+            SEMIF_SOURCE_REVISION,
+            ""
+        ));
+        assert!(!checkout_state_matches_pin(
+            SEMIF_REPOSITORY,
+            "0000000000000000000000000000000000000000",
+            ""
+        ));
+        assert!(!checkout_state_matches_pin(
+            SEMIF_REPOSITORY,
+            SEMIF_SOURCE_REVISION,
+            " M src/semif_phase1/cli.py"
+        ));
+        assert!(!checkout_state_matches_pin(
+            "https://example.invalid/semif.git",
+            SEMIF_SOURCE_REVISION,
+            ""
+        ));
+    }
+
+    #[test]
+    fn backend_readiness_probes_backend_specific_imports() {
+        assert_eq!(SemifInstallBackend::Torch.import_probe(), "import torch");
+        assert_eq!(
+            SemifInstallBackend::Mlx.import_probe(),
+            "import mlx.core; import mlx_lm"
+        );
+        assert_eq!(
+            SemifInstallBackend::LlamaCpp.import_probe(),
+            "import llama_cpp"
         );
     }
 
