@@ -784,7 +784,9 @@ fn checkout_matches_pin(directory: &Path) -> bool {
     );
 
     match (origin, head, status) {
-        (Some(origin), Some(head), Some(status)) => checkout_state_matches_pin(&origin, &head, &status),
+        (Some(origin), Some(head), Some(status)) => {
+            checkout_state_matches_pin(&origin, &head, &status)
+        }
         _ => false,
     }
 }
@@ -797,11 +799,10 @@ fn checkout_state_matches_pin(origin: &str, head: &str, status: &str) -> bool {
 
 fn local_command_output(command: &mut Command) -> Option<String> {
     let output = command.output().ok()?;
-    output.status.success().then(|| {
-        String::from_utf8_lossy(&output.stdout)
-            .trim()
-            .to_string()
-    })
+    output
+        .status
+        .success()
+        .then(|| String::from_utf8_lossy(&output.stdout).trim().to_string())
 }
 
 fn revision_exists(directory: &Path) -> Result<bool, SemifSetupError> {
