@@ -21,8 +21,8 @@ use semantic_decision::{
     CONTRADICTS_OPTION_ID, SUPPORTS_OPTION_ID, UNKNOWN_OPTION_ID,
 };
 use semif_provider::{
-    bootstrap_semif, download_model, model_is_ready, model_path, semif_score_path, SemifBackend,
-    SemifInstallBackend, SemifModelTier, SemifProvider,
+    bootstrap_semif, download_model, model_is_ready, model_path, semif_install_is_ready,
+    semif_score_path, SemifBackend, SemifInstallBackend, SemifModelTier, SemifProvider,
 };
 
 const SEMIF_DIR: &str = ".local/semif";
@@ -191,13 +191,11 @@ fn doctor(tier: SemifModelTier) -> Result<(), Box<dyn Error>> {
     println!("  curl: {}", availability("curl"));
 
     let executable = semif_score_path(&paths.semif);
+    let semif_ready =
+        semif_install_is_ready(&paths.semif, SemifInstallBackend::LlamaCpp);
     println!(
         "  SemIf: {} ({})",
-        if executable.is_file() {
-            "ready"
-        } else {
-            "not installed"
-        },
+        if semif_ready { "ready" } else { "not ready" },
         executable.display()
     );
     match model_is_ready(tier, &paths.models) {
@@ -210,7 +208,7 @@ fn doctor(tier: SemifModelTier) -> Result<(), Box<dyn Error>> {
         Err(error) => println!("  model {}: invalid ({error})", tier.as_str()),
     }
 
-    if !executable.is_file() || !model_is_ready(tier, &paths.models).unwrap_or(false) {
+    if !semif_ready || !model_is_ready(tier, &paths.models).unwrap_or(false) {
         println!();
         println!(
             "Run cargo run -- setup {} to prepare local semantic scoring.",
@@ -222,8 +220,9 @@ fn doctor(tier: SemifModelTier) -> Result<(), Box<dyn Error>> {
 
 fn semantic_demo(tier: SemifModelTier) -> Result<(), Box<dyn Error>> {
     let paths = LocalPaths::default();
-    let executable = semif_score_path(&paths.semif);
-    if !executable.is_file() || !model_is_ready(tier, &paths.models)? {
+    if !semif_install_is_ready(&paths.semif, SemifInstallBackend::LlamaCpp)
+        || !model_is_ready(tier, &paths.models)?
+    {
         return Err(app_error(format!(
             "local SemIf is not ready; run cargo run -- setup {} first",
             tier.as_str()
