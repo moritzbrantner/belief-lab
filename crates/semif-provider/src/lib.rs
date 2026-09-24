@@ -1062,10 +1062,7 @@ mod tests {
 
         write_setup_receipt(&root, SemifInstallBackend::LlamaCpp).unwrap();
 
-        assert!(setup_receipt_matches(
-            &root,
-            SemifInstallBackend::LlamaCpp
-        ));
+        assert!(setup_receipt_matches(&root, SemifInstallBackend::LlamaCpp));
         assert!(!setup_receipt_matches(&root, SemifInstallBackend::Torch));
 
         fs::write(
@@ -1075,10 +1072,7 @@ mod tests {
             ),
         )
         .unwrap();
-        assert!(!setup_receipt_matches(
-            &root,
-            SemifInstallBackend::LlamaCpp
-        ));
+        assert!(!setup_receipt_matches(&root, SemifInstallBackend::LlamaCpp));
     }
 
     #[test]
@@ -1088,10 +1082,7 @@ mod tests {
         fs::create_dir(&root).unwrap();
         fs::write(setup_receipt_path(&root), b"{not json").unwrap();
 
-        assert!(!setup_receipt_matches(
-            &root,
-            SemifInstallBackend::LlamaCpp
-        ));
+        assert!(!setup_receipt_matches(&root, SemifInstallBackend::LlamaCpp));
     }
 
     #[test]
