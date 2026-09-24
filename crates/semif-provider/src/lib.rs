@@ -1,16 +1,20 @@
 use semantic_decision::{
     AuthorizedDecisionRequest, DecisionEngineError, SemanticDecisionEngine, SemanticDecisionReceipt,
 };
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use serde_json::json;
 use std::collections::BTreeMap;
 use std::env;
 use std::fs;
+use std::io::Write;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 
 pub const SEMIF_REPOSITORY: &str = "https://github.com/TheoLeeCJ/SemIf.git";
 pub const SEMIF_SOURCE_REVISION: &str = "1f2dea3e25379f9dfc98cb83c324f00ab5deda37";
+
+const SEMIF_SETUP_RECEIPT_SCHEMA_VERSION: u32 = 1;
+const SEMIF_SETUP_RECEIPT_SUFFIX: &str = "belief-lab-setup.json";
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum SemifModelTier {
@@ -47,6 +51,7 @@ impl SemifModelTier {
                 gguf_revision: "23749fefcc72300e3a2ad315e1317431b06b590a",
                 gguf_file: "Qwen3-0.6B-Q8_0.gguf",
                 gguf_bytes: 639_446_688,
+                gguf_sha256: "9465e63a22add5354d9bb4b99e90117043c7124007664907259bd16d043bb031",
             },
             Self::Desktop => SemifModelPin {
                 tier: self,
@@ -56,6 +61,7 @@ impl SemifModelTier {
                 gguf_revision: "2079a22f3beaa4e306449978533478fe0522f4b3",
                 gguf_file: "MiniCPM5-2B-Q4_K_M.gguf",
                 gguf_bytes: 1_561_318_368,
+                gguf_sha256: "ec2d5801640099e97d8d7e8003ad4d81f336e757811f03a26173dddf386602fd",
             },
             Self::HighMemory => SemifModelPin {
                 tier: self,
@@ -65,6 +71,7 @@ impl SemifModelTier {
                 gguf_revision: "4168f45a16a1290d65a4ec0fa312ae917a4c15d6",
                 gguf_file: "Qwen_Qwen3.5-4B-Q4_K_M.gguf",
                 gguf_bytes: 3_013_027_808,
+                gguf_sha256: "13c16f426047e2de38cd075bdade4a7bcbc8c774384876f677740cda65f8a983",
             },
         }
     }
@@ -79,6 +86,7 @@ pub struct SemifModelPin {
     pub gguf_revision: &'static str,
     pub gguf_file: &'static str,
     pub gguf_bytes: u64,
+    pub gguf_sha256: &'static str,
 }
 
 impl SemifModelPin {
@@ -311,11 +319,16 @@ fn parse_semif_output(
             .model
             .gguf
             .ok_or(SemifProviderError::MissingGgufIdentity)?;
-        if gguf.file != model.gguf_file || gguf.bytes != model.gguf_bytes || gguf.sha256.len() != 64
+        if gguf.file != model.gguf_file
+            || gguf.bytes != model.gguf_bytes
+            || gguf.sha256 != model.gguf_sha256
         {
             return Err(SemifProviderError::GgufIdentityMismatch);
         }
-        format!("{}+gguf-sha256:{}", model.source_revision, gguf.sha256)
+        format!(
+            "{}+gguf-sha256:{}",
+            model.source_revision, model.gguf_sha256
+        )
     } else {
         model.source_revision.to_string()
     };
@@ -380,6 +393,14 @@ impl SemifInstallBackend {
             Self::LlamaCpp => ".[llamacpp]",
         }
     }
+
+    fn import_probe(self) -> &'static str {
+        match self {
+            Self::Torch => "import torch",
+            Self::Mlx => "import mlx.core; import mlx_lm",
+            Self::LlamaCpp => "import llama_cpp",
+        }
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -387,6 +408,89 @@ pub struct SemifSetupOutcome {
     pub cloned: bool,
     pub venv_created: bool,
     pub executable: PathBuf,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct SemifSetupReceipt {
+    schema_version: u32,
+    semif_repository: String,
+    semif_revision: String,
+    backend: String,
+}
+
+impl SemifSetupReceipt {
+    fn new(backend: SemifInstallBackend) -> Self {
+        Self {
+            schema_version: SEMIF_SETUP_RECEIPT_SCHEMA_VERSION,
+            semif_repository: SEMIF_REPOSITORY.to_string(),
+            semif_revision: SEMIF_SOURCE_REVISION.to_string(),
+            backend: backend.as_str().to_string(),
+        }
+    }
+}
+
+fn setup_receipt_path(directory: &Path) -> PathBuf {
+    let directory_name = directory
+        .file_name()
+        .and_then(|name| name.to_str())
+        .unwrap_or("semif");
+    directory.with_file_name(format!("{directory_name}.{SEMIF_SETUP_RECEIPT_SUFFIX}"))
+}
+
+fn setup_receipt_matches(directory: &Path, backend: SemifInstallBackend) -> bool {
+    fs::read_to_string(setup_receipt_path(directory))
+        .ok()
+        .and_then(|contents| serde_json::from_str::<SemifSetupReceipt>(&contents).ok())
+        .is_some_and(|receipt| receipt == SemifSetupReceipt::new(backend))
+}
+
+fn write_setup_receipt(
+    directory: &Path,
+    backend: SemifInstallBackend,
+) -> Result<(), SemifSetupError> {
+    let path = setup_receipt_path(directory);
+    let parent = path
+        .parent()
+        .filter(|parent| !parent.as_os_str().is_empty())
+        .unwrap_or_else(|| Path::new("."));
+    let mut temporary = tempfile::Builder::new()
+        .prefix(".belief-lab-semif-setup-")
+        .tempfile_in(parent)
+        .map_err(|error| SemifSetupError::Io {
+            context: format!("create setup receipt beside {}", path.display()),
+            message: error.to_string(),
+        })?;
+
+    serde_json::to_writer_pretty(temporary.as_file_mut(), &SemifSetupReceipt::new(backend))
+        .map_err(|error| SemifSetupError::Io {
+            context: format!("serialize {}", path.display()),
+            message: error.to_string(),
+        })?;
+    temporary
+        .as_file_mut()
+        .write_all(b"\n")
+        .and_then(|()| temporary.as_file_mut().sync_all())
+        .map_err(|error| SemifSetupError::Io {
+            context: format!("write {}", path.display()),
+            message: error.to_string(),
+        })?;
+    temporary
+        .persist(&path)
+        .map_err(|error| SemifSetupError::Io {
+            context: format!("replace {}", path.display()),
+            message: error.error.to_string(),
+        })?;
+    Ok(())
+}
+
+pub fn semif_install_is_ready(directory: &Path, backend: SemifInstallBackend) -> bool {
+    let interpreter = venv_python(directory);
+    checkout_matches_pin(directory)
+        && venv_is_usable(&interpreter)
+        && backend_is_usable(&interpreter, backend)
+        && semif_score_path(directory).is_file()
+        && setup_receipt_matches(directory, backend)
 }
 
 pub fn bootstrap_semif(
@@ -462,6 +566,7 @@ pub fn bootstrap_semif(
     )?;
     ensure_clean_checkout(directory)?;
 
+    let installation_ready = semif_install_is_ready(directory, backend);
     let interpreter = venv_python(directory);
     let venv_created = if venv_is_usable(&interpreter) {
         false
@@ -484,20 +589,23 @@ pub fn bootstrap_semif(
             message: error.to_string(),
         })?;
 
-    run_command(
-        Command::new(&interpreter)
-            .current_dir(directory)
-            .arg("-m")
-            .arg("pip")
-            .arg("install")
-            .arg("-e")
-            .arg(backend.pip_extra()),
-        "install pinned SemIf",
-    )?;
-
     let executable = semif_score_path(directory);
-    if !executable.is_file() {
-        return Err(SemifSetupError::MissingExecutable(executable));
+    if !installation_ready || venv_created {
+        run_command(
+            Command::new(&interpreter)
+                .current_dir(directory)
+                .arg("-m")
+                .arg("pip")
+                .arg("install")
+                .arg("-e")
+                .arg(backend.pip_extra()),
+            "install pinned SemIf",
+        )?;
+
+        if !executable.is_file() {
+            return Err(SemifSetupError::MissingExecutable(executable));
+        }
+        write_setup_receipt(directory, backend)?;
     }
 
     Ok(SemifSetupOutcome {
@@ -618,13 +726,83 @@ fn ensure_clean_checkout(directory: &Path) -> Result<(), SemifSetupError> {
 }
 
 fn venv_is_usable(interpreter: &Path) -> bool {
-    interpreter.is_file()
-        && Command::new(interpreter)
-            .arg("-m")
-            .arg("pip")
-            .arg("--version")
-            .output()
-            .is_ok_and(|output| output.status.success())
+    if !interpreter.is_file() {
+        return false;
+    }
+
+    let pip_available = Command::new(interpreter)
+        .arg("-m")
+        .arg("pip")
+        .arg("--version")
+        .output()
+        .is_ok_and(|output| output.status.success());
+    let dependencies_consistent = Command::new(interpreter)
+        .arg("-m")
+        .arg("pip")
+        .arg("check")
+        .output()
+        .is_ok_and(|output| output.status.success());
+
+    pip_available && dependencies_consistent
+}
+
+fn backend_is_usable(interpreter: &Path, backend: SemifInstallBackend) -> bool {
+    Command::new(interpreter)
+        .arg("-c")
+        .arg(backend.import_probe())
+        .output()
+        .is_ok_and(|output| output.status.success())
+}
+
+fn checkout_matches_pin(directory: &Path) -> bool {
+    if !directory.join(".git").is_dir() {
+        return false;
+    }
+
+    let origin = local_command_output(
+        Command::new("git")
+            .arg("-C")
+            .arg(directory)
+            .arg("remote")
+            .arg("get-url")
+            .arg("origin"),
+    );
+    let head = local_command_output(
+        Command::new("git")
+            .arg("-C")
+            .arg(directory)
+            .arg("rev-parse")
+            .arg("HEAD"),
+    );
+    let status = local_command_output(
+        Command::new("git")
+            .arg("-C")
+            .arg(directory)
+            .arg("status")
+            .arg("--porcelain")
+            .arg("--untracked-files=all"),
+    );
+
+    match (origin, head, status) {
+        (Some(origin), Some(head), Some(status)) => {
+            checkout_state_matches_pin(&origin, &head, &status)
+        }
+        _ => false,
+    }
+}
+
+fn checkout_state_matches_pin(origin: &str, head: &str, status: &str) -> bool {
+    normalize_repository_url(origin) == normalize_repository_url(SEMIF_REPOSITORY)
+        && head.trim() == SEMIF_SOURCE_REVISION
+        && status.trim().is_empty()
+}
+
+fn local_command_output(command: &mut Command) -> Option<String> {
+    let output = command.output().ok()?;
+    output
+        .status
+        .success()
+        .then(|| String::from_utf8_lossy(&output.stdout).trim().to_string())
 }
 
 fn revision_exists(directory: &Path) -> Result<bool, SemifSetupError> {
@@ -945,11 +1123,95 @@ mod tests {
     }
 
     #[test]
+    fn checkout_readiness_requires_exact_clean_pinned_state() {
+        assert!(checkout_state_matches_pin(
+            SEMIF_REPOSITORY,
+            SEMIF_SOURCE_REVISION,
+            ""
+        ));
+        assert!(!checkout_state_matches_pin(
+            SEMIF_REPOSITORY,
+            "0000000000000000000000000000000000000000",
+            ""
+        ));
+        assert!(!checkout_state_matches_pin(
+            SEMIF_REPOSITORY,
+            SEMIF_SOURCE_REVISION,
+            " M src/semif_phase1/cli.py"
+        ));
+        assert!(!checkout_state_matches_pin(
+            "https://example.invalid/semif.git",
+            SEMIF_SOURCE_REVISION,
+            ""
+        ));
+    }
+
+    #[test]
+    fn backend_readiness_probes_backend_specific_imports() {
+        assert_eq!(SemifInstallBackend::Torch.import_probe(), "import torch");
+        assert_eq!(
+            SemifInstallBackend::Mlx.import_probe(),
+            "import mlx.core; import mlx_lm"
+        );
+        assert_eq!(
+            SemifInstallBackend::LlamaCpp.import_probe(),
+            "import llama_cpp"
+        );
+    }
+
+    #[test]
+    fn setup_receipt_is_outside_the_semif_checkout() {
+        let root = Path::new(".local/semif");
+
+        assert_eq!(
+            setup_receipt_path(root),
+            Path::new(".local/semif.belief-lab-setup.json")
+        );
+        assert!(!setup_receipt_path(root).starts_with(root));
+    }
+
+    #[test]
+    fn setup_receipt_binds_revision_and_backend() {
+        let temp = tempfile::tempdir().unwrap();
+        let root = temp.path().join("semif");
+        fs::create_dir(&root).unwrap();
+
+        write_setup_receipt(&root, SemifInstallBackend::LlamaCpp).unwrap();
+
+        assert!(setup_receipt_matches(&root, SemifInstallBackend::LlamaCpp));
+        assert!(!setup_receipt_matches(&root, SemifInstallBackend::Torch));
+
+        fs::write(
+            setup_receipt_path(&root),
+            format!(
+                r#"{{"schemaVersion":1,"semifRepository":"{SEMIF_REPOSITORY}","semifRevision":"stale","backend":"llamacpp"}}"#
+            ),
+        )
+        .unwrap();
+        assert!(!setup_receipt_matches(&root, SemifInstallBackend::LlamaCpp));
+    }
+
+    #[test]
+    fn invalid_setup_receipt_is_not_reused() {
+        let temp = tempfile::tempdir().unwrap();
+        let root = temp.path().join("semif");
+        fs::create_dir(&root).unwrap();
+        fs::write(setup_receipt_path(&root), b"{not json").unwrap();
+
+        assert!(!setup_receipt_matches(&root, SemifInstallBackend::LlamaCpp));
+    }
+
+    #[test]
     fn catalog_uses_immutable_semif_model_revisions() {
         for pin in model_catalog() {
             assert_eq!(pin.source_revision.len(), 40);
             assert_eq!(pin.gguf_revision.len(), 40);
             assert!(pin.gguf_bytes > 0);
+            assert_eq!(pin.gguf_sha256.len(), 64);
+            assert!(pin
+                .gguf_sha256
+                .chars()
+                .all(|character| character.is_ascii_hexdigit()));
             assert!(pin.gguf_url().contains(pin.gguf_revision));
         }
     }
@@ -959,8 +1221,8 @@ mod tests {
         let authorized = request();
         let pin = SemifModelTier::Phone.pin();
         let output = format!(
-            r#"{{"id":"decision:1","option_ids":["supports","contradicts","unknown"],"probabilities":[0.7,0.2,0.1],"prompt_sha256":"abc123","model":{{"source":"{}","revision":"{}","gguf":{{"file":"{}","bytes":{},"sha256":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"}}}},"readout":"native-full-vocabulary-last-position"}}"#,
-            pin.source, pin.source_revision, pin.gguf_file, pin.gguf_bytes
+            r#"{{"id":"decision:1","option_ids":["supports","contradicts","unknown"],"probabilities":[0.7,0.2,0.1],"prompt_sha256":"abc123","model":{{"source":"{}","revision":"{}","gguf":{{"file":"{}","bytes":{},"sha256":"{}"}}}},"readout":"native-full-vocabulary-last-position"}}"#,
+            pin.source, pin.source_revision, pin.gguf_file, pin.gguf_bytes, pin.gguf_sha256
         );
 
         let receipt = parse_semif_output(authorized.request(), pin, "llamacpp", &output).unwrap();
@@ -971,6 +1233,21 @@ mod tests {
         assert_eq!(receipt.runtime(), "llamacpp");
         assert_eq!(receipt.selected_option(), "supports");
         assert!(receipt.model_revision().contains("gguf-sha256:"));
+    }
+
+    #[test]
+    fn rejects_gguf_digest_drift_even_when_file_and_size_match() {
+        let authorized = request();
+        let pin = SemifModelTier::Phone.pin();
+        let output = format!(
+            r#"{{"id":"decision:1","option_ids":["supports","contradicts","unknown"],"probabilities":[0.7,0.2,0.1],"prompt_sha256":"abc123","model":{{"source":"{}","revision":"{}","gguf":{{"file":"{}","bytes":{},"sha256":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"}}}},"readout":"native-full-vocabulary-last-position"}}"#,
+            pin.source, pin.source_revision, pin.gguf_file, pin.gguf_bytes
+        );
+
+        assert_eq!(
+            parse_semif_output(authorized.request(), pin, "llamacpp", &output),
+            Err(SemifProviderError::GgufIdentityMismatch)
+        );
     }
 
     #[test]
