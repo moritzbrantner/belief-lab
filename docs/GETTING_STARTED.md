@@ -77,8 +77,8 @@ Setup is designed to be rerun safely:
 - the checkout is returned to the exact pinned revision;
 - a healthy virtual environment is reused, while a partial/broken virtual environment is recreated with `venv --clear`;
 - after a successful package install, Belief Lab records the exact SemIf revision and selected backend in an ignored setup receipt beside the checkout;
-- when that receipt, the virtual environment, and the `semif-score` executable still agree, a repeated `setup` skips `pip install` entirely;
-- a missing, corrupt, stale-revision, or different-backend receipt triggers package repair rather than silent reuse;
+- when the checkout is still clean at the exact pinned revision, the receipt matches, the selected backend imports successfully, the virtual environment passes `pip check`, and the `semif-score` executable exists, a repeated `setup` skips `pip install` entirely;
+- a moved/dirty checkout, missing backend extra, missing/corrupt receipt, stale revision, or different backend is rejected or repaired rather than silently reused;
 - a completed model is reused after exact-size validation;
 - a partial model download is resumed;
 - an incomplete final model file is moved back to the partial-download path and resumed.
