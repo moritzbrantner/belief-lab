@@ -191,8 +191,7 @@ fn doctor(tier: SemifModelTier) -> Result<(), Box<dyn Error>> {
     println!("  curl: {}", availability("curl"));
 
     let executable = semif_score_path(&paths.semif);
-    let semif_ready =
-        semif_install_is_ready(&paths.semif, SemifInstallBackend::LlamaCpp);
+    let semif_ready = semif_install_is_ready(&paths.semif, SemifInstallBackend::LlamaCpp);
     println!(
         "  SemIf: {} ({})",
         if semif_ready { "ready" } else { "not ready" },
