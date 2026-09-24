@@ -75,7 +75,10 @@ Setup is designed to be rerun safely:
 - its origin must still be the expected upstream repository;
 - a dirty checkout is rejected rather than silently installing modified code under the pinned revision;
 - the checkout is returned to the exact pinned revision;
-- a usable virtual environment is reused, while a partial/broken virtual environment is recreated with `venv --clear`;
+- a healthy virtual environment is reused, while a partial/broken virtual environment is recreated with `venv --clear`;
+- after a successful package install, Belief Lab records the exact SemIf revision and selected backend in an ignored setup receipt beside the checkout;
+- when that receipt, the virtual environment, and the `semif-score` executable still agree, a repeated `setup` skips `pip install` entirely;
+- a missing, corrupt, stale-revision, or different-backend receipt triggers package repair rather than silent reuse;
 - a completed model is reused after exact-size validation;
 - a partial model download is resumed;
 - an incomplete final model file is moved back to the partial-download path and resumed.
@@ -83,6 +86,8 @@ Setup is designed to be rerun safely:
 If `.local/semif` exists but is not the expected git checkout, setup stops rather than deleting or overwriting it.
 
 If a model file has an unexpected size and cannot be resumed into the pinned artifact, setup reports the exact path and expected size instead of silently accepting it.
+
+Once the pinned checkout, virtual environment, setup receipt, and model are present, rerunning `cargo run -- setup [tier]` does not need the package index or model host. The setup path remains local unless one of those declared inputs needs acquisition or repair.
 
 ## Commands
 
