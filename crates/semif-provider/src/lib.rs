@@ -1101,7 +1101,10 @@ mod tests {
             assert_eq!(pin.gguf_revision.len(), 40);
             assert!(pin.gguf_bytes > 0);
             assert_eq!(pin.gguf_sha256.len(), 64);
-            assert!(pin.gguf_sha256.chars().all(|character| character.is_ascii_hexdigit()));
+            assert!(pin
+                .gguf_sha256
+                .chars()
+                .all(|character| character.is_ascii_hexdigit()));
             assert!(pin.gguf_url().contains(pin.gguf_revision));
         }
     }
@@ -1112,11 +1115,7 @@ mod tests {
         let pin = SemifModelTier::Phone.pin();
         let output = format!(
             r#"{{"id":"decision:1","option_ids":["supports","contradicts","unknown"],"probabilities":[0.7,0.2,0.1],"prompt_sha256":"abc123","model":{{"source":"{}","revision":"{}","gguf":{{"file":"{}","bytes":{},"sha256":"{}"}}}},"readout":"native-full-vocabulary-last-position"}}"#,
-            pin.source,
-            pin.source_revision,
-            pin.gguf_file,
-            pin.gguf_bytes,
-            pin.gguf_sha256
+            pin.source, pin.source_revision, pin.gguf_file, pin.gguf_bytes, pin.gguf_sha256
         );
 
         let receipt = parse_semif_output(authorized.request(), pin, "llamacpp", &output).unwrap();
