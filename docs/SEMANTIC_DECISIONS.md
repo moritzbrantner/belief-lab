@@ -65,6 +65,6 @@ Every accepted result retains:
 - prompt SHA-256 and readout identity;
 - complete option-score map and selected option.
 
-For the llama.cpp backend, SemIf computes the local GGUF SHA-256 at load time. `semif-provider` requires the reported file name/size to match the pinned artifact and folds that SHA-256 into the stored model revision. This means an explanation identifies the actual quantized file that produced a judgment.
+For the llama.cpp backend, SemIf computes the local GGUF SHA-256 at load time. `semif-provider` requires the reported file name, byte size, and SHA-256 to match the exact pinned artifact before accepting the result, then folds the pinned digest into the stored model revision. A same-sized substituted GGUF therefore cannot acquire valid Belief Lab provenance merely by reporting an arbitrary digest.
 
 `belief-store::insert_semantic_judgment` persists this provider provenance beside the judgment. `explain_belief` returns semantic-decision provenance for selected semantic judgments, preserving the chain from belief back through inference, model decision, evidence, and producer revisions.
