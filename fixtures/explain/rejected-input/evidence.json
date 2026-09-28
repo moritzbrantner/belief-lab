@@ -1,0 +1,32 @@
+{
+  "schema": "belief_evidence_interchange",
+  "schemaVersion": 1,
+  "exporter": {
+    "name": "youtube-corpus",
+    "revision": "git:youtube-corpus-fixture"
+  },
+  "revision": "batch:rejected-interchange:v1",
+  "evidence": [
+    {
+      "id": "evidence:transcript:1",
+      "subject": "corpus-person:1",
+      "class": "transcript",
+      "familyId": "family:utterance:1",
+      "source": {
+        "repository": "youtube-corpus",
+        "scopeId": "video:1",
+        "recordId": "transcript-segment:1",
+        "revision": "sha256:transcript-segment-1-v1"
+      },
+      "producer": {
+        "name": "audio-analysis",
+        "revision": "git:audio-analysis-fixture",
+        "model": "whisper"
+      },
+      "score": {
+        "value": 0.94,
+        "semantics": "model_confidence"
+      }
+    }
+  ]
+}

@@ -1,0 +1,333 @@
+{
+  "report": "belief_explain",
+  "report_version": 1,
+  "outcome": "explained",
+  "policy": {
+    "profile": "semantic_research",
+    "settings": {
+      "BELIEF_POLICY_PROFILE": "semantic_research"
+    }
+  },
+  "rejection": null,
+  "batch": {
+    "schema": "belief_evidence_interchange@1",
+    "exporter": {
+      "name": "youtube-corpus",
+      "revision": "git:youtube-corpus-fixture"
+    },
+    "revision": "batch:multimodal-gates:v1",
+    "evidence": [
+      {
+        "id": "evidence:face-track:1",
+        "class": "face_track_reference",
+        "family": "family:face-track:1",
+        "subject": "corpus-person:1",
+        "score": {
+          "value": 0.82,
+          "semantics": "similarity"
+        },
+        "source": {
+          "repository": "youtube-corpus",
+          "scope_id": "video:1",
+          "record_id": "face-track:1",
+          "revision": "sha256:face-track-1-v1"
+        },
+        "producer": {
+          "name": "visual-analysis",
+          "revision": "git:visual-analysis-fixture",
+          "model": "face-tracking",
+          "config_hash": null
+        },
+        "parents": [],
+        "admission": {
+          "admitted": false,
+          "admitted_purposes": [],
+          "denied_purposes": {
+            "corroboration": "evidence class face_track_reference is outside profile semantic_research",
+            "direct_support": "evidence class face_track_reference is outside profile semantic_research",
+            "entity_linking": "evidence class face_track_reference is outside profile semantic_research"
+          },
+          "rejection_reasons": [
+            "evidence class face_track_reference is outside profile semantic_research"
+          ]
+        }
+      },
+      {
+        "id": "evidence:transcript:1",
+        "class": "transcript",
+        "family": "family:utterance:1",
+        "subject": "corpus-person:1",
+        "score": {
+          "value": 0.94,
+          "semantics": "model_confidence"
+        },
+        "source": {
+          "repository": "youtube-corpus",
+          "scope_id": "video:1",
+          "record_id": "transcript-segment:1",
+          "revision": "sha256:transcript-segment-1-v1"
+        },
+        "producer": {
+          "name": "audio-analysis",
+          "revision": "git:audio-analysis-fixture",
+          "model": "whisper",
+          "config_hash": null
+        },
+        "parents": [],
+        "admission": {
+          "admitted": true,
+          "admitted_purposes": [
+            "direct_support",
+            "corroboration"
+          ],
+          "denied_purposes": {
+            "entity_linking": "evidence purpose entity_linking is outside profile semantic_research"
+          },
+          "rejection_reasons": []
+        }
+      },
+      {
+        "id": "evidence:transcript:2",
+        "class": "transcript",
+        "family": "family:utterance:2",
+        "subject": "corpus-person:1",
+        "score": {
+          "value": 0.91,
+          "semantics": "model_confidence"
+        },
+        "source": {
+          "repository": "youtube-corpus",
+          "scope_id": "video:2",
+          "record_id": "transcript-segment:2",
+          "revision": "sha256:transcript-segment-2-v1"
+        },
+        "producer": {
+          "name": "audio-analysis",
+          "revision": "git:audio-analysis-fixture",
+          "model": "whisper",
+          "config_hash": null
+        },
+        "parents": [],
+        "admission": {
+          "admitted": true,
+          "admitted_purposes": [
+            "direct_support",
+            "corroboration"
+          ],
+          "denied_purposes": {
+            "entity_linking": "evidence purpose entity_linking is outside profile semantic_research"
+          },
+          "rejection_reasons": []
+        }
+      },
+      {
+        "id": "evidence:voice-track:1",
+        "class": "voice_track_reference",
+        "family": "family:voice-track:1",
+        "subject": "corpus-person:1",
+        "score": {
+          "value": 0.86,
+          "semantics": "similarity"
+        },
+        "source": {
+          "repository": "youtube-corpus",
+          "scope_id": "video:1",
+          "record_id": "voice-track:1",
+          "revision": "sha256:voice-track-1-v1"
+        },
+        "producer": {
+          "name": "audio-analysis",
+          "revision": "git:audio-analysis-fixture",
+          "model": "speaker-tracking",
+          "config_hash": null
+        },
+        "parents": [],
+        "admission": {
+          "admitted": false,
+          "admitted_purposes": [],
+          "denied_purposes": {
+            "corroboration": "evidence class voice_track_reference is outside profile semantic_research",
+            "direct_support": "evidence class voice_track_reference is outside profile semantic_research",
+            "entity_linking": "evidence class voice_track_reference is outside profile semantic_research"
+          },
+          "rejection_reasons": [
+            "evidence class voice_track_reference is outside profile semantic_research"
+          ]
+        }
+      }
+    ],
+    "import": {
+      "imported": false,
+      "stored": 0,
+      "reason": "evidence evidence:face-track:1 (face_track_reference) is not authorized for import under the active policy; import is all-or-nothing, so 2 rejected of 4 refuses the whole batch"
+    }
+  },
+  "inferences": [
+    {
+      "id": "speaker-on-screen",
+      "class": "descriptive",
+      "proposition": {
+        "subject": "corpus-person:1",
+        "predicate": "speaks_on_screen",
+        "object": "true"
+      },
+      "status": "not_run",
+      "reason": "the evidence batch was not imported",
+      "rule": null,
+      "judgments": [
+        {
+          "id": "judgment:on-screen:1",
+          "outcome": "supports",
+          "confidence": {
+            "value": 0.85,
+            "semantics": "model_confidence"
+          },
+          "correlation_group": "family:utterance:1",
+          "evidence": [
+            {
+              "evidence": "evidence:transcript:1",
+              "purpose": "direct_support"
+            },
+            {
+              "evidence": "evidence:face-track:1",
+              "purpose": "corroboration"
+            }
+          ],
+          "spec": "fixture-judgment@v1",
+          "model_revision": "fixture-judge:v1",
+          "selection": null
+        }
+      ],
+      "authorization": null,
+      "belief": null,
+      "provenance": null
+    },
+    {
+      "id": "face-as-direct-support",
+      "class": "descriptive",
+      "proposition": {
+        "subject": "corpus-person:1",
+        "predicate": "appears_in_video",
+        "object": "video:1"
+      },
+      "status": "not_run",
+      "reason": "the evidence batch was not imported",
+      "rule": null,
+      "judgments": [
+        {
+          "id": "judgment:appears:1",
+          "outcome": "supports",
+          "confidence": {
+            "value": 0.9,
+            "semantics": "model_confidence"
+          },
+          "correlation_group": "family:face-track:1",
+          "evidence": [
+            {
+              "evidence": "evidence:face-track:1",
+              "purpose": "direct_support"
+            }
+          ],
+          "spec": "fixture-judgment@v1",
+          "model_revision": "fixture-judge:v1",
+          "selection": null
+        }
+      ],
+      "authorization": null,
+      "belief": null,
+      "provenance": null
+    },
+    {
+      "id": "across-videos",
+      "class": "preference",
+      "proposition": {
+        "subject": "corpus-person:1",
+        "predicate": "prefers_customization",
+        "object": "true"
+      },
+      "status": "not_run",
+      "reason": "the evidence batch was not imported",
+      "rule": null,
+      "judgments": [
+        {
+          "id": "judgment:across:1",
+          "outcome": "supports",
+          "confidence": {
+            "value": 0.8,
+            "semantics": "model_confidence"
+          },
+          "correlation_group": "family:utterance:1",
+          "evidence": [
+            {
+              "evidence": "evidence:transcript:1",
+              "purpose": "direct_support"
+            }
+          ],
+          "spec": "fixture-judgment@v1",
+          "model_revision": "fixture-judge:v1",
+          "selection": null
+        },
+        {
+          "id": "judgment:across:2",
+          "outcome": "supports",
+          "confidence": {
+            "value": 0.7,
+            "semantics": "model_confidence"
+          },
+          "correlation_group": "family:utterance:2",
+          "evidence": [
+            {
+              "evidence": "evidence:transcript:2",
+              "purpose": "direct_support"
+            }
+          ],
+          "spec": "fixture-judgment@v1",
+          "model_revision": "fixture-judge:v1",
+          "selection": null
+        }
+      ],
+      "authorization": null,
+      "belief": null,
+      "provenance": null
+    },
+    {
+      "id": "corpus-local-link",
+      "class": "local_entity_link",
+      "proposition": {
+        "subject": "corpus-person:1",
+        "predicate": "same_corpus_person_as",
+        "object": "corpus-person:2"
+      },
+      "status": "not_run",
+      "reason": "the evidence batch was not imported",
+      "rule": null,
+      "judgments": [
+        {
+          "id": "judgment:link:1",
+          "outcome": "supports",
+          "confidence": {
+            "value": 0.75,
+            "semantics": "model_confidence"
+          },
+          "correlation_group": "family:voice-track:1",
+          "evidence": [
+            {
+              "evidence": "evidence:face-track:1",
+              "purpose": "entity_linking"
+            },
+            {
+              "evidence": "evidence:voice-track:1",
+              "purpose": "entity_linking"
+            }
+          ],
+          "spec": "fixture-judgment@v1",
+          "model_revision": "fixture-judge:v1",
+          "selection": null
+        }
+      ],
+      "authorization": null,
+      "belief": null,
+      "provenance": null
+    }
+  ]
+}

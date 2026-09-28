@@ -1,0 +1,61 @@
+{
+  "schema": "belief_judgment_script",
+  "schemaVersion": 1,
+  "judgmentSpec": {
+    "name": "fixture-judgment",
+    "revision": "v1"
+  },
+  "modelRevision": "fixture-judge:v1",
+  "inferences": [
+    {
+      "id": "sensitive-trait",
+      "class": "sensitive_trait",
+      "proposition": {
+        "subject": "corpus-person:1",
+        "predicate": "has_religious_affiliation",
+        "object": {
+          "text": "example-affiliation"
+        }
+      },
+      "judgments": [
+        {
+          "id": "judgment:sensitive:1",
+          "outcome": "supports",
+          "modelConfidence": 0.9,
+          "correlationGroup": "family:assertion:1",
+          "evidence": [
+            {
+              "id": "evidence:assertion:1",
+              "purpose": "direct_support"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "real-world-identity",
+      "class": "real_world_identity",
+      "proposition": {
+        "subject": "corpus-person:1",
+        "predicate": "is_real_world_person",
+        "object": {
+          "entity": "person:example-public-figure"
+        }
+      },
+      "judgments": [
+        {
+          "id": "judgment:identity:1",
+          "outcome": "supports",
+          "modelConfidence": 0.9,
+          "correlationGroup": "family:assertion:1",
+          "evidence": [
+            {
+              "id": "evidence:assertion:1",
+              "purpose": "direct_support"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

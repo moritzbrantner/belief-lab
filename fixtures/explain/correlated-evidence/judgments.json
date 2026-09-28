@@ -1,0 +1,72 @@
+{
+  "schema": "belief_judgment_script",
+  "schemaVersion": 1,
+  "judgmentSpec": {
+    "name": "fixture-judgment",
+    "revision": "v1"
+  },
+  "modelRevision": "fixture-judge:v1",
+  "inferences": [
+    {
+      "id": "corpus-person-1:uses-thinkpad",
+      "class": "descriptive",
+      "proposition": {
+        "subject": "corpus-person:1",
+        "predicate": "uses_laptop",
+        "object": {
+          "entity": "product:thinkpad"
+        }
+      },
+      "judgments": [
+        {
+          "id": "judgment:transcript:1",
+          "outcome": "supports",
+          "modelConfidence": 0.9,
+          "correlationGroup": "family:utterance:1",
+          "evidence": [
+            {
+              "id": "evidence:transcript:1",
+              "purpose": "direct_support"
+            }
+          ]
+        },
+        {
+          "id": "judgment:entity:1",
+          "outcome": "supports",
+          "modelConfidence": 0.8,
+          "correlationGroup": "family:utterance:1",
+          "evidence": [
+            {
+              "id": "evidence:entity:1",
+              "purpose": "corroboration"
+            }
+          ]
+        },
+        {
+          "id": "judgment:ocr:1",
+          "outcome": "contradicts",
+          "modelConfidence": 0.6,
+          "correlationGroup": "family:visual-text:1",
+          "evidence": [
+            {
+              "id": "evidence:ocr:1",
+              "purpose": "corroboration"
+            }
+          ]
+        },
+        {
+          "id": "judgment:ocr:2",
+          "outcome": "unknown",
+          "modelConfidence": 0.5,
+          "correlationGroup": "family:visual-text:2",
+          "evidence": [
+            {
+              "id": "evidence:ocr:1",
+              "purpose": "corroboration"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,16 @@
+{
+  "description": "inference-baseline counts at most one judgment per correlation group: the weaker named-entity judgment derived from the same utterance is ignored, and an unknown judgment carries no signal.",
+  "runs": [
+    {
+      "name": "semantic_research",
+      "args": [
+        "evidence.json",
+        "--judgments",
+        "judgments.json",
+        "--profile",
+        "semantic_research"
+      ],
+      "exit": 0
+    }
+  ]
+}

@@ -1,0 +1,36 @@
+{
+  "schema": "belief_judgment_script",
+  "schemaVersion": 1,
+  "judgmentSpec": {
+    "name": "fixture-judgment",
+    "revision": "v1"
+  },
+  "modelRevision": "fixture-judge:v1",
+  "inferences": [
+    {
+      "id": "corpus-person-1:prefers-dark-mode",
+      "class": "preference",
+      "proposition": {
+        "subject": "corpus-person:1",
+        "predicate": "prefers_dark_mode",
+        "object": {
+          "boolean": true
+        }
+      },
+      "judgments": [
+        {
+          "id": "judgment:dark-mode:1",
+          "outcome": "supports",
+          "modelConfidence": 0.9,
+          "correlationGroup": "family:assertion:1",
+          "evidence": [
+            {
+              "id": "evidence:assertion:1",
+              "purpose": "direct_support"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

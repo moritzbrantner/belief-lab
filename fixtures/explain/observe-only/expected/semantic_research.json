@@ -1,0 +1,169 @@
+{
+  "report": "belief_explain",
+  "report_version": 1,
+  "outcome": "explained",
+  "policy": {
+    "profile": "semantic_research",
+    "settings": {
+      "BELIEF_POLICY_PROFILE": "semantic_research"
+    }
+  },
+  "rejection": null,
+  "batch": {
+    "schema": "belief_evidence_interchange@1",
+    "exporter": {
+      "name": "survey-corpus",
+      "revision": "git:survey-corpus-fixture"
+    },
+    "revision": "batch:observe-only:v1",
+    "evidence": [
+      {
+        "id": "evidence:assertion:1",
+        "class": "user_assertion",
+        "family": "family:assertion:1",
+        "subject": "corpus-person:1",
+        "score": null,
+        "source": {
+          "repository": "survey-corpus",
+          "scope_id": "form:1",
+          "record_id": "answer:1",
+          "revision": "sha256:answer-1-v1"
+        },
+        "producer": {
+          "name": "survey-export",
+          "revision": "git:survey-export-fixture",
+          "model": null,
+          "config_hash": null
+        },
+        "parents": [],
+        "admission": {
+          "admitted": true,
+          "admitted_purposes": [
+            "direct_support",
+            "corroboration"
+          ],
+          "denied_purposes": {
+            "entity_linking": "evidence purpose entity_linking is outside profile semantic_research"
+          },
+          "rejection_reasons": []
+        }
+      }
+    ],
+    "import": {
+      "imported": true,
+      "stored": 1,
+      "reason": null
+    }
+  },
+  "inferences": [
+    {
+      "id": "corpus-person-1:prefers-dark-mode",
+      "class": "preference",
+      "proposition": {
+        "subject": "corpus-person:1",
+        "predicate": "prefers_dark_mode",
+        "object": "true"
+      },
+      "status": "derived",
+      "reason": null,
+      "rule": "baseline:preference:v1",
+      "judgments": [
+        {
+          "id": "judgment:dark-mode:1",
+          "outcome": "supports",
+          "confidence": {
+            "value": 0.9,
+            "semantics": "model_confidence"
+          },
+          "correlation_group": "family:assertion:1",
+          "evidence": [
+            {
+              "evidence": "evidence:assertion:1",
+              "purpose": "direct_support"
+            }
+          ],
+          "spec": "fixture-judgment@v1",
+          "model_revision": "fixture-judge:v1",
+          "selection": "selected"
+        }
+      ],
+      "authorization": {
+        "profile": "semantic_research",
+        "inference_class": "preference",
+        "source_scopes": [
+          "survey-corpus/form:1"
+        ],
+        "cross_source_join": false,
+        "evidence_uses": [
+          {
+            "evidence": "evidence:assertion:1",
+            "purpose": "direct_support"
+          }
+        ]
+      },
+      "belief": {
+        "id": "belief:corpus-person-1:prefers-dark-mode",
+        "claim": "claim:corpus-person-1:prefers-dark-mode",
+        "value": 0.95,
+        "semantics": "soft_truth",
+        "meaning": "heuristic soft truth in [0, 1] with 0.5 neutral; not a calibrated posterior probability"
+      },
+      "provenance": {
+        "belief": "belief:corpus-person-1:prefers-dark-mode",
+        "validity": "active",
+        "derivation": {
+          "rule": "baseline:preference:v1",
+          "inference_run": "run:corpus-person-1:prefers-dark-mode",
+          "judgments": [
+            "judgment:dark-mode:1"
+          ],
+          "evidence": [
+            "evidence:assertion:1"
+          ],
+          "claims": []
+        },
+        "claim": {
+          "id": "claim:corpus-person-1:prefers-dark-mode",
+          "validity": "active",
+          "origin": "judgment judgment:dark-mode:1"
+        },
+        "judgments": [
+          {
+            "id": "judgment:dark-mode:1",
+            "validity": "active",
+            "outcome": "supports",
+            "confidence": {
+              "value": 0.9,
+              "semantics": "model_confidence"
+            },
+            "spec": "fixture-judgment@v1",
+            "model_revision": "fixture-judge:v1",
+            "evidence": [
+              "evidence:assertion:1"
+            ]
+          }
+        ],
+        "evidence": [
+          {
+            "id": "evidence:assertion:1",
+            "validity": "active",
+            "class": "user_assertion",
+            "source": {
+              "repository": "survey-corpus",
+              "scope_id": "form:1",
+              "record_id": "answer:1",
+              "revision": "sha256:answer-1-v1"
+            },
+            "producer": {
+              "name": "survey-export",
+              "revision": "git:survey-export-fixture",
+              "model": null,
+              "config_hash": null
+            },
+            "parents": []
+          }
+        ]
+      }
+    }
+  ]
+}

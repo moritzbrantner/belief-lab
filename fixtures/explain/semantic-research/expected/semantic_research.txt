@@ -1,0 +1,27 @@
+Policy profile: semantic_research
+  BELIEF_POLICY_PROFILE=semantic_research
+
+Evidence batch batch:semantic-research:v1 (belief_evidence_interchange@1) exported by youtube-corpus @ git:youtube-corpus-fixture
+  admitted evidence:transcript:1 [transcript] for direct_support, corroboration
+  admitted evidence:entity:1 [named_entity] for direct_support, corroboration
+Import: stored 2 evidence records.
+
+Inference corpus-person-1:prefers-customization [preference]: corpus-person:1 prefers_customization true
+  derived by baseline:preference:v1
+  belief belief:corpus-person-1:prefers-customization = 0.900 soft_truth
+    meaning: heuristic soft truth in [0, 1] with 0.5 neutral; not a calibrated posterior probability
+  judgments:
+    judgment:customization:1 supports 0.800 model_confidence, group family:utterance:1, selected
+      uses evidence:transcript:1 as direct_support, evidence:entity:1 as corroboration
+  authorized under semantic_research for preference; scopes youtube-corpus/video:1; cross-source join no
+  provenance (read back from the store):
+    belief belief:corpus-person-1:prefers-customization [active] <- baseline:preference:v1 run run:corpus-person-1:prefers-customization
+    claim claim:corpus-person-1:prefers-customization [active] <- judgment judgment:customization:1
+    judgment judgment:customization:1 [active] supports 0.800 model_confidence, spec fixture-judgment@v1, model fixture-judge:v1
+      evidence evidence:entity:1 [active] named_entity
+        source youtube-corpus video:1 named-entity:1 @ sha256:named-entity-1-v1
+        producer nlp-stack @ git:nlp-stack-fixture, model ner
+        parents evidence:transcript:1
+      evidence evidence:transcript:1 [active] transcript
+        source youtube-corpus video:1 transcript-segment:1 @ sha256:transcript-segment-1-v1
+        producer audio-analysis @ git:audio-analysis-fixture, model whisper

@@ -1,0 +1,70 @@
+{
+  "description": "Sensitive-trait and real-world identity inference are refused under every shipped profile, even with every gate enabled, and cannot be enabled through policy settings.",
+  "runs": [
+    {
+      "name": "observe_only",
+      "args": [
+        "evidence.json",
+        "--judgments",
+        "judgments.json",
+        "--profile",
+        "observe_only"
+      ],
+      "exit": 0
+    },
+    {
+      "name": "semantic_research",
+      "args": [
+        "evidence.json",
+        "--judgments",
+        "judgments.json",
+        "--profile",
+        "semantic_research"
+      ],
+      "exit": 0
+    },
+    {
+      "name": "multimodal_all_gates",
+      "args": [
+        "evidence.json",
+        "--judgments",
+        "judgments.json",
+        "--profile",
+        "multimodal_research",
+        "--policy",
+        "BELIEF_BIOMETRIC_EVIDENCE=reference_only",
+        "--policy",
+        "BELIEF_ALLOW_CROSS_SOURCE_JOIN=true",
+        "--policy",
+        "BELIEF_IDENTITY_RESOLUTION=corpus_local"
+      ],
+      "exit": 0
+    },
+    {
+      "name": "allowlist_sensitive_trait",
+      "args": [
+        "evidence.json",
+        "--judgments",
+        "judgments.json",
+        "--profile",
+        "multimodal_research",
+        "--policy",
+        "BELIEF_ALLOWED_INFERENCES=sensitive_trait"
+      ],
+      "exit": 2
+    },
+    {
+      "name": "real_world_identity_resolution",
+      "args": [
+        "evidence.json",
+        "--judgments",
+        "judgments.json",
+        "--profile",
+        "multimodal_research",
+        "--policy",
+        "BELIEF_IDENTITY_RESOLUTION=real_world"
+      ],
+      "exit": 2
+    }
+  ]
+}

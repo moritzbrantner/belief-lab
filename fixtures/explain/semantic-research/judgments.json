@@ -1,0 +1,40 @@
+{
+  "schema": "belief_judgment_script",
+  "schemaVersion": 1,
+  "judgmentSpec": {
+    "name": "fixture-judgment",
+    "revision": "v1"
+  },
+  "modelRevision": "fixture-judge:v1",
+  "inferences": [
+    {
+      "id": "corpus-person-1:prefers-customization",
+      "class": "preference",
+      "proposition": {
+        "subject": "corpus-person:1",
+        "predicate": "prefers_customization",
+        "object": {
+          "boolean": true
+        }
+      },
+      "judgments": [
+        {
+          "id": "judgment:customization:1",
+          "outcome": "supports",
+          "modelConfidence": 0.8,
+          "correlationGroup": "family:utterance:1",
+          "evidence": [
+            {
+              "id": "evidence:transcript:1",
+              "purpose": "direct_support"
+            },
+            {
+              "id": "evidence:entity:1",
+              "purpose": "corroboration"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

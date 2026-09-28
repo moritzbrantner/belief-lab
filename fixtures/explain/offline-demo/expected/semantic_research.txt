@@ -1,0 +1,22 @@
+Policy profile: semantic_research
+  BELIEF_POLICY_PROFILE=semantic_research
+
+Evidence batch batch:demo:v1 (belief_evidence_interchange@1) exported by belief-cli-demo @ git:belief-cli-demo-v1
+  admitted evidence:demo:statement [transcript] for direct_support, corroboration
+Import: stored 1 evidence record.
+
+Inference demo:preference [preference]: person:alice prefers_customization true
+  derived by baseline:preference:v1
+  belief belief:demo:preference = 0.950 soft_truth
+    meaning: heuristic soft truth in [0, 1] with 0.5 neutral; not a calibrated posterior probability
+  judgments:
+    judgment:demo:support supports 0.900 model_confidence, group correlation:demo:statement, selected
+      uses evidence:demo:statement as corroboration
+  authorized under semantic_research for preference; scopes belief-cli-demo/demo:1; cross-source join no
+  provenance (read back from the store):
+    belief belief:demo:preference [active] <- baseline:preference:v1 run run:demo:preference
+    claim claim:demo:preference [active] <- judgment judgment:demo:support
+    judgment judgment:demo:support [active] supports 0.900 model_confidence, spec demo-support@v1, model demo-model:v1
+      evidence evidence:demo:statement [active] transcript
+        source belief-cli-demo demo:1 statement:1 @ sha256:demo-source-v1
+        producer belief-cli-demo @ commit:demo-producer-v1

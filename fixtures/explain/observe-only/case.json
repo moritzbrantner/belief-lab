@@ -1,0 +1,36 @@
+{
+  "description": "observe_only admits a user assertion but refuses every inference; semantic_research derives a belief from the same input for contrast.",
+  "runs": [
+    {
+      "name": "observe_only",
+      "args": [
+        "evidence.json",
+        "--judgments",
+        "judgments.json",
+        "--profile",
+        "observe_only"
+      ],
+      "exit": 0
+    },
+    {
+      "name": "default_profile",
+      "args": [
+        "evidence.json",
+        "--judgments",
+        "judgments.json"
+      ],
+      "exit": 0
+    },
+    {
+      "name": "semantic_research",
+      "args": [
+        "evidence.json",
+        "--judgments",
+        "judgments.json",
+        "--profile",
+        "semantic_research"
+      ],
+      "exit": 0
+    }
+  ]
+}

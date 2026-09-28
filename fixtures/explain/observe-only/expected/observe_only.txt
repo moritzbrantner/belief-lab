@@ -1,0 +1,12 @@
+Policy profile: observe_only
+  BELIEF_POLICY_PROFILE=observe_only
+
+Evidence batch batch:observe-only:v1 (belief_evidence_interchange@1) exported by survey-corpus @ git:survey-corpus-fixture
+  admitted evidence:assertion:1 [user_assertion] for direct_support
+Import: stored 1 evidence record.
+
+Inference corpus-person-1:prefers-dark-mode [preference]: corpus-person:1 prefers_dark_mode true
+  refused: inference class preference is outside profile observe_only
+  judgments (not stored):
+    judgment:dark-mode:1 supports 0.900 model_confidence, group family:assertion:1
+      uses evidence:assertion:1 as direct_support

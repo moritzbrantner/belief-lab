@@ -1,0 +1,338 @@
+{
+  "report": "belief_explain",
+  "report_version": 1,
+  "outcome": "explained",
+  "policy": {
+    "profile": "semantic_research",
+    "settings": {
+      "BELIEF_POLICY_PROFILE": "semantic_research"
+    }
+  },
+  "rejection": null,
+  "batch": {
+    "schema": "belief_evidence_interchange@1",
+    "exporter": {
+      "name": "youtube-corpus",
+      "revision": "git:youtube-corpus-fixture"
+    },
+    "revision": "batch:correlated-evidence:v1",
+    "evidence": [
+      {
+        "id": "evidence:ocr:1",
+        "class": "ocr",
+        "family": "family:visual-text:1",
+        "subject": null,
+        "score": {
+          "value": 0.89,
+          "semantics": "detector_confidence"
+        },
+        "source": {
+          "repository": "youtube-corpus",
+          "scope_id": "video:1",
+          "record_id": "visual-text:1",
+          "revision": "sha256:visual-text-1-v1"
+        },
+        "producer": {
+          "name": "visual-analysis",
+          "revision": "git:visual-analysis-fixture",
+          "model": "ocr",
+          "config_hash": null
+        },
+        "parents": [],
+        "admission": {
+          "admitted": true,
+          "admitted_purposes": [
+            "direct_support",
+            "corroboration"
+          ],
+          "denied_purposes": {
+            "entity_linking": "evidence purpose entity_linking is outside profile semantic_research"
+          },
+          "rejection_reasons": []
+        }
+      },
+      {
+        "id": "evidence:transcript:1",
+        "class": "transcript",
+        "family": "family:utterance:1",
+        "subject": "corpus-person:1",
+        "score": {
+          "value": 0.94,
+          "semantics": "model_confidence"
+        },
+        "source": {
+          "repository": "youtube-corpus",
+          "scope_id": "video:1",
+          "record_id": "transcript-segment:1",
+          "revision": "sha256:transcript-segment-1-v1"
+        },
+        "producer": {
+          "name": "audio-analysis",
+          "revision": "git:audio-analysis-fixture",
+          "model": "whisper",
+          "config_hash": null
+        },
+        "parents": [],
+        "admission": {
+          "admitted": true,
+          "admitted_purposes": [
+            "direct_support",
+            "corroboration"
+          ],
+          "denied_purposes": {
+            "entity_linking": "evidence purpose entity_linking is outside profile semantic_research"
+          },
+          "rejection_reasons": []
+        }
+      },
+      {
+        "id": "evidence:entity:1",
+        "class": "named_entity",
+        "family": "family:utterance:1",
+        "subject": "corpus-person:1",
+        "score": {
+          "value": 0.88,
+          "semantics": "model_confidence"
+        },
+        "source": {
+          "repository": "youtube-corpus",
+          "scope_id": "video:1",
+          "record_id": "named-entity:1",
+          "revision": "sha256:named-entity-1-v1"
+        },
+        "producer": {
+          "name": "nlp-stack",
+          "revision": "git:nlp-stack-fixture",
+          "model": "ner",
+          "config_hash": null
+        },
+        "parents": [
+          "evidence:transcript:1"
+        ],
+        "admission": {
+          "admitted": true,
+          "admitted_purposes": [
+            "direct_support",
+            "corroboration"
+          ],
+          "denied_purposes": {
+            "entity_linking": "evidence purpose entity_linking is outside profile semantic_research"
+          },
+          "rejection_reasons": []
+        }
+      }
+    ],
+    "import": {
+      "imported": true,
+      "stored": 3,
+      "reason": null
+    }
+  },
+  "inferences": [
+    {
+      "id": "corpus-person-1:uses-thinkpad",
+      "class": "descriptive",
+      "proposition": {
+        "subject": "corpus-person:1",
+        "predicate": "uses_laptop",
+        "object": "product:thinkpad"
+      },
+      "status": "derived",
+      "reason": null,
+      "rule": "baseline:descriptive:v1",
+      "judgments": [
+        {
+          "id": "judgment:transcript:1",
+          "outcome": "supports",
+          "confidence": {
+            "value": 0.9,
+            "semantics": "model_confidence"
+          },
+          "correlation_group": "family:utterance:1",
+          "evidence": [
+            {
+              "evidence": "evidence:transcript:1",
+              "purpose": "direct_support"
+            }
+          ],
+          "spec": "fixture-judgment@v1",
+          "model_revision": "fixture-judge:v1",
+          "selection": "selected"
+        },
+        {
+          "id": "judgment:entity:1",
+          "outcome": "supports",
+          "confidence": {
+            "value": 0.8,
+            "semantics": "model_confidence"
+          },
+          "correlation_group": "family:utterance:1",
+          "evidence": [
+            {
+              "evidence": "evidence:entity:1",
+              "purpose": "corroboration"
+            }
+          ],
+          "spec": "fixture-judgment@v1",
+          "model_revision": "fixture-judge:v1",
+          "selection": "ignored_correlated"
+        },
+        {
+          "id": "judgment:ocr:1",
+          "outcome": "contradicts",
+          "confidence": {
+            "value": 0.6,
+            "semantics": "model_confidence"
+          },
+          "correlation_group": "family:visual-text:1",
+          "evidence": [
+            {
+              "evidence": "evidence:ocr:1",
+              "purpose": "corroboration"
+            }
+          ],
+          "spec": "fixture-judgment@v1",
+          "model_revision": "fixture-judge:v1",
+          "selection": "selected"
+        },
+        {
+          "id": "judgment:ocr:2",
+          "outcome": "unknown",
+          "confidence": {
+            "value": 0.5,
+            "semantics": "model_confidence"
+          },
+          "correlation_group": "family:visual-text:2",
+          "evidence": [
+            {
+              "evidence": "evidence:ocr:1",
+              "purpose": "corroboration"
+            }
+          ],
+          "spec": "fixture-judgment@v1",
+          "model_revision": "fixture-judge:v1",
+          "selection": "ignored_unknown"
+        }
+      ],
+      "authorization": {
+        "profile": "semantic_research",
+        "inference_class": "descriptive",
+        "source_scopes": [
+          "youtube-corpus/video:1"
+        ],
+        "cross_source_join": false,
+        "evidence_uses": [
+          {
+            "evidence": "evidence:entity:1",
+            "purpose": "corroboration"
+          },
+          {
+            "evidence": "evidence:ocr:1",
+            "purpose": "corroboration"
+          },
+          {
+            "evidence": "evidence:transcript:1",
+            "purpose": "direct_support"
+          }
+        ]
+      },
+      "belief": {
+        "id": "belief:corpus-person-1:uses-thinkpad",
+        "claim": "claim:corpus-person-1:uses-thinkpad",
+        "value": 0.575,
+        "semantics": "soft_truth",
+        "meaning": "heuristic soft truth in [0, 1] with 0.5 neutral; not a calibrated posterior probability"
+      },
+      "provenance": {
+        "belief": "belief:corpus-person-1:uses-thinkpad",
+        "validity": "active",
+        "derivation": {
+          "rule": "baseline:descriptive:v1",
+          "inference_run": "run:corpus-person-1:uses-thinkpad",
+          "judgments": [
+            "judgment:ocr:1",
+            "judgment:transcript:1"
+          ],
+          "evidence": [
+            "evidence:ocr:1",
+            "evidence:transcript:1"
+          ],
+          "claims": []
+        },
+        "claim": {
+          "id": "claim:corpus-person-1:uses-thinkpad",
+          "validity": "active",
+          "origin": "judgment judgment:transcript:1"
+        },
+        "judgments": [
+          {
+            "id": "judgment:ocr:1",
+            "validity": "active",
+            "outcome": "contradicts",
+            "confidence": {
+              "value": 0.6,
+              "semantics": "model_confidence"
+            },
+            "spec": "fixture-judgment@v1",
+            "model_revision": "fixture-judge:v1",
+            "evidence": [
+              "evidence:ocr:1"
+            ]
+          },
+          {
+            "id": "judgment:transcript:1",
+            "validity": "active",
+            "outcome": "supports",
+            "confidence": {
+              "value": 0.9,
+              "semantics": "model_confidence"
+            },
+            "spec": "fixture-judgment@v1",
+            "model_revision": "fixture-judge:v1",
+            "evidence": [
+              "evidence:transcript:1"
+            ]
+          }
+        ],
+        "evidence": [
+          {
+            "id": "evidence:ocr:1",
+            "validity": "active",
+            "class": "ocr",
+            "source": {
+              "repository": "youtube-corpus",
+              "scope_id": "video:1",
+              "record_id": "visual-text:1",
+              "revision": "sha256:visual-text-1-v1"
+            },
+            "producer": {
+              "name": "visual-analysis",
+              "revision": "git:visual-analysis-fixture",
+              "model": "ocr",
+              "config_hash": null
+            },
+            "parents": []
+          },
+          {
+            "id": "evidence:transcript:1",
+            "validity": "active",
+            "class": "transcript",
+            "source": {
+              "repository": "youtube-corpus",
+              "scope_id": "video:1",
+              "record_id": "transcript-segment:1",
+              "revision": "sha256:transcript-segment-1-v1"
+            },
+            "producer": {
+              "name": "audio-analysis",
+              "revision": "git:audio-analysis-fixture",
+              "model": "whisper",
+              "config_hash": null
+            },
+            "parents": []
+          }
+        ]
+      }
+    }
+  ]
+}

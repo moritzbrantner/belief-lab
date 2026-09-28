@@ -1,0 +1,35 @@
+Policy profile: multimodal_research
+  BELIEF_POLICY_PROFILE=multimodal_research
+
+Evidence batch batch:multimodal-gates:v1 (belief_evidence_interchange@1) exported by youtube-corpus @ git:youtube-corpus-fixture
+  rejected evidence:face-track:1 [face_track_reference]: face_track_reference requires BELIEF_BIOMETRIC_EVIDENCE=reference_only
+  admitted evidence:transcript:1 [transcript] for direct_support, corroboration, entity_linking
+  admitted evidence:transcript:2 [transcript] for direct_support, corroboration, entity_linking
+  rejected evidence:voice-track:1 [voice_track_reference]: voice_track_reference requires BELIEF_BIOMETRIC_EVIDENCE=reference_only
+Import refused: evidence evidence:face-track:1 (face_track_reference) is not authorized for import under the active policy; import is all-or-nothing, so 2 rejected of 4 refuses the whole batch. Nothing was stored.
+
+Inference speaker-on-screen [descriptive]: corpus-person:1 speaks_on_screen true
+  not run: the evidence batch was not imported
+  judgments (not stored):
+    judgment:on-screen:1 supports 0.850 model_confidence, group family:utterance:1
+      uses evidence:transcript:1 as direct_support, evidence:face-track:1 as corroboration
+
+Inference face-as-direct-support [descriptive]: corpus-person:1 appears_in_video video:1
+  not run: the evidence batch was not imported
+  judgments (not stored):
+    judgment:appears:1 supports 0.900 model_confidence, group family:face-track:1
+      uses evidence:face-track:1 as direct_support
+
+Inference across-videos [preference]: corpus-person:1 prefers_customization true
+  not run: the evidence batch was not imported
+  judgments (not stored):
+    judgment:across:1 supports 0.800 model_confidence, group family:utterance:1
+      uses evidence:transcript:1 as direct_support
+    judgment:across:2 supports 0.700 model_confidence, group family:utterance:2
+      uses evidence:transcript:2 as direct_support
+
+Inference corpus-local-link [local_entity_link]: corpus-person:1 same_corpus_person_as corpus-person:2
+  not run: the evidence batch was not imported
+  judgments (not stored):
+    judgment:link:1 supports 0.750 model_confidence, group family:voice-track:1
+      uses evidence:face-track:1 as entity_linking, evidence:voice-track:1 as entity_linking

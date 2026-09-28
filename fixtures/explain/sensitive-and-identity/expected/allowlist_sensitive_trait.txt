@@ -1,0 +1,6 @@
+Policy profile: multimodal_research
+  BELIEF_ALLOWED_INFERENCES=sensitive_trait
+  BELIEF_POLICY_PROFILE=multimodal_research
+
+Input rejected (policy configuration): BELIEF_ALLOWED_INFERENCES="sensitive_trait" exceeds the maximum capability of profile multimodal_research
+Failed closed: nothing was imported, inferred, or stored.

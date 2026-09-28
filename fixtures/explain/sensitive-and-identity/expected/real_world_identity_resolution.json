@@ -1,0 +1,18 @@
+{
+  "report": "belief_explain",
+  "report_version": 1,
+  "outcome": "input_rejected",
+  "policy": {
+    "profile": "multimodal_research",
+    "settings": {
+      "BELIEF_IDENTITY_RESOLUTION": "real_world",
+      "BELIEF_POLICY_PROFILE": "multimodal_research"
+    }
+  },
+  "rejection": {
+    "stage": "policy_config",
+    "reason": "BELIEF_IDENTITY_RESOLUTION=\"real_world\" exceeds the maximum capability of profile multimodal_research"
+  },
+  "batch": null,
+  "inferences": []
+}

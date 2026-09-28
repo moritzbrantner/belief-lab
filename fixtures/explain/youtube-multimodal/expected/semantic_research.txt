@@ -1,0 +1,13 @@
+Policy profile: semantic_research
+  BELIEF_POLICY_PROFILE=semantic_research
+
+Evidence batch batch:youtube-video-1:v1 (belief_evidence_interchange@1) exported by youtube-corpus @ git:youtube-corpus-example
+  rejected evidence:face-track:2 [face_track_reference]: evidence class face_track_reference is outside profile semantic_research
+  admitted evidence:scene:4 [scene_detection] for direct_support, corroboration
+  admitted evidence:transcript:17 [transcript] for direct_support, corroboration
+  rejected evidence:voice-track:3 [voice_track_reference]: evidence class voice_track_reference is outside profile semantic_research
+  admitted evidence:entity:arch [named_entity] for direct_support, corroboration
+  admitted evidence:ocr:thinkpad [ocr] for direct_support, corroboration
+Import refused: evidence evidence:face-track:2 (face_track_reference) is not authorized for import under the active policy; import is all-or-nothing, so 2 rejected of 6 refuses the whole batch. Nothing was stored.
+
+No judgment script supplied; no inference was requested.

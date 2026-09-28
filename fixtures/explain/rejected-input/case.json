@@ -1,0 +1,43 @@
+{
+  "description": "Malformed or unsupported input fails closed with exit code 2 before anything is imported: an unknown interchange version, truncated JSON, an imported soft-truth score, and a judgment script that references evidence outside the batch.",
+  "runs": [
+    {
+      "name": "unsupported_version",
+      "args": [
+        "unsupported-version.json",
+        "--profile",
+        "semantic_research"
+      ],
+      "exit": 2
+    },
+    {
+      "name": "malformed_json",
+      "args": [
+        "malformed.json",
+        "--profile",
+        "semantic_research"
+      ],
+      "exit": 2
+    },
+    {
+      "name": "imported_soft_truth",
+      "args": [
+        "inference-score.json",
+        "--profile",
+        "semantic_research"
+      ],
+      "exit": 2
+    },
+    {
+      "name": "judgments_missing_evidence",
+      "args": [
+        "evidence.json",
+        "--judgments",
+        "judgments-missing-evidence.json",
+        "--profile",
+        "semantic_research"
+      ],
+      "exit": 2
+    }
+  ]
+}

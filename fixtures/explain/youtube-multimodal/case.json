@@ -1,0 +1,25 @@
+{
+  "description": "The shipped evidence-interchange fixture without judgments: admission only.",
+  "runs": [
+    {
+      "name": "semantic_research",
+      "args": [
+        "../../evidence-interchange/youtube-multimodal-v1.json",
+        "--profile",
+        "semantic_research"
+      ],
+      "exit": 0
+    },
+    {
+      "name": "multimodal_biometric",
+      "args": [
+        "../../evidence-interchange/youtube-multimodal-v1.json",
+        "--profile",
+        "multimodal_research",
+        "--policy",
+        "BELIEF_BIOMETRIC_EVIDENCE=reference_only"
+      ],
+      "exit": 0
+    }
+  ]
+}

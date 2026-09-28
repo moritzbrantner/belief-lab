@@ -1,0 +1,95 @@
+{
+  "schema": "belief_evidence_interchange",
+  "schemaVersion": 1,
+  "exporter": {
+    "name": "youtube-corpus",
+    "revision": "git:youtube-corpus-fixture"
+  },
+  "revision": "batch:multimodal-gates:v1",
+  "evidence": [
+    {
+      "id": "evidence:transcript:1",
+      "subject": "corpus-person:1",
+      "class": "transcript",
+      "familyId": "family:utterance:1",
+      "source": {
+        "repository": "youtube-corpus",
+        "scopeId": "video:1",
+        "recordId": "transcript-segment:1",
+        "revision": "sha256:transcript-segment-1-v1"
+      },
+      "producer": {
+        "name": "audio-analysis",
+        "revision": "git:audio-analysis-fixture",
+        "model": "whisper"
+      },
+      "score": {
+        "value": 0.94,
+        "semantics": "model_confidence"
+      }
+    },
+    {
+      "id": "evidence:transcript:2",
+      "subject": "corpus-person:1",
+      "class": "transcript",
+      "familyId": "family:utterance:2",
+      "source": {
+        "repository": "youtube-corpus",
+        "scopeId": "video:2",
+        "recordId": "transcript-segment:2",
+        "revision": "sha256:transcript-segment-2-v1"
+      },
+      "producer": {
+        "name": "audio-analysis",
+        "revision": "git:audio-analysis-fixture",
+        "model": "whisper"
+      },
+      "score": {
+        "value": 0.91,
+        "semantics": "model_confidence"
+      }
+    },
+    {
+      "id": "evidence:face-track:1",
+      "subject": "corpus-person:1",
+      "class": "face_track_reference",
+      "familyId": "family:face-track:1",
+      "source": {
+        "repository": "youtube-corpus",
+        "scopeId": "video:1",
+        "recordId": "face-track:1",
+        "revision": "sha256:face-track-1-v1"
+      },
+      "producer": {
+        "name": "visual-analysis",
+        "revision": "git:visual-analysis-fixture",
+        "model": "face-tracking"
+      },
+      "score": {
+        "value": 0.82,
+        "semantics": "similarity"
+      }
+    },
+    {
+      "id": "evidence:voice-track:1",
+      "subject": "corpus-person:1",
+      "class": "voice_track_reference",
+      "familyId": "family:voice-track:1",
+      "source": {
+        "repository": "youtube-corpus",
+        "scopeId": "video:1",
+        "recordId": "voice-track:1",
+        "revision": "sha256:voice-track-1-v1"
+      },
+      "producer": {
+        "name": "audio-analysis",
+        "revision": "git:audio-analysis-fixture",
+        "model": "speaker-tracking"
+      },
+      "score": {
+        "value": 0.86,
+        "semantics": "similarity"
+      }
+    }
+  ]
+}

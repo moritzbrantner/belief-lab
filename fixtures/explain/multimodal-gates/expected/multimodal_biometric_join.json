@@ -1,0 +1,542 @@
+{
+  "report": "belief_explain",
+  "report_version": 1,
+  "outcome": "explained",
+  "policy": {
+    "profile": "multimodal_research",
+    "settings": {
+      "BELIEF_ALLOW_CROSS_SOURCE_JOIN": "true",
+      "BELIEF_BIOMETRIC_EVIDENCE": "reference_only",
+      "BELIEF_POLICY_PROFILE": "multimodal_research"
+    }
+  },
+  "rejection": null,
+  "batch": {
+    "schema": "belief_evidence_interchange@1",
+    "exporter": {
+      "name": "youtube-corpus",
+      "revision": "git:youtube-corpus-fixture"
+    },
+    "revision": "batch:multimodal-gates:v1",
+    "evidence": [
+      {
+        "id": "evidence:face-track:1",
+        "class": "face_track_reference",
+        "family": "family:face-track:1",
+        "subject": "corpus-person:1",
+        "score": {
+          "value": 0.82,
+          "semantics": "similarity"
+        },
+        "source": {
+          "repository": "youtube-corpus",
+          "scope_id": "video:1",
+          "record_id": "face-track:1",
+          "revision": "sha256:face-track-1-v1"
+        },
+        "producer": {
+          "name": "visual-analysis",
+          "revision": "git:visual-analysis-fixture",
+          "model": "face-tracking",
+          "config_hash": null
+        },
+        "parents": [],
+        "admission": {
+          "admitted": true,
+          "admitted_purposes": [
+            "corroboration",
+            "entity_linking"
+          ],
+          "denied_purposes": {
+            "direct_support": "face_track_reference can never be used as direct_support"
+          },
+          "rejection_reasons": []
+        }
+      },
+      {
+        "id": "evidence:transcript:1",
+        "class": "transcript",
+        "family": "family:utterance:1",
+        "subject": "corpus-person:1",
+        "score": {
+          "value": 0.94,
+          "semantics": "model_confidence"
+        },
+        "source": {
+          "repository": "youtube-corpus",
+          "scope_id": "video:1",
+          "record_id": "transcript-segment:1",
+          "revision": "sha256:transcript-segment-1-v1"
+        },
+        "producer": {
+          "name": "audio-analysis",
+          "revision": "git:audio-analysis-fixture",
+          "model": "whisper",
+          "config_hash": null
+        },
+        "parents": [],
+        "admission": {
+          "admitted": true,
+          "admitted_purposes": [
+            "direct_support",
+            "corroboration",
+            "entity_linking"
+          ],
+          "denied_purposes": {},
+          "rejection_reasons": []
+        }
+      },
+      {
+        "id": "evidence:transcript:2",
+        "class": "transcript",
+        "family": "family:utterance:2",
+        "subject": "corpus-person:1",
+        "score": {
+          "value": 0.91,
+          "semantics": "model_confidence"
+        },
+        "source": {
+          "repository": "youtube-corpus",
+          "scope_id": "video:2",
+          "record_id": "transcript-segment:2",
+          "revision": "sha256:transcript-segment-2-v1"
+        },
+        "producer": {
+          "name": "audio-analysis",
+          "revision": "git:audio-analysis-fixture",
+          "model": "whisper",
+          "config_hash": null
+        },
+        "parents": [],
+        "admission": {
+          "admitted": true,
+          "admitted_purposes": [
+            "direct_support",
+            "corroboration",
+            "entity_linking"
+          ],
+          "denied_purposes": {},
+          "rejection_reasons": []
+        }
+      },
+      {
+        "id": "evidence:voice-track:1",
+        "class": "voice_track_reference",
+        "family": "family:voice-track:1",
+        "subject": "corpus-person:1",
+        "score": {
+          "value": 0.86,
+          "semantics": "similarity"
+        },
+        "source": {
+          "repository": "youtube-corpus",
+          "scope_id": "video:1",
+          "record_id": "voice-track:1",
+          "revision": "sha256:voice-track-1-v1"
+        },
+        "producer": {
+          "name": "audio-analysis",
+          "revision": "git:audio-analysis-fixture",
+          "model": "speaker-tracking",
+          "config_hash": null
+        },
+        "parents": [],
+        "admission": {
+          "admitted": true,
+          "admitted_purposes": [
+            "corroboration",
+            "entity_linking"
+          ],
+          "denied_purposes": {
+            "direct_support": "voice_track_reference can never be used as direct_support"
+          },
+          "rejection_reasons": []
+        }
+      }
+    ],
+    "import": {
+      "imported": true,
+      "stored": 4,
+      "reason": null
+    }
+  },
+  "inferences": [
+    {
+      "id": "speaker-on-screen",
+      "class": "descriptive",
+      "proposition": {
+        "subject": "corpus-person:1",
+        "predicate": "speaks_on_screen",
+        "object": "true"
+      },
+      "status": "derived",
+      "reason": null,
+      "rule": "baseline:descriptive:v1",
+      "judgments": [
+        {
+          "id": "judgment:on-screen:1",
+          "outcome": "supports",
+          "confidence": {
+            "value": 0.85,
+            "semantics": "model_confidence"
+          },
+          "correlation_group": "family:utterance:1",
+          "evidence": [
+            {
+              "evidence": "evidence:transcript:1",
+              "purpose": "direct_support"
+            },
+            {
+              "evidence": "evidence:face-track:1",
+              "purpose": "corroboration"
+            }
+          ],
+          "spec": "fixture-judgment@v1",
+          "model_revision": "fixture-judge:v1",
+          "selection": "selected"
+        }
+      ],
+      "authorization": {
+        "profile": "multimodal_research",
+        "inference_class": "descriptive",
+        "source_scopes": [
+          "youtube-corpus/video:1"
+        ],
+        "cross_source_join": false,
+        "evidence_uses": [
+          {
+            "evidence": "evidence:face-track:1",
+            "purpose": "corroboration"
+          },
+          {
+            "evidence": "evidence:transcript:1",
+            "purpose": "direct_support"
+          }
+        ]
+      },
+      "belief": {
+        "id": "belief:speaker-on-screen",
+        "claim": "claim:speaker-on-screen",
+        "value": 0.925,
+        "semantics": "soft_truth",
+        "meaning": "heuristic soft truth in [0, 1] with 0.5 neutral; not a calibrated posterior probability"
+      },
+      "provenance": {
+        "belief": "belief:speaker-on-screen",
+        "validity": "active",
+        "derivation": {
+          "rule": "baseline:descriptive:v1",
+          "inference_run": "run:speaker-on-screen",
+          "judgments": [
+            "judgment:on-screen:1"
+          ],
+          "evidence": [
+            "evidence:face-track:1",
+            "evidence:transcript:1"
+          ],
+          "claims": []
+        },
+        "claim": {
+          "id": "claim:speaker-on-screen",
+          "validity": "active",
+          "origin": "judgment judgment:on-screen:1"
+        },
+        "judgments": [
+          {
+            "id": "judgment:on-screen:1",
+            "validity": "active",
+            "outcome": "supports",
+            "confidence": {
+              "value": 0.85,
+              "semantics": "model_confidence"
+            },
+            "spec": "fixture-judgment@v1",
+            "model_revision": "fixture-judge:v1",
+            "evidence": [
+              "evidence:face-track:1",
+              "evidence:transcript:1"
+            ]
+          }
+        ],
+        "evidence": [
+          {
+            "id": "evidence:face-track:1",
+            "validity": "active",
+            "class": "face_track_reference",
+            "source": {
+              "repository": "youtube-corpus",
+              "scope_id": "video:1",
+              "record_id": "face-track:1",
+              "revision": "sha256:face-track-1-v1"
+            },
+            "producer": {
+              "name": "visual-analysis",
+              "revision": "git:visual-analysis-fixture",
+              "model": "face-tracking",
+              "config_hash": null
+            },
+            "parents": []
+          },
+          {
+            "id": "evidence:transcript:1",
+            "validity": "active",
+            "class": "transcript",
+            "source": {
+              "repository": "youtube-corpus",
+              "scope_id": "video:1",
+              "record_id": "transcript-segment:1",
+              "revision": "sha256:transcript-segment-1-v1"
+            },
+            "producer": {
+              "name": "audio-analysis",
+              "revision": "git:audio-analysis-fixture",
+              "model": "whisper",
+              "config_hash": null
+            },
+            "parents": []
+          }
+        ]
+      }
+    },
+    {
+      "id": "face-as-direct-support",
+      "class": "descriptive",
+      "proposition": {
+        "subject": "corpus-person:1",
+        "predicate": "appears_in_video",
+        "object": "video:1"
+      },
+      "status": "refused",
+      "reason": "evidence evidence:face-track:1 (face_track_reference) is not authorized for direct_support",
+      "rule": "baseline:descriptive:v1",
+      "judgments": [
+        {
+          "id": "judgment:appears:1",
+          "outcome": "supports",
+          "confidence": {
+            "value": 0.9,
+            "semantics": "model_confidence"
+          },
+          "correlation_group": "family:face-track:1",
+          "evidence": [
+            {
+              "evidence": "evidence:face-track:1",
+              "purpose": "direct_support"
+            }
+          ],
+          "spec": "fixture-judgment@v1",
+          "model_revision": "fixture-judge:v1",
+          "selection": null
+        }
+      ],
+      "authorization": null,
+      "belief": null,
+      "provenance": null
+    },
+    {
+      "id": "across-videos",
+      "class": "preference",
+      "proposition": {
+        "subject": "corpus-person:1",
+        "predicate": "prefers_customization",
+        "object": "true"
+      },
+      "status": "derived",
+      "reason": null,
+      "rule": "baseline:preference:v1",
+      "judgments": [
+        {
+          "id": "judgment:across:1",
+          "outcome": "supports",
+          "confidence": {
+            "value": 0.8,
+            "semantics": "model_confidence"
+          },
+          "correlation_group": "family:utterance:1",
+          "evidence": [
+            {
+              "evidence": "evidence:transcript:1",
+              "purpose": "direct_support"
+            }
+          ],
+          "spec": "fixture-judgment@v1",
+          "model_revision": "fixture-judge:v1",
+          "selection": "selected"
+        },
+        {
+          "id": "judgment:across:2",
+          "outcome": "supports",
+          "confidence": {
+            "value": 0.7,
+            "semantics": "model_confidence"
+          },
+          "correlation_group": "family:utterance:2",
+          "evidence": [
+            {
+              "evidence": "evidence:transcript:2",
+              "purpose": "direct_support"
+            }
+          ],
+          "spec": "fixture-judgment@v1",
+          "model_revision": "fixture-judge:v1",
+          "selection": "selected"
+        }
+      ],
+      "authorization": {
+        "profile": "multimodal_research",
+        "inference_class": "preference",
+        "source_scopes": [
+          "youtube-corpus/video:1",
+          "youtube-corpus/video:2"
+        ],
+        "cross_source_join": true,
+        "evidence_uses": [
+          {
+            "evidence": "evidence:transcript:1",
+            "purpose": "direct_support"
+          },
+          {
+            "evidence": "evidence:transcript:2",
+            "purpose": "direct_support"
+          }
+        ]
+      },
+      "belief": {
+        "id": "belief:across-videos",
+        "claim": "claim:across-videos",
+        "value": 0.875,
+        "semantics": "soft_truth",
+        "meaning": "heuristic soft truth in [0, 1] with 0.5 neutral; not a calibrated posterior probability"
+      },
+      "provenance": {
+        "belief": "belief:across-videos",
+        "validity": "active",
+        "derivation": {
+          "rule": "baseline:preference:v1",
+          "inference_run": "run:across-videos",
+          "judgments": [
+            "judgment:across:1",
+            "judgment:across:2"
+          ],
+          "evidence": [
+            "evidence:transcript:1",
+            "evidence:transcript:2"
+          ],
+          "claims": []
+        },
+        "claim": {
+          "id": "claim:across-videos",
+          "validity": "active",
+          "origin": "judgment judgment:across:1"
+        },
+        "judgments": [
+          {
+            "id": "judgment:across:1",
+            "validity": "active",
+            "outcome": "supports",
+            "confidence": {
+              "value": 0.8,
+              "semantics": "model_confidence"
+            },
+            "spec": "fixture-judgment@v1",
+            "model_revision": "fixture-judge:v1",
+            "evidence": [
+              "evidence:transcript:1"
+            ]
+          },
+          {
+            "id": "judgment:across:2",
+            "validity": "active",
+            "outcome": "supports",
+            "confidence": {
+              "value": 0.7,
+              "semantics": "model_confidence"
+            },
+            "spec": "fixture-judgment@v1",
+            "model_revision": "fixture-judge:v1",
+            "evidence": [
+              "evidence:transcript:2"
+            ]
+          }
+        ],
+        "evidence": [
+          {
+            "id": "evidence:transcript:1",
+            "validity": "active",
+            "class": "transcript",
+            "source": {
+              "repository": "youtube-corpus",
+              "scope_id": "video:1",
+              "record_id": "transcript-segment:1",
+              "revision": "sha256:transcript-segment-1-v1"
+            },
+            "producer": {
+              "name": "audio-analysis",
+              "revision": "git:audio-analysis-fixture",
+              "model": "whisper",
+              "config_hash": null
+            },
+            "parents": []
+          },
+          {
+            "id": "evidence:transcript:2",
+            "validity": "active",
+            "class": "transcript",
+            "source": {
+              "repository": "youtube-corpus",
+              "scope_id": "video:2",
+              "record_id": "transcript-segment:2",
+              "revision": "sha256:transcript-segment-2-v1"
+            },
+            "producer": {
+              "name": "audio-analysis",
+              "revision": "git:audio-analysis-fixture",
+              "model": "whisper",
+              "config_hash": null
+            },
+            "parents": []
+          }
+        ]
+      }
+    },
+    {
+      "id": "corpus-local-link",
+      "class": "local_entity_link",
+      "proposition": {
+        "subject": "corpus-person:1",
+        "predicate": "same_corpus_person_as",
+        "object": "corpus-person:2"
+      },
+      "status": "refused",
+      "reason": "local_entity_link requires BELIEF_IDENTITY_RESOLUTION=corpus_local",
+      "rule": null,
+      "judgments": [
+        {
+          "id": "judgment:link:1",
+          "outcome": "supports",
+          "confidence": {
+            "value": 0.75,
+            "semantics": "model_confidence"
+          },
+          "correlation_group": "family:voice-track:1",
+          "evidence": [
+            {
+              "evidence": "evidence:face-track:1",
+              "purpose": "entity_linking"
+            },
+            {
+              "evidence": "evidence:voice-track:1",
+              "purpose": "entity_linking"
+            }
+          ],
+          "spec": "fixture-judgment@v1",
+          "model_revision": "fixture-judge:v1",
+          "selection": null
+        }
+      ],
+      "authorization": null,
+      "belief": null,
+      "provenance": null
+    }
+  ]
+}

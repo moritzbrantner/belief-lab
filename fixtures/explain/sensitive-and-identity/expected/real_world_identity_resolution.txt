@@ -1,0 +1,6 @@
+Policy profile: multimodal_research
+  BELIEF_IDENTITY_RESOLUTION=real_world
+  BELIEF_POLICY_PROFILE=multimodal_research
+
+Input rejected (policy configuration): BELIEF_IDENTITY_RESOLUTION="real_world" exceeds the maximum capability of profile multimodal_research
+Failed closed: nothing was imported, inferred, or stored.

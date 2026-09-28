@@ -1,0 +1,5 @@
+Policy profile: semantic_research
+  BELIEF_POLICY_PROFILE=semantic_research
+
+Input rejected (evidence interchange): invalid evidence interchange JSON: missing field `revision` at line 31 column 1
+Failed closed: nothing was imported, inferred, or stored.

@@ -1,0 +1,16 @@
+{
+  "description": "Normal semantic research path: transcript plus a derived named entity are admitted and one scripted judgment yields a soft-truth preference belief.",
+  "runs": [
+    {
+      "name": "semantic_research",
+      "args": [
+        "evidence.json",
+        "--judgments",
+        "judgments.json",
+        "--profile",
+        "semantic_research"
+      ],
+      "exit": 0
+    }
+  ]
+}

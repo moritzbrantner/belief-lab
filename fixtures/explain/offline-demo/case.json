@@ -1,0 +1,10 @@
+{
+  "description": "The `cargo run` offline demo: one transcript reference and one scripted supporting judgment yield a soft-truth preference belief.",
+  "runs": [
+    {
+      "name": "semantic_research",
+      "args": ["evidence.json", "--judgments", "judgments.json", "--profile", "semantic_research"],
+      "exit": 0
+    }
+  ]
+}

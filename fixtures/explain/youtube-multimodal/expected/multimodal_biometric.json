@@ -1,0 +1,233 @@
+{
+  "report": "belief_explain",
+  "report_version": 1,
+  "outcome": "explained",
+  "policy": {
+    "profile": "multimodal_research",
+    "settings": {
+      "BELIEF_BIOMETRIC_EVIDENCE": "reference_only",
+      "BELIEF_POLICY_PROFILE": "multimodal_research"
+    }
+  },
+  "rejection": null,
+  "batch": {
+    "schema": "belief_evidence_interchange@1",
+    "exporter": {
+      "name": "youtube-corpus",
+      "revision": "git:youtube-corpus-example"
+    },
+    "revision": "batch:youtube-video-1:v1",
+    "evidence": [
+      {
+        "id": "evidence:face-track:2",
+        "class": "face_track_reference",
+        "family": "family:face-track:2",
+        "subject": null,
+        "score": {
+          "value": 0.82,
+          "semantics": "similarity"
+        },
+        "source": {
+          "repository": "youtube-corpus",
+          "scope_id": "video:1",
+          "record_id": "face-track:2",
+          "revision": "sha256:face-track-run-v1"
+        },
+        "producer": {
+          "name": "visual-analysis",
+          "revision": "git:visual-analysis-example",
+          "model": "face-tracking",
+          "config_hash": null
+        },
+        "parents": [],
+        "admission": {
+          "admitted": true,
+          "admitted_purposes": [
+            "corroboration",
+            "entity_linking"
+          ],
+          "denied_purposes": {
+            "direct_support": "face_track_reference can never be used as direct_support"
+          },
+          "rejection_reasons": []
+        }
+      },
+      {
+        "id": "evidence:scene:4",
+        "class": "scene_detection",
+        "family": "family:scene:4",
+        "subject": null,
+        "score": {
+          "value": 0.97,
+          "semantics": "detector_confidence"
+        },
+        "source": {
+          "repository": "youtube-corpus",
+          "scope_id": "video:1",
+          "record_id": "scene:4",
+          "revision": "sha256:scene-run-v1"
+        },
+        "producer": {
+          "name": "scenedetect-rs",
+          "revision": "git:scenedetect-example",
+          "model": "content-detector",
+          "config_hash": null
+        },
+        "parents": [],
+        "admission": {
+          "admitted": true,
+          "admitted_purposes": [
+            "direct_support",
+            "corroboration",
+            "entity_linking"
+          ],
+          "denied_purposes": {},
+          "rejection_reasons": []
+        }
+      },
+      {
+        "id": "evidence:transcript:17",
+        "class": "transcript",
+        "family": "family:utterance:17",
+        "subject": null,
+        "score": {
+          "value": 0.94,
+          "semantics": "model_confidence"
+        },
+        "source": {
+          "repository": "youtube-corpus",
+          "scope_id": "video:1",
+          "record_id": "transcript-segment:17",
+          "revision": "sha256:transcript-stream-v1"
+        },
+        "producer": {
+          "name": "audio-analysis",
+          "revision": "git:audio-analysis-example",
+          "model": "whisper",
+          "config_hash": "sha256:asr-config-v1"
+        },
+        "parents": [],
+        "admission": {
+          "admitted": true,
+          "admitted_purposes": [
+            "direct_support",
+            "corroboration",
+            "entity_linking"
+          ],
+          "denied_purposes": {},
+          "rejection_reasons": []
+        }
+      },
+      {
+        "id": "evidence:voice-track:3",
+        "class": "voice_track_reference",
+        "family": "family:voice-track:3",
+        "subject": null,
+        "score": {
+          "value": 0.86,
+          "semantics": "similarity"
+        },
+        "source": {
+          "repository": "youtube-corpus",
+          "scope_id": "video:1",
+          "record_id": "voice-track:3",
+          "revision": "sha256:voice-track-run-v1"
+        },
+        "producer": {
+          "name": "audio-analysis",
+          "revision": "git:audio-analysis-example",
+          "model": "speaker-tracking",
+          "config_hash": null
+        },
+        "parents": [],
+        "admission": {
+          "admitted": true,
+          "admitted_purposes": [
+            "corroboration",
+            "entity_linking"
+          ],
+          "denied_purposes": {
+            "direct_support": "voice_track_reference can never be used as direct_support"
+          },
+          "rejection_reasons": []
+        }
+      },
+      {
+        "id": "evidence:entity:arch",
+        "class": "named_entity",
+        "family": "family:utterance:17",
+        "subject": null,
+        "score": {
+          "value": 0.88,
+          "semantics": "model_confidence"
+        },
+        "source": {
+          "repository": "youtube-corpus",
+          "scope_id": "video:1",
+          "record_id": "named-entity:arch",
+          "revision": "sha256:semantic-pass-v1"
+        },
+        "producer": {
+          "name": "nlp-stack",
+          "revision": "git:nlp-stack-example",
+          "model": "ner",
+          "config_hash": null
+        },
+        "parents": [
+          "evidence:transcript:17"
+        ],
+        "admission": {
+          "admitted": true,
+          "admitted_purposes": [
+            "direct_support",
+            "corroboration",
+            "entity_linking"
+          ],
+          "denied_purposes": {},
+          "rejection_reasons": []
+        }
+      },
+      {
+        "id": "evidence:ocr:thinkpad",
+        "class": "ocr",
+        "family": "family:visual-text:4",
+        "subject": null,
+        "score": {
+          "value": 0.89,
+          "semantics": "detector_confidence"
+        },
+        "source": {
+          "repository": "youtube-corpus",
+          "scope_id": "video:1",
+          "record_id": "visual-text-observation:thinkpad",
+          "revision": "sha256:ocr-run-v1"
+        },
+        "producer": {
+          "name": "visual-analysis",
+          "revision": "git:visual-analysis-example",
+          "model": "ocr",
+          "config_hash": null
+        },
+        "parents": [
+          "evidence:scene:4"
+        ],
+        "admission": {
+          "admitted": true,
+          "admitted_purposes": [
+            "direct_support",
+            "corroboration",
+            "entity_linking"
+          ],
+          "denied_purposes": {},
+          "rejection_reasons": []
+        }
+      }
+    ],
+    "import": {
+      "imported": true,
+      "stored": 6,
+      "reason": null
+    }
+  },
+  "inferences": []
+}
