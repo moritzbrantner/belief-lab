@@ -488,7 +488,8 @@ impl fmt::Display for InterchangeError {
                 semantics,
             } => write!(
                 f,
-                "evidence {evidence} cannot import inference-result score semantics {semantics:?}"
+                "evidence {evidence} cannot import inference-result score semantics {}",
+                semantics.as_str()
             ),
             Self::Model(error) => write!(f, "invalid evidence model: {error}"),
         }

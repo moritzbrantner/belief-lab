@@ -130,7 +130,10 @@ impl PolicyConfig {
         if biometric_evidence > maximum.biometric_evidence {
             return Err(ConfigError::CapabilityExceedsProfile {
                 key: "BELIEF_BIOMETRIC_EVIDENCE".into(),
-                value: format!("{biometric_evidence:?}"),
+                value: values
+                    .get("BELIEF_BIOMETRIC_EVIDENCE")
+                    .cloned()
+                    .unwrap_or_default(),
                 profile,
             });
         }
@@ -144,7 +147,10 @@ impl PolicyConfig {
         if identity_resolution > maximum.identity_resolution {
             return Err(ConfigError::CapabilityExceedsProfile {
                 key: "BELIEF_IDENTITY_RESOLUTION".into(),
-                value: format!("{identity_resolution:?}"),
+                value: values
+                    .get("BELIEF_IDENTITY_RESOLUTION")
+                    .cloned()
+                    .unwrap_or_default(),
                 profile,
             });
         }
