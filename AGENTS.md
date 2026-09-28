@@ -11,7 +11,7 @@ Pure Rust workspace; `cargo run` executes a deterministic offline demo of the fu
 
 | Crate | Role |
 | --- | --- |
-| `apps/belief-cli` | Top-level CLI (`cargo run`, `doctor`, `setup`, `semantic-demo`) |
+| `apps/belief-cli` | Top-level CLI (`cargo run`, `explain`, `doctor`, `setup`, `semantic-demo`) |
 | `belief-core` | Evidence, judgments, claims, beliefs, derivations, provenance, score semantics |
 | `belief-policy` | Fail-closed authorization over evidence and inference classes |
 | `evidence-interchange` | Versioned, policy-admitted references to producer-owned evidence |
@@ -28,7 +28,18 @@ cargo fmt --all -- --check
 cargo clippy --workspace --all-targets -- -D warnings
 cargo test --workspace
 cargo run --quiet        # offline demo; CI runs it, must stay green without network or models
+
+# See what the pipeline does for an input instead of reading the code (offline, deterministic):
+cargo run -q -- explain <evidence.json> [--judgments <script.json>] [--profile <name>] \
+  [--policy BELIEF_KEY=VALUE]... [--json]
+# e.g. cargo run -q -- explain fixtures/explain/semantic-research/evidence.json \
+#        --judgments fixtures/explain/semantic-research/judgments.json --profile semantic_research
+
+# Golden outputs for fixtures/explain/<case>/ run in `cargo test --workspace`; after an intended change:
+BELIEF_UPDATE_FIXTURES=1 cargo test -p belief-cli --test explain_fixtures   # then review the diff
 ```
+
+`explain` exits 0 when it produced an explanation (policy refusals included), 2 when an input was malformed or unsupported (fail-closed), and 1 on usage or I/O errors. It reads no policy from the environment; pass `--profile` and `--policy` explicitly. Add a case directory under `fixtures/explain/` for new behavior (see `docs/GETTING_STARTED.md`).
 
 `cargo run -- setup` / `semantic-demo` download SemIf and a ~639 MB model into `.local/`. Run them when a task needs real semantic scoring; reuse an existing `.local/`.
 

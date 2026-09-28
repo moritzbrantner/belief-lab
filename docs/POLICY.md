@@ -22,6 +22,10 @@ The multimodal profile still starts with the high-risk gates off:
 
 These gates are independent. Enabling one does not enable the others.
 
+## Denial reasons
+
+`PolicyConfig::evidence_decision` and `inference_decision` return the reason for a denial, for example that a class is outside the profile, an allowlist removed it, or a gate is off. The boolean `allows_*` helpers delegate to them, so a reason and a decision can never disagree. Sensitive-trait and real-world identity inference are denied before any profile or setting is consulted. `cargo run -- explain` shows these reasons.
+
 ## Evidence purpose
 
 Authorization checks both an evidence class and the purpose for which it is used:
