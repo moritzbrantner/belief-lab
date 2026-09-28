@@ -30,7 +30,7 @@ cargo test --workspace
 cargo run --quiet        # offline demo; CI runs it, must stay green without network or models
 ```
 
-`cargo run -- setup` / `semantic-demo` download SemIf and a ~639 MB model into `.local/`. Do not run them unless the task needs real semantic scoring.
+`cargo run -- setup` / `semantic-demo` download SemIf and a ~639 MB model into `.local/`. Run them when a task needs real semantic scoring; reuse an existing `.local/`.
 
 ## Invariants
 
@@ -40,25 +40,13 @@ cargo run --quiet        # offline demo; CI runs it, must stay green without net
 - Every judgment keeps provider/model/prompt provenance. SemIf and model revisions stay pinned; a dirty or mismatched environment is refused, not silently accepted.
 - The default path (`cargo run`, tests) stays deterministic and offline.
 
-## Git and merging
+## Shared conventions
 
-- Work on a branch named `agent/<short-topic>`; never commit directly to `main`.
-- Open a PR, wait for CI, and merge it yourself with a merge commit (`gh pr merge --merge --delete-branch`) when all checks are green.
-- You may also review and merge Renovate PRs, other agents' PRs and the owner's feature PRs once they are reviewed and green.
-- Never weaken, skip, or delete a failing test or check to get green.
+General engineering rules (git and merging, commits, testing, ADRs, docs, dependencies, Rust style, …) come from `coding-agent-conventions`, installed in `.conventions/`. Read the rule briefing in `.conventions/index.md` before implementing and open the linked source when a rule applies. Do not edit `.conventions/`; refresh it with `coding-tooling conventions update`. Rules below are repository-specific additions or exceptions.
 
-## Design decisions
+## Evidence producers
 
-- Implement directly; no planning issue is needed first.
-- When you make a real architecture decision (new boundary, dependency, persistence/protocol shape, trade-off that is hard to reverse), record it as an ADR in `docs/adr/NNNN-<slug>.md` in the same PR.
-
-## Shared foundations
-
-- Evidence producers live beside this repo under `~/privat/`: `youtube-corpus`, `audio-analysis`, `visual-analysis`, `nlp-stack`. If a task needs a producer-side change, change it there: PR, merge when green, then bump the pinned rev here in the same task. Do not work around a producer bug locally or take over producer truth.
-
-## Testing
-
-- Every behavior change or bug fix comes with a test. For bugs, write the failing test that reproduces it first, then fix.
+- Producers are checked out beside this repo under `~/privat/`: `youtube-corpus`, `audio-analysis`, `visual-analysis`, `nlp-stack`. Fix producer-side defects there and update the reference here (DEP-003); never take over producer truth.
 
 ## Done means
 
