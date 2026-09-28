@@ -155,6 +155,19 @@ pub enum ScoreSemantics {
     PosteriorProbability,
 }
 
+impl ScoreSemantics {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::DetectorConfidence => "detector_confidence",
+            Self::ModelConfidence => "model_confidence",
+            Self::ConditionalOptionProbability => "conditional_option_probability",
+            Self::Similarity => "similarity",
+            Self::SoftTruth => "soft_truth",
+            Self::PosteriorProbability => "posterior_probability",
+        }
+    }
+}
+
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Score {
     value: f64,
@@ -385,6 +398,16 @@ pub enum JudgmentOutcome {
     Supports,
     Contradicts,
     Unknown,
+}
+
+impl JudgmentOutcome {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::Supports => "supports",
+            Self::Contradicts => "contradicts",
+            Self::Unknown => "unknown",
+        }
+    }
 }
 
 #[derive(Debug, Clone, PartialEq)]
