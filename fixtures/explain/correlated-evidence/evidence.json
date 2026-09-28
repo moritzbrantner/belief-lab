@@ -1,0 +1,76 @@
+{
+  "schema": "belief_evidence_interchange",
+  "schemaVersion": 1,
+  "exporter": {
+    "name": "youtube-corpus",
+    "revision": "git:youtube-corpus-fixture"
+  },
+  "revision": "batch:correlated-evidence:v1",
+  "evidence": [
+    {
+      "id": "evidence:transcript:1",
+      "subject": "corpus-person:1",
+      "class": "transcript",
+      "familyId": "family:utterance:1",
+      "source": {
+        "repository": "youtube-corpus",
+        "scopeId": "video:1",
+        "recordId": "transcript-segment:1",
+        "revision": "sha256:transcript-segment-1-v1"
+      },
+      "producer": {
+        "name": "audio-analysis",
+        "revision": "git:audio-analysis-fixture",
+        "model": "whisper"
+      },
+      "score": {
+        "value": 0.94,
+        "semantics": "model_confidence"
+      }
+    },
+    {
+      "id": "evidence:entity:1",
+      "subject": "corpus-person:1",
+      "class": "named_entity",
+      "familyId": "family:utterance:1",
+      "source": {
+        "repository": "youtube-corpus",
+        "scopeId": "video:1",
+        "recordId": "named-entity:1",
+        "revision": "sha256:named-entity-1-v1"
+      },
+      "producer": {
+        "name": "nlp-stack",
+        "revision": "git:nlp-stack-fixture",
+        "model": "ner"
+      },
+      "score": {
+        "value": 0.88,
+        "semantics": "model_confidence"
+      },
+      "parentEvidenceIds": [
+        "evidence:transcript:1"
+      ]
+    },
+    {
+      "id": "evidence:ocr:1",
+      "class": "ocr",
+      "familyId": "family:visual-text:1",
+      "source": {
+        "repository": "youtube-corpus",
+        "scopeId": "video:1",
+        "recordId": "visual-text:1",
+        "revision": "sha256:visual-text-1-v1"
+      },
+      "producer": {
+        "name": "visual-analysis",
+        "revision": "git:visual-analysis-fixture",
+        "model": "ocr"
+      },
+      "score": {
+        "value": 0.89,
+        "semantics": "detector_confidence"
+      }
+    }
+  ]
+}

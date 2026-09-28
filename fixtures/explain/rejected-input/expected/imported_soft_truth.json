@@ -1,0 +1,17 @@
+{
+  "report": "belief_explain",
+  "report_version": 1,
+  "outcome": "input_rejected",
+  "policy": {
+    "profile": "semantic_research",
+    "settings": {
+      "BELIEF_POLICY_PROFILE": "semantic_research"
+    }
+  },
+  "rejection": {
+    "stage": "interchange",
+    "reason": "evidence evidence:transcript:1 cannot import inference-result score semantics soft_truth"
+  },
+  "batch": null,
+  "inferences": []
+}

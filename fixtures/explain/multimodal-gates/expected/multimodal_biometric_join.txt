@@ -1,0 +1,64 @@
+Policy profile: multimodal_research
+  BELIEF_ALLOW_CROSS_SOURCE_JOIN=true
+  BELIEF_BIOMETRIC_EVIDENCE=reference_only
+  BELIEF_POLICY_PROFILE=multimodal_research
+
+Evidence batch batch:multimodal-gates:v1 (belief_evidence_interchange@1) exported by youtube-corpus @ git:youtube-corpus-fixture
+  admitted evidence:face-track:1 [face_track_reference] for corroboration, entity_linking
+  admitted evidence:transcript:1 [transcript] for direct_support, corroboration, entity_linking
+  admitted evidence:transcript:2 [transcript] for direct_support, corroboration, entity_linking
+  admitted evidence:voice-track:1 [voice_track_reference] for corroboration, entity_linking
+Import: stored 4 evidence records.
+
+Inference speaker-on-screen [descriptive]: corpus-person:1 speaks_on_screen true
+  derived by baseline:descriptive:v1
+  belief belief:speaker-on-screen = 0.925 soft_truth
+    meaning: heuristic soft truth in [0, 1] with 0.5 neutral; not a calibrated posterior probability
+  judgments:
+    judgment:on-screen:1 supports 0.850 model_confidence, group family:utterance:1, selected
+      uses evidence:transcript:1 as direct_support, evidence:face-track:1 as corroboration
+  authorized under multimodal_research for descriptive; scopes youtube-corpus/video:1; cross-source join no
+  provenance (read back from the store):
+    belief belief:speaker-on-screen [active] <- baseline:descriptive:v1 run run:speaker-on-screen
+    claim claim:speaker-on-screen [active] <- judgment judgment:on-screen:1
+    judgment judgment:on-screen:1 [active] supports 0.850 model_confidence, spec fixture-judgment@v1, model fixture-judge:v1
+      evidence evidence:face-track:1 [active] face_track_reference
+        source youtube-corpus video:1 face-track:1 @ sha256:face-track-1-v1
+        producer visual-analysis @ git:visual-analysis-fixture, model face-tracking
+      evidence evidence:transcript:1 [active] transcript
+        source youtube-corpus video:1 transcript-segment:1 @ sha256:transcript-segment-1-v1
+        producer audio-analysis @ git:audio-analysis-fixture, model whisper
+
+Inference face-as-direct-support [descriptive]: corpus-person:1 appears_in_video video:1
+  refused: evidence evidence:face-track:1 (face_track_reference) is not authorized for direct_support
+  judgments (not stored):
+    judgment:appears:1 supports 0.900 model_confidence, group family:face-track:1
+      uses evidence:face-track:1 as direct_support
+
+Inference across-videos [preference]: corpus-person:1 prefers_customization true
+  derived by baseline:preference:v1
+  belief belief:across-videos = 0.875 soft_truth
+    meaning: heuristic soft truth in [0, 1] with 0.5 neutral; not a calibrated posterior probability
+  judgments:
+    judgment:across:1 supports 0.800 model_confidence, group family:utterance:1, selected
+      uses evidence:transcript:1 as direct_support
+    judgment:across:2 supports 0.700 model_confidence, group family:utterance:2, selected
+      uses evidence:transcript:2 as direct_support
+  authorized under multimodal_research for preference; scopes youtube-corpus/video:1, youtube-corpus/video:2; cross-source join yes
+  provenance (read back from the store):
+    belief belief:across-videos [active] <- baseline:preference:v1 run run:across-videos
+    claim claim:across-videos [active] <- judgment judgment:across:1
+    judgment judgment:across:1 [active] supports 0.800 model_confidence, spec fixture-judgment@v1, model fixture-judge:v1
+      evidence evidence:transcript:1 [active] transcript
+        source youtube-corpus video:1 transcript-segment:1 @ sha256:transcript-segment-1-v1
+        producer audio-analysis @ git:audio-analysis-fixture, model whisper
+    judgment judgment:across:2 [active] supports 0.700 model_confidence, spec fixture-judgment@v1, model fixture-judge:v1
+      evidence evidence:transcript:2 [active] transcript
+        source youtube-corpus video:2 transcript-segment:2 @ sha256:transcript-segment-2-v1
+        producer audio-analysis @ git:audio-analysis-fixture, model whisper
+
+Inference corpus-local-link [local_entity_link]: corpus-person:1 same_corpus_person_as corpus-person:2
+  refused: local_entity_link requires BELIEF_IDENTITY_RESOLUTION=corpus_local
+  judgments (not stored):
+    judgment:link:1 supports 0.750 model_confidence, group family:voice-track:1
+      uses evidence:face-track:1 as entity_linking, evidence:voice-track:1 as entity_linking

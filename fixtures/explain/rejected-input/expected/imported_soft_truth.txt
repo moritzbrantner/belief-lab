@@ -1,0 +1,5 @@
+Policy profile: semantic_research
+  BELIEF_POLICY_PROFILE=semantic_research
+
+Input rejected (evidence interchange): evidence evidence:transcript:1 cannot import inference-result score semantics soft_truth
+Failed closed: nothing was imported, inferred, or stored.

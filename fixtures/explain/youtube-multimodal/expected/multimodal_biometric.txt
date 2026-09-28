@@ -1,0 +1,14 @@
+Policy profile: multimodal_research
+  BELIEF_BIOMETRIC_EVIDENCE=reference_only
+  BELIEF_POLICY_PROFILE=multimodal_research
+
+Evidence batch batch:youtube-video-1:v1 (belief_evidence_interchange@1) exported by youtube-corpus @ git:youtube-corpus-example
+  admitted evidence:face-track:2 [face_track_reference] for corroboration, entity_linking
+  admitted evidence:scene:4 [scene_detection] for direct_support, corroboration, entity_linking
+  admitted evidence:transcript:17 [transcript] for direct_support, corroboration, entity_linking
+  admitted evidence:voice-track:3 [voice_track_reference] for corroboration, entity_linking
+  admitted evidence:entity:arch [named_entity] for direct_support, corroboration, entity_linking
+  admitted evidence:ocr:thinkpad [ocr] for direct_support, corroboration, entity_linking
+Import: stored 6 evidence records.
+
+No judgment script supplied; no inference was requested.

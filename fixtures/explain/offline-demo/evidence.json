@@ -1,0 +1,27 @@
+{
+  "schema": "belief_evidence_interchange",
+  "schemaVersion": 1,
+  "exporter": {
+    "name": "belief-cli-demo",
+    "revision": "git:belief-cli-demo-v1"
+  },
+  "revision": "batch:demo:v1",
+  "evidence": [
+    {
+      "id": "evidence:demo:statement",
+      "subject": "person:alice",
+      "class": "transcript",
+      "familyId": "family:demo:statement",
+      "source": {
+        "repository": "belief-cli-demo",
+        "scopeId": "demo:1",
+        "recordId": "statement:1",
+        "revision": "sha256:demo-source-v1"
+      },
+      "producer": {
+        "name": "belief-cli-demo",
+        "revision": "commit:demo-producer-v1"
+      }
+    }
+  ]
+}

@@ -18,6 +18,30 @@ This is the default command. It constructs a provenance-bearing transcript refer
 
 It intentionally needs no network access after Rust dependencies are available, no `.env`, no Python environment, and no model weights.
 
+## Explain an evidence batch
+
+`explain` runs any evidence-interchange batch offline through the same path as the demo: interchange validation, policy admission, deterministic judgments, policy authorization, baseline inference, the store, and the store's explanation.
+
+```bash
+cargo run -q -- explain fixtures/explain/semantic-research/evidence.json \
+  --judgments fixtures/explain/semantic-research/judgments.json \
+  --profile semantic_research
+```
+
+It prints the admitted and rejected evidence with the policy reason, each requested inference with its status (`derived`, `refused`, `not run`, `no belief`), derived beliefs with score semantics, which judgments the baseline selected or ignored as correlated, and the provenance chain read back from the store. `--json` prints the full structured report. Output has no timestamps or absolute paths and a fixed order.
+
+- `--profile` selects a shipped profile (`observe_only` is the default). `--policy KEY=VALUE` sets any other key from [`.env.example`](../.env.example), such as `BELIEF_BIOMETRIC_EVIDENCE=reference_only`. The same fail-closed limits apply as for `.env`, so sensitive-trait inference and real-world identity resolution stay refused. The process environment is ignored.
+- Without `--judgments` only admission runs. A judgment script (`belief_judgment_script@1`, see `fixtures/explain/*/judgments.json`) records the judgments a provider such as SemIf would return: the proposition and inference class, and for each judgment its outcome, `modelConfidence`, correlation group and evidence uses with a purpose. No model runs. Everything after the judgments is the real policy, inference and store code.
+- Import is all-or-nothing: one rejected record refuses the whole batch, and the report still lists every record's decision.
+- Exit codes: 0 means an explanation was produced, including policy refusals. 2 means an input was malformed or unsupported and nothing was imported. 1 means a usage or I/O error.
+
+Every directory in `fixtures/explain/` is a case. Its `case.json` lists runs, and each run has arguments relative to the case directory and an expected exit code. `cargo test --workspace` runs each case as text and as `--json` and compares the output with `expected/<run>.txt` and `expected/<run>.json`. After an intended output change, regenerate the expected files and review the diff:
+
+```bash
+BELIEF_UPDATE_FIXTURES=1 cargo test -p belief-cli --test explain_fixtures
+git diff fixtures/explain
+```
+
 ## 2. Local semantic decisions
 
 The optional SemIf-backed path adds:
@@ -94,6 +118,8 @@ Once the pinned checkout, virtual environment, setup receipt, and model are pres
 ```text
 cargo run                         offline core demo
 cargo run -- demo                 offline core demo
+cargo run -- explain <evidence.json> [--judgments <file>] [--profile <name>] [--policy K=V]... [--json]
+                                  explain an evidence batch offline
 cargo run -- doctor [tier]        inspect prerequisites and local state
 cargo run -- setup [tier]         prepare pinned SemIf + model
 cargo run -- semantic-demo [tier] run real local semantic scoring

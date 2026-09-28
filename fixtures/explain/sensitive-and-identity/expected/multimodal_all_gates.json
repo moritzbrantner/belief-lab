@@ -1,0 +1,132 @@
+{
+  "report": "belief_explain",
+  "report_version": 1,
+  "outcome": "explained",
+  "policy": {
+    "profile": "multimodal_research",
+    "settings": {
+      "BELIEF_ALLOW_CROSS_SOURCE_JOIN": "true",
+      "BELIEF_BIOMETRIC_EVIDENCE": "reference_only",
+      "BELIEF_IDENTITY_RESOLUTION": "corpus_local",
+      "BELIEF_POLICY_PROFILE": "multimodal_research"
+    }
+  },
+  "rejection": null,
+  "batch": {
+    "schema": "belief_evidence_interchange@1",
+    "exporter": {
+      "name": "survey-corpus",
+      "revision": "git:survey-corpus-fixture"
+    },
+    "revision": "batch:sensitive-and-identity:v1",
+    "evidence": [
+      {
+        "id": "evidence:assertion:1",
+        "class": "user_assertion",
+        "family": "family:assertion:1",
+        "subject": "corpus-person:1",
+        "score": null,
+        "source": {
+          "repository": "survey-corpus",
+          "scope_id": "form:1",
+          "record_id": "answer:1",
+          "revision": "sha256:answer-1-v1"
+        },
+        "producer": {
+          "name": "survey-export",
+          "revision": "git:survey-export-fixture",
+          "model": null,
+          "config_hash": null
+        },
+        "parents": [],
+        "admission": {
+          "admitted": true,
+          "admitted_purposes": [
+            "direct_support",
+            "corroboration",
+            "entity_linking"
+          ],
+          "denied_purposes": {},
+          "rejection_reasons": []
+        }
+      }
+    ],
+    "import": {
+      "imported": true,
+      "stored": 1,
+      "reason": null
+    }
+  },
+  "inferences": [
+    {
+      "id": "sensitive-trait",
+      "class": "sensitive_trait",
+      "proposition": {
+        "subject": "corpus-person:1",
+        "predicate": "has_religious_affiliation",
+        "object": "\"example-affiliation\""
+      },
+      "status": "refused",
+      "reason": "inference class sensitive_trait is not authorized by any shipped profile",
+      "rule": null,
+      "judgments": [
+        {
+          "id": "judgment:sensitive:1",
+          "outcome": "supports",
+          "confidence": {
+            "value": 0.9,
+            "semantics": "model_confidence"
+          },
+          "correlation_group": "family:assertion:1",
+          "evidence": [
+            {
+              "evidence": "evidence:assertion:1",
+              "purpose": "direct_support"
+            }
+          ],
+          "spec": "fixture-judgment@v1",
+          "model_revision": "fixture-judge:v1",
+          "selection": null
+        }
+      ],
+      "authorization": null,
+      "belief": null,
+      "provenance": null
+    },
+    {
+      "id": "real-world-identity",
+      "class": "real_world_identity",
+      "proposition": {
+        "subject": "corpus-person:1",
+        "predicate": "is_real_world_person",
+        "object": "person:example-public-figure"
+      },
+      "status": "refused",
+      "reason": "inference class real_world_identity is not authorized by any shipped profile",
+      "rule": null,
+      "judgments": [
+        {
+          "id": "judgment:identity:1",
+          "outcome": "supports",
+          "confidence": {
+            "value": 0.9,
+            "semantics": "model_confidence"
+          },
+          "correlation_group": "family:assertion:1",
+          "evidence": [
+            {
+              "evidence": "evidence:assertion:1",
+              "purpose": "direct_support"
+            }
+          ],
+          "spec": "fixture-judgment@v1",
+          "model_revision": "fixture-judge:v1",
+          "selection": null
+        }
+      ],
+      "authorization": null,
+      "belief": null,
+      "provenance": null
+    }
+  ]
+}

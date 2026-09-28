@@ -1,0 +1,17 @@
+{
+  "report": "belief_explain",
+  "report_version": 1,
+  "outcome": "input_rejected",
+  "policy": {
+    "profile": "semantic_research",
+    "settings": {
+      "BELIEF_POLICY_PROFILE": "semantic_research"
+    }
+  },
+  "rejection": {
+    "stage": "interchange",
+    "reason": "invalid evidence interchange JSON: missing field `revision` at line 31 column 1"
+  },
+  "batch": null,
+  "inferences": []
+}

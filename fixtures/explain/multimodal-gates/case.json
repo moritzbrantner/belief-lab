@@ -1,0 +1,72 @@
+{
+  "description": "Face/voice track references and each multimodal capability are refused until separately enabled: biometric references, cross-source joins, and corpus-local identity (which has no trusted rule yet). Biometric references are never direct support.",
+  "runs": [
+    {
+      "name": "semantic_research",
+      "args": [
+        "evidence.json",
+        "--judgments",
+        "judgments.json",
+        "--profile",
+        "semantic_research"
+      ],
+      "exit": 0
+    },
+    {
+      "name": "multimodal_no_gates",
+      "args": [
+        "evidence.json",
+        "--judgments",
+        "judgments.json",
+        "--profile",
+        "multimodal_research"
+      ],
+      "exit": 0
+    },
+    {
+      "name": "multimodal_biometric",
+      "args": [
+        "evidence.json",
+        "--judgments",
+        "judgments.json",
+        "--profile",
+        "multimodal_research",
+        "--policy",
+        "BELIEF_BIOMETRIC_EVIDENCE=reference_only"
+      ],
+      "exit": 0
+    },
+    {
+      "name": "multimodal_biometric_join",
+      "args": [
+        "evidence.json",
+        "--judgments",
+        "judgments.json",
+        "--profile",
+        "multimodal_research",
+        "--policy",
+        "BELIEF_BIOMETRIC_EVIDENCE=reference_only",
+        "--policy",
+        "BELIEF_ALLOW_CROSS_SOURCE_JOIN=true"
+      ],
+      "exit": 0
+    },
+    {
+      "name": "multimodal_all_gates",
+      "args": [
+        "evidence.json",
+        "--judgments",
+        "judgments.json",
+        "--profile",
+        "multimodal_research",
+        "--policy",
+        "BELIEF_BIOMETRIC_EVIDENCE=reference_only",
+        "--policy",
+        "BELIEF_ALLOW_CROSS_SOURCE_JOIN=true",
+        "--policy",
+        "BELIEF_IDENTITY_RESOLUTION=corpus_local"
+      ],
+      "exit": 0
+    }
+  ]
+}

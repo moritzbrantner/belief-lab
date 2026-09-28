@@ -69,6 +69,21 @@ pub enum TrustedInferenceRule {
 }
 
 impl TrustedInferenceRule {
+    /// The trusted rule implementing an inference class, if any exists.
+    ///
+    /// Only descriptive and preference inference have a trusted rule today; every other class
+    /// has no executable rule regardless of policy.
+    pub fn for_class(class: InferenceClass) -> Option<Self> {
+        match class {
+            InferenceClass::Descriptive => Some(Self::BaselineDescriptiveV1),
+            InferenceClass::Preference => Some(Self::BaselinePreferenceV1),
+            InferenceClass::LocalEntityLink
+            | InferenceClass::CrossSourceAssociation
+            | InferenceClass::SensitiveTrait
+            | InferenceClass::RealWorldIdentity => None,
+        }
+    }
+
     pub fn class(self) -> InferenceClass {
         match self {
             Self::BaselineDescriptiveV1 => InferenceClass::Descriptive,

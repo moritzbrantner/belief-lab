@@ -92,6 +92,8 @@ A validated batch must be admitted through `belief-policy`. The selected profile
 - `semantic_research` rejects face/voice-track references;
 - `multimodal_research` still rejects them unless `BELIEF_BIOMETRIC_EVIDENCE=reference_only` is explicitly enabled.
 
+`ValidatedEvidenceBatch::admission` reports the decision for each record: the purposes it is admitted for, and the policy reason for each denied purpose. `authorize` uses the same report. Import stays all-or-nothing: if any record is admissible for no purpose, the whole batch is refused.
+
 Successful admission issues an `EvidenceImportReceipt` containing the policy profile, exporter revision, batch revision, imported evidence ids, and evidence classes.
 
 ## Store semantics

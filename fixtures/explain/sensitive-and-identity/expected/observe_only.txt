@@ -1,0 +1,18 @@
+Policy profile: observe_only
+  BELIEF_POLICY_PROFILE=observe_only
+
+Evidence batch batch:sensitive-and-identity:v1 (belief_evidence_interchange@1) exported by survey-corpus @ git:survey-corpus-fixture
+  admitted evidence:assertion:1 [user_assertion] for direct_support
+Import: stored 1 evidence record.
+
+Inference sensitive-trait [sensitive_trait]: corpus-person:1 has_religious_affiliation "example-affiliation"
+  refused: inference class sensitive_trait is not authorized by any shipped profile
+  judgments (not stored):
+    judgment:sensitive:1 supports 0.900 model_confidence, group family:assertion:1
+      uses evidence:assertion:1 as direct_support
+
+Inference real-world-identity [real_world_identity]: corpus-person:1 is_real_world_person person:example-public-figure
+  refused: inference class real_world_identity is not authorized by any shipped profile
+  judgments (not stored):
+    judgment:identity:1 supports 0.900 model_confidence, group family:assertion:1
+      uses evidence:assertion:1 as direct_support

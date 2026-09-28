@@ -12,6 +12,15 @@ cargo run
 
 That executes a deterministic offline demo of the complete evidence → judgment → policy → inference → store → explanation path. It does **not** require a `.env` file, Python, SemIf, or model weights.
 
+To see what the pipeline does with a given evidence batch, without reading the code:
+
+```bash
+cargo run -q -- explain fixtures/explain/semantic-research/evidence.json \
+  --judgments fixtures/explain/semantic-research/judgments.json --profile semantic_research
+```
+
+Golden outputs for every case in `fixtures/explain/` are checked by `cargo test --workspace`. See [Getting started](docs/GETTING_STARTED.md#explain-an-evidence-batch).
+
 For real local semantic scoring:
 
 ```bash

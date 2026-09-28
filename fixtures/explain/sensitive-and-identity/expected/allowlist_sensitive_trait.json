@@ -1,0 +1,18 @@
+{
+  "report": "belief_explain",
+  "report_version": 1,
+  "outcome": "input_rejected",
+  "policy": {
+    "profile": "multimodal_research",
+    "settings": {
+      "BELIEF_ALLOWED_INFERENCES": "sensitive_trait",
+      "BELIEF_POLICY_PROFILE": "multimodal_research"
+    }
+  },
+  "rejection": {
+    "stage": "policy_config",
+    "reason": "BELIEF_ALLOWED_INFERENCES=\"sensitive_trait\" exceeds the maximum capability of profile multimodal_research"
+  },
+  "batch": null,
+  "inferences": []
+}

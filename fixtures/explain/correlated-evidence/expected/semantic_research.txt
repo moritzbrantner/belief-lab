@@ -1,0 +1,34 @@
+Policy profile: semantic_research
+  BELIEF_POLICY_PROFILE=semantic_research
+
+Evidence batch batch:correlated-evidence:v1 (belief_evidence_interchange@1) exported by youtube-corpus @ git:youtube-corpus-fixture
+  admitted evidence:ocr:1 [ocr] for direct_support, corroboration
+  admitted evidence:transcript:1 [transcript] for direct_support, corroboration
+  admitted evidence:entity:1 [named_entity] for direct_support, corroboration
+Import: stored 3 evidence records.
+
+Inference corpus-person-1:uses-thinkpad [descriptive]: corpus-person:1 uses_laptop product:thinkpad
+  derived by baseline:descriptive:v1
+  belief belief:corpus-person-1:uses-thinkpad = 0.575 soft_truth
+    meaning: heuristic soft truth in [0, 1] with 0.5 neutral; not a calibrated posterior probability
+  judgments:
+    judgment:transcript:1 supports 0.900 model_confidence, group family:utterance:1, selected
+      uses evidence:transcript:1 as direct_support
+    judgment:entity:1 supports 0.800 model_confidence, group family:utterance:1, ignored: weaker judgment in the same correlation group
+      uses evidence:entity:1 as corroboration
+    judgment:ocr:1 contradicts 0.600 model_confidence, group family:visual-text:1, selected
+      uses evidence:ocr:1 as corroboration
+    judgment:ocr:2 unknown 0.500 model_confidence, group family:visual-text:2, ignored: unknown outcome carries no signal
+      uses evidence:ocr:1 as corroboration
+  authorized under semantic_research for descriptive; scopes youtube-corpus/video:1; cross-source join no
+  provenance (read back from the store):
+    belief belief:corpus-person-1:uses-thinkpad [active] <- baseline:descriptive:v1 run run:corpus-person-1:uses-thinkpad
+    claim claim:corpus-person-1:uses-thinkpad [active] <- judgment judgment:transcript:1
+    judgment judgment:ocr:1 [active] contradicts 0.600 model_confidence, spec fixture-judgment@v1, model fixture-judge:v1
+      evidence evidence:ocr:1 [active] ocr
+        source youtube-corpus video:1 visual-text:1 @ sha256:visual-text-1-v1
+        producer visual-analysis @ git:visual-analysis-fixture, model ocr
+    judgment judgment:transcript:1 [active] supports 0.900 model_confidence, spec fixture-judgment@v1, model fixture-judge:v1
+      evidence evidence:transcript:1 [active] transcript
+        source youtube-corpus video:1 transcript-segment:1 @ sha256:transcript-segment-1-v1
+        producer audio-analysis @ git:audio-analysis-fixture, model whisper

@@ -1,0 +1,131 @@
+{
+  "schema": "belief_judgment_script",
+  "schemaVersion": 1,
+  "judgmentSpec": {
+    "name": "fixture-judgment",
+    "revision": "v1"
+  },
+  "modelRevision": "fixture-judge:v1",
+  "inferences": [
+    {
+      "id": "speaker-on-screen",
+      "class": "descriptive",
+      "proposition": {
+        "subject": "corpus-person:1",
+        "predicate": "speaks_on_screen",
+        "object": {
+          "boolean": true
+        }
+      },
+      "judgments": [
+        {
+          "id": "judgment:on-screen:1",
+          "outcome": "supports",
+          "modelConfidence": 0.85,
+          "correlationGroup": "family:utterance:1",
+          "evidence": [
+            {
+              "id": "evidence:transcript:1",
+              "purpose": "direct_support"
+            },
+            {
+              "id": "evidence:face-track:1",
+              "purpose": "corroboration"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "face-as-direct-support",
+      "class": "descriptive",
+      "proposition": {
+        "subject": "corpus-person:1",
+        "predicate": "appears_in_video",
+        "object": {
+          "entity": "video:1"
+        }
+      },
+      "judgments": [
+        {
+          "id": "judgment:appears:1",
+          "outcome": "supports",
+          "modelConfidence": 0.9,
+          "correlationGroup": "family:face-track:1",
+          "evidence": [
+            {
+              "id": "evidence:face-track:1",
+              "purpose": "direct_support"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "across-videos",
+      "class": "preference",
+      "proposition": {
+        "subject": "corpus-person:1",
+        "predicate": "prefers_customization",
+        "object": {
+          "boolean": true
+        }
+      },
+      "judgments": [
+        {
+          "id": "judgment:across:1",
+          "outcome": "supports",
+          "modelConfidence": 0.8,
+          "correlationGroup": "family:utterance:1",
+          "evidence": [
+            {
+              "id": "evidence:transcript:1",
+              "purpose": "direct_support"
+            }
+          ]
+        },
+        {
+          "id": "judgment:across:2",
+          "outcome": "supports",
+          "modelConfidence": 0.7,
+          "correlationGroup": "family:utterance:2",
+          "evidence": [
+            {
+              "id": "evidence:transcript:2",
+              "purpose": "direct_support"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "corpus-local-link",
+      "class": "local_entity_link",
+      "proposition": {
+        "subject": "corpus-person:1",
+        "predicate": "same_corpus_person_as",
+        "object": {
+          "entity": "corpus-person:2"
+        }
+      },
+      "judgments": [
+        {
+          "id": "judgment:link:1",
+          "outcome": "supports",
+          "modelConfidence": 0.75,
+          "correlationGroup": "family:voice-track:1",
+          "evidence": [
+            {
+              "id": "evidence:face-track:1",
+              "purpose": "entity_linking"
+            },
+            {
+              "id": "evidence:voice-track:1",
+              "purpose": "entity_linking"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

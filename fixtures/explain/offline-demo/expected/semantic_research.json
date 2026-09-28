@@ -1,0 +1,169 @@
+{
+  "report": "belief_explain",
+  "report_version": 1,
+  "outcome": "explained",
+  "policy": {
+    "profile": "semantic_research",
+    "settings": {
+      "BELIEF_POLICY_PROFILE": "semantic_research"
+    }
+  },
+  "rejection": null,
+  "batch": {
+    "schema": "belief_evidence_interchange@1",
+    "exporter": {
+      "name": "belief-cli-demo",
+      "revision": "git:belief-cli-demo-v1"
+    },
+    "revision": "batch:demo:v1",
+    "evidence": [
+      {
+        "id": "evidence:demo:statement",
+        "class": "transcript",
+        "family": "family:demo:statement",
+        "subject": "person:alice",
+        "score": null,
+        "source": {
+          "repository": "belief-cli-demo",
+          "scope_id": "demo:1",
+          "record_id": "statement:1",
+          "revision": "sha256:demo-source-v1"
+        },
+        "producer": {
+          "name": "belief-cli-demo",
+          "revision": "commit:demo-producer-v1",
+          "model": null,
+          "config_hash": null
+        },
+        "parents": [],
+        "admission": {
+          "admitted": true,
+          "admitted_purposes": [
+            "direct_support",
+            "corroboration"
+          ],
+          "denied_purposes": {
+            "entity_linking": "evidence purpose entity_linking is outside profile semantic_research"
+          },
+          "rejection_reasons": []
+        }
+      }
+    ],
+    "import": {
+      "imported": true,
+      "stored": 1,
+      "reason": null
+    }
+  },
+  "inferences": [
+    {
+      "id": "demo:preference",
+      "class": "preference",
+      "proposition": {
+        "subject": "person:alice",
+        "predicate": "prefers_customization",
+        "object": "true"
+      },
+      "status": "derived",
+      "reason": null,
+      "rule": "baseline:preference:v1",
+      "judgments": [
+        {
+          "id": "judgment:demo:support",
+          "outcome": "supports",
+          "confidence": {
+            "value": 0.9,
+            "semantics": "model_confidence"
+          },
+          "correlation_group": "correlation:demo:statement",
+          "evidence": [
+            {
+              "evidence": "evidence:demo:statement",
+              "purpose": "corroboration"
+            }
+          ],
+          "spec": "demo-support@v1",
+          "model_revision": "demo-model:v1",
+          "selection": "selected"
+        }
+      ],
+      "authorization": {
+        "profile": "semantic_research",
+        "inference_class": "preference",
+        "source_scopes": [
+          "belief-cli-demo/demo:1"
+        ],
+        "cross_source_join": false,
+        "evidence_uses": [
+          {
+            "evidence": "evidence:demo:statement",
+            "purpose": "corroboration"
+          }
+        ]
+      },
+      "belief": {
+        "id": "belief:demo:preference",
+        "claim": "claim:demo:preference",
+        "value": 0.95,
+        "semantics": "soft_truth",
+        "meaning": "heuristic soft truth in [0, 1] with 0.5 neutral; not a calibrated posterior probability"
+      },
+      "provenance": {
+        "belief": "belief:demo:preference",
+        "validity": "active",
+        "derivation": {
+          "rule": "baseline:preference:v1",
+          "inference_run": "run:demo:preference",
+          "judgments": [
+            "judgment:demo:support"
+          ],
+          "evidence": [
+            "evidence:demo:statement"
+          ],
+          "claims": []
+        },
+        "claim": {
+          "id": "claim:demo:preference",
+          "validity": "active",
+          "origin": "judgment judgment:demo:support"
+        },
+        "judgments": [
+          {
+            "id": "judgment:demo:support",
+            "validity": "active",
+            "outcome": "supports",
+            "confidence": {
+              "value": 0.9,
+              "semantics": "model_confidence"
+            },
+            "spec": "demo-support@v1",
+            "model_revision": "demo-model:v1",
+            "evidence": [
+              "evidence:demo:statement"
+            ]
+          }
+        ],
+        "evidence": [
+          {
+            "id": "evidence:demo:statement",
+            "validity": "active",
+            "class": "transcript",
+            "source": {
+              "repository": "belief-cli-demo",
+              "scope_id": "demo:1",
+              "record_id": "statement:1",
+              "revision": "sha256:demo-source-v1"
+            },
+            "producer": {
+              "name": "belief-cli-demo",
+              "revision": "commit:demo-producer-v1",
+              "model": null,
+              "config_hash": null
+            },
+            "parents": []
+          }
+        ]
+      }
+    }
+  ]
+}

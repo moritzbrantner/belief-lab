@@ -1,0 +1,22 @@
+Policy profile: semantic_research
+  BELIEF_POLICY_PROFILE=semantic_research
+
+Evidence batch batch:observe-only:v1 (belief_evidence_interchange@1) exported by survey-corpus @ git:survey-corpus-fixture
+  admitted evidence:assertion:1 [user_assertion] for direct_support, corroboration
+Import: stored 1 evidence record.
+
+Inference corpus-person-1:prefers-dark-mode [preference]: corpus-person:1 prefers_dark_mode true
+  derived by baseline:preference:v1
+  belief belief:corpus-person-1:prefers-dark-mode = 0.950 soft_truth
+    meaning: heuristic soft truth in [0, 1] with 0.5 neutral; not a calibrated posterior probability
+  judgments:
+    judgment:dark-mode:1 supports 0.900 model_confidence, group family:assertion:1, selected
+      uses evidence:assertion:1 as direct_support
+  authorized under semantic_research for preference; scopes survey-corpus/form:1; cross-source join no
+  provenance (read back from the store):
+    belief belief:corpus-person-1:prefers-dark-mode [active] <- baseline:preference:v1 run run:corpus-person-1:prefers-dark-mode
+    claim claim:corpus-person-1:prefers-dark-mode [active] <- judgment judgment:dark-mode:1
+    judgment judgment:dark-mode:1 [active] supports 0.900 model_confidence, spec fixture-judgment@v1, model fixture-judge:v1
+      evidence evidence:assertion:1 [active] user_assertion
+        source survey-corpus form:1 answer:1 @ sha256:answer-1-v1
+        producer survey-export @ git:survey-export-fixture

@@ -1,21 +1,24 @@
+mod explain;
+mod judgments;
+mod pipeline;
+mod render;
+
+use std::collections::BTreeMap;
 use std::env;
 use std::error::Error;
+use std::fs;
 use std::io;
 use std::path::{Path, PathBuf};
 use std::process::{Command, ExitCode};
 
 use belief_core::{
     BeliefId, Claim, ClaimId, EntityId, EvidenceClass, EvidenceFamilyId, EvidenceId,
-    EvidencePurpose, EvidenceRef, InferenceRunId, Judgment, JudgmentId, JudgmentOutcome,
-    JudgmentSpecRef, ObjectValue, Predicate, ProducerRef, Proposition, Provenance, Score,
-    ScoreSemantics, SourceRef,
+    EvidencePurpose, EvidenceRef, InferenceRunId, JudgmentId, JudgmentOutcome, JudgmentSpecRef,
+    ObjectValue, Predicate, ProducerRef, Proposition, Provenance, SourceRef,
 };
-use belief_policy::PolicyConfig;
+use belief_policy::{PolicyConfig, POLICY_KEYS};
 use belief_store::InMemoryBeliefStore;
-use inference_baseline::BaselineInferenceEngine;
-use inference_core::{
-    EvidenceUse, InferenceEngine, InferenceRequest, JudgmentBasis, TrustedInferenceRule,
-};
+use inference_core::{EvidenceUse, InferenceRequest, JudgmentBasis, TrustedInferenceRule};
 use semantic_decision::{
     DecisionEvidenceUse, DecisionOption, DecisionRequest, SemanticDecisionEngine,
     CONTRADICTS_OPTION_ID, SUPPORTS_OPTION_ID, UNKNOWN_OPTION_ID,
@@ -25,12 +28,23 @@ use semif_provider::{
     semif_score_path, SemifBackend, SemifInstallBackend, SemifModelTier, SemifProvider,
 };
 
+use explain::{explain, ExplainInput, InferenceStatus, Outcome};
+use pipeline::derive_belief;
+
 const SEMIF_DIR: &str = ".local/semif";
 const MODEL_DIR: &str = ".local/models";
 
+/// The offline demo is an ordinary explain fixture, so `cargo run` and `explain` share one path.
+const DEMO_EVIDENCE: &str = include_str!("../../../fixtures/explain/offline-demo/evidence.json");
+const DEMO_JUDGMENTS: &str = include_str!("../../../fixtures/explain/offline-demo/judgments.json");
+const DEMO_PROFILE: &str = "semantic_research";
+
+/// `explain` exit code when an input is malformed or unsupported and the run failed closed.
+const EXIT_INPUT_REJECTED: u8 = 2;
+
 fn main() -> ExitCode {
     match run(env::args().skip(1).collect()) {
-        Ok(()) => ExitCode::SUCCESS,
+        Ok(code) => code,
         Err(error) => {
             eprintln!("belief: {error}");
             ExitCode::FAILURE
@@ -38,8 +52,16 @@ fn main() -> ExitCode {
     }
 }
 
-fn run(args: Vec<String>) -> Result<(), Box<dyn Error>> {
-    match args.as_slice() {
+fn run(args: Vec<String>) -> Result<ExitCode, Box<dyn Error>> {
+    if args.first().map(String::as_str) == Some("explain") {
+        return run_explain(&args[1..]);
+    }
+    run_command(&args)?;
+    Ok(ExitCode::SUCCESS)
+}
+
+fn run_command(args: &[String]) -> Result<(), Box<dyn Error>> {
+    match args {
         [] => {
             print_core_demo(run_core_demo()?);
             Ok(())
@@ -64,98 +86,62 @@ fn run(args: Vec<String>) -> Result<(), Box<dyn Error>> {
 
 #[derive(Debug, Clone, PartialEq)]
 struct DemoSummary {
+    proposition: String,
     belief_value: f64,
     source_repository: String,
     producer: String,
 }
 
 fn run_core_demo() -> Result<DemoSummary, Box<dyn Error>> {
-    let proposition = Proposition::new(
-        EntityId::new("person:alice")?,
-        Predicate::new("prefers_customization")?,
-        ObjectValue::Boolean(true),
-    );
-    let evidence = EvidenceRef::new(
-        EvidenceId::new("evidence:demo:statement")?,
-        Some(EntityId::new("person:alice")?),
-        EvidenceClass::Transcript,
-        EvidenceFamilyId::new("family:demo:statement")?,
-        None,
-        Provenance::new(
-            SourceRef::new(
-                "belief-cli-demo",
-                "demo:1",
-                "statement:1",
-                "sha256:demo-source-v1",
-            )?,
-            ProducerRef::new("belief-cli-demo", "commit:demo-producer-v1", None, None)?,
-            [],
-        ),
-    );
-    let judgment = Judgment::new(
-        JudgmentId::new("judgment:demo:support")?,
-        proposition.clone(),
-        JudgmentOutcome::Supports,
-        Score::new(0.9, ScoreSemantics::ModelConfidence)?,
-        [evidence.id.clone()],
-        JudgmentSpecRef::new("demo-support", "v1")?,
-        "demo-model:v1",
-    )?;
-    let claim = Claim::from_judgment(
-        ClaimId::new("claim:demo:preference")?,
-        proposition,
-        judgment.id().clone(),
-    );
-    let basis = JudgmentBasis::new(
-        judgment.clone(),
-        EvidenceFamilyId::new("correlation:demo:statement")?,
-        vec![EvidenceUse::new(
-            evidence.clone(),
-            EvidencePurpose::Corroboration,
-        )],
-    )?;
-    let request = InferenceRequest::new(
-        InferenceRunId::new("run:demo:1")?,
-        BeliefId::new("belief:demo:1")?,
-        TrustedInferenceRule::BaselinePreferenceV1,
-        claim.clone(),
-        vec![basis],
-    )?;
-    let policy = PolicyConfig::from_pairs([("BELIEF_POLICY_PROFILE", "semantic_research")])?;
-    let authorized = request.authorize(&policy)?;
-    let result = BaselineInferenceEngine.infer(&authorized)?;
-    let belief_id = result.belief().id().clone();
-
-    let mut store = InMemoryBeliefStore::default();
-    store.insert_evidence(evidence)?;
-    store.insert_judgment(judgment)?;
-    store.insert_claim(claim)?;
-    store.insert_inference_result(result)?;
-
-    let explanation = store.explain_belief(&belief_id)?;
-    let retained = explanation
-        .evidence
+    let report = explain(&ExplainInput {
+        evidence_json: DEMO_EVIDENCE,
+        judgments_json: Some(DEMO_JUDGMENTS),
+        policy: BTreeMap::from([("BELIEF_POLICY_PROFILE".into(), DEMO_PROFILE.into())]),
+    })?;
+    let inference = report
+        .inferences
         .first()
+        .filter(|inference| inference.status == InferenceStatus::Derived)
+        .ok_or_else(|| app_error("demo did not derive a belief"))?;
+    let belief = inference
+        .belief
+        .as_ref()
+        .ok_or_else(|| app_error("demo belief is missing"))?;
+    let retained = inference
+        .provenance
+        .as_ref()
+        .and_then(|provenance| provenance.evidence.first())
         .ok_or_else(|| app_error("demo explanation did not retain evidence"))?;
+    let proposition = &inference.proposition;
 
     Ok(DemoSummary {
-        belief_value: explanation.belief.value.value().value(),
-        source_repository: retained.value.provenance.source.repository().to_string(),
-        producer: retained.value.provenance.producer.name().to_string(),
+        proposition: format!(
+            "{} {} {}",
+            proposition.subject, proposition.predicate, proposition.object
+        ),
+        belief_value: belief.value,
+        source_repository: retained.source.repository.clone(),
+        producer: retained.producer.name.clone(),
     })
 }
 
 fn print_core_demo(summary: DemoSummary) {
     println!("Belief Lab is ready.");
     println!(
-        "Derived person:alice prefers_customization true as {:.3} soft truth.",
-        summary.belief_value
+        "Derived {} as {:.3} soft truth.",
+        summary.proposition, summary.belief_value
     );
     println!(
         "Explanation retained source {} and producer {}.",
         summary.source_repository, summary.producer
     );
     println!("No model download or .env file was required.");
+    println!();
+    println!("To explain any evidence batch offline:");
+    println!("  cargo run -q -- explain fixtures/explain/offline-demo/evidence.json \\");
+    println!(
+        "    --judgments fixtures/explain/offline-demo/judgments.json --profile {DEMO_PROFILE}"
+    );
     println!();
     println!("For real local semantic scoring:");
     println!("  cargo run -- setup");
@@ -318,7 +304,7 @@ fn semantic_demo(tier: SemifModelTier) -> Result<(), Box<dyn Error>> {
         judgment.id().clone(),
     );
     let basis = JudgmentBasis::new(
-        judgment.clone(),
+        judgment,
         EvidenceFamilyId::new("correlation:semantic-demo:statement")?,
         vec![EvidenceUse::new(
             evidence.clone(),
@@ -329,25 +315,125 @@ fn semantic_demo(tier: SemifModelTier) -> Result<(), Box<dyn Error>> {
         InferenceRunId::new("run:semantic-demo:1")?,
         BeliefId::new("belief:semantic-demo:1")?,
         TrustedInferenceRule::BaselinePreferenceV1,
-        claim.clone(),
+        claim,
         vec![basis],
-    )?
-    .authorize(&policy)?;
-    let result = BaselineInferenceEngine.infer(&inference)?;
-    let belief_id = result.belief().id().clone();
+    )?;
 
     let mut store = InMemoryBeliefStore::default();
     store.insert_evidence(evidence)?;
-    store.insert_semantic_judgment(semantic)?;
-    store.insert_claim(claim)?;
-    store.insert_inference_result(result)?;
-
-    let explanation = store.explain_belief(&belief_id)?;
+    let derived = derive_belief(&mut store, &policy, inference, |store| {
+        store.insert_semantic_judgment(semantic)
+    })?;
     println!(
         "Belief Lab produced {:.3} soft truth with provider provenance retained.",
-        explanation.belief.value.value().value()
+        derived.explanation.belief.value.value().value()
     );
     Ok(())
+}
+
+/// `belief explain <evidence.json> [--judgments <file>] [--profile <name>]
+/// [--policy KEY=VALUE]... [--json]`
+fn run_explain(args: &[String]) -> Result<ExitCode, Box<dyn Error>> {
+    let options = ExplainOptions::parse(args)?;
+    let evidence_json = read_input(&options.evidence)?;
+    let judgments_json = options.judgments.as_deref().map(read_input).transpose()?;
+
+    let report = explain(&ExplainInput {
+        evidence_json: &evidence_json,
+        judgments_json: judgments_json.as_deref(),
+        policy: options.policy,
+    })?;
+    if options.json {
+        println!("{}", serde_json::to_string_pretty(&report)?);
+    } else {
+        print!("{}", render::render_text(&report));
+    }
+
+    Ok(match report.outcome {
+        Outcome::Explained => ExitCode::SUCCESS,
+        Outcome::InputRejected => ExitCode::from(EXIT_INPUT_REJECTED),
+    })
+}
+
+#[derive(Debug, PartialEq)]
+struct ExplainOptions {
+    evidence: PathBuf,
+    judgments: Option<PathBuf>,
+    policy: BTreeMap<String, String>,
+    json: bool,
+}
+
+impl ExplainOptions {
+    fn parse(args: &[String]) -> Result<Self, Box<dyn Error>> {
+        let mut evidence = None;
+        let mut judgments = None;
+        let mut policy = BTreeMap::new();
+        let mut json = false;
+        let mut args = args.iter();
+
+        while let Some(arg) = args.next() {
+            match arg.as_str() {
+                "--json" => json = true,
+                "--judgments" => {
+                    let value = args.next().ok_or("--judgments requires a file path")?;
+                    if judgments.replace(PathBuf::from(value)).is_some() {
+                        return Err(app_error("--judgments may be given once"));
+                    }
+                }
+                "--profile" => {
+                    let value = args.next().ok_or("--profile requires a profile name")?;
+                    insert_policy(&mut policy, "BELIEF_POLICY_PROFILE", value)?;
+                }
+                "--policy" => {
+                    let value = args.next().ok_or("--policy requires KEY=VALUE")?;
+                    let (key, value) = value.split_once('=').ok_or_else(|| {
+                        app_error(format!("--policy expects KEY=VALUE, got {value:?}"))
+                    })?;
+                    if key == "BELIEF_POLICY_PROFILE" {
+                        return Err(app_error("use --profile to select the policy profile"));
+                    }
+                    if !POLICY_KEYS.contains(&key) {
+                        return Err(app_error(format!(
+                            "unknown policy key {key:?}; expected one of {}",
+                            POLICY_KEYS.join(", ")
+                        )));
+                    }
+                    insert_policy(&mut policy, key, value)?;
+                }
+                flag if flag.starts_with("--") => {
+                    return Err(app_error(format!("unknown explain option {flag}")));
+                }
+                path => {
+                    if evidence.replace(PathBuf::from(path)).is_some() {
+                        return Err(app_error("explain takes exactly one evidence file"));
+                    }
+                }
+            }
+        }
+
+        Ok(Self {
+            evidence: evidence.ok_or("explain requires an evidence interchange JSON file")?,
+            judgments,
+            policy,
+            json,
+        })
+    }
+}
+
+fn insert_policy(
+    policy: &mut BTreeMap<String, String>,
+    key: &str,
+    value: &str,
+) -> Result<(), Box<dyn Error>> {
+    if policy.insert(key.into(), value.into()).is_some() {
+        return Err(app_error(format!("{key} may be set once")));
+    }
+    Ok(())
+}
+
+fn read_input(path: &Path) -> Result<String, Box<dyn Error>> {
+    fs::read_to_string(path)
+        .map_err(|error| app_error(format!("cannot read {}: {error}", path.display())))
 }
 
 fn parse_tier(value: &str) -> Result<SemifModelTier, Box<dyn Error>> {
@@ -386,15 +472,21 @@ fn app_error(message: impl Into<String>) -> Box<dyn Error> {
 
 fn print_usage() {
     println!(
-        "Belief Lab\\n\\n\\
-         Usage:\\n\\
-           cargo run                         Run the offline core demo\\n\\
-           cargo run -- demo                 Run the offline core demo\\n\\
-           cargo run -- setup [tier]         Install/update pinned SemIf and download a model\\n\\
-           cargo run -- semantic-demo [tier] Run a real local SemIf-backed decision\\n\\
-           cargo run -- doctor [tier]        Show local prerequisites and setup state\\n\\
-           cargo run -- help                 Show this help\\n\\n\\
-         Model tiers: phone (default), desktop, high-memory"
+        "Belief Lab
+
+Usage:
+  cargo run                         Run the offline core demo
+  cargo run -- demo                 Run the offline core demo
+  cargo run -- explain <evidence.json> [--judgments <file>] [--profile <name>]
+                       [--policy KEY=VALUE]... [--json]
+                                    Explain an evidence batch offline (exit 2 = input rejected)
+  cargo run -- setup [tier]         Install/update pinned SemIf and download a model
+  cargo run -- semantic-demo [tier] Run a real local SemIf-backed decision
+  cargo run -- doctor [tier]        Show local prerequisites and setup state
+  cargo run -- help                 Show this help
+
+Profiles: observe_only (default), semantic_research, multimodal_research
+Model tiers: phone (default), desktop, high-memory"
     );
 }
 
@@ -406,9 +498,67 @@ mod tests {
     fn offline_demo_exercises_the_full_belief_pipeline() {
         let summary = run_core_demo().unwrap();
 
+        assert_eq!(
+            summary.proposition,
+            "person:alice prefers_customization true"
+        );
         assert!((summary.belief_value - 0.95).abs() < f64::EPSILON);
         assert_eq!(summary.source_repository, "belief-cli-demo");
         assert_eq!(summary.producer, "belief-cli-demo");
+    }
+
+    fn explain_args(args: &[&str]) -> Result<ExplainOptions, Box<dyn Error>> {
+        ExplainOptions::parse(&args.iter().map(|arg| arg.to_string()).collect::<Vec<_>>())
+    }
+
+    #[test]
+    fn explain_options_map_flags_to_policy_pairs() {
+        let options = explain_args(&[
+            "batch.json",
+            "--profile",
+            "multimodal_research",
+            "--policy",
+            "BELIEF_BIOMETRIC_EVIDENCE=reference_only",
+            "--json",
+        ])
+        .unwrap();
+
+        assert_eq!(options.evidence, Path::new("batch.json"));
+        assert_eq!(options.judgments, None);
+        assert!(options.json);
+        assert_eq!(
+            options.policy,
+            BTreeMap::from([
+                (
+                    "BELIEF_BIOMETRIC_EVIDENCE".to_string(),
+                    "reference_only".to_string()
+                ),
+                (
+                    "BELIEF_POLICY_PROFILE".to_string(),
+                    "multimodal_research".to_string()
+                ),
+            ])
+        );
+    }
+
+    #[test]
+    fn explain_options_reject_ambiguous_or_unknown_settings() {
+        assert!(explain_args(&[]).is_err());
+        assert!(explain_args(&["a.json", "b.json"]).is_err());
+        assert!(
+            explain_args(&["a.json", "--policy", "BELIEF_POLICY_PROFILE=observe_only"]).is_err()
+        );
+        assert!(explain_args(&["a.json", "--policy", "BELIEF_UNKNOWN=true"]).is_err());
+        assert!(explain_args(&["a.json", "--policy", "BELIEF_BIOMETRIC_EVIDENCE"]).is_err());
+        assert!(explain_args(&[
+            "a.json",
+            "--profile",
+            "observe_only",
+            "--profile",
+            "semantic_research"
+        ])
+        .is_err());
+        assert!(explain_args(&["a.json", "--verbose"]).is_err());
     }
 
     #[test]

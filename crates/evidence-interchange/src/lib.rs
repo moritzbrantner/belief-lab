@@ -5,7 +5,7 @@ use belief_core::{
     EntityId, EvidenceClass, EvidenceFamilyId, EvidenceId, EvidencePurpose, EvidenceRef,
     ProducerRef, Provenance, Score, ScoreSemantics, SourceRef,
 };
-use belief_policy::{AuthorizationProfile, PolicyConfig};
+use belief_policy::{AuthorizationProfile, EvidenceDenial, PolicyConfig};
 use serde::Deserialize;
 
 pub const EVIDENCE_INTERCHANGE_SCHEMA: &str = "belief_evidence_interchange";
@@ -129,6 +129,17 @@ impl ValidatedEvidenceBatch {
         &self.evidence
     }
 
+    /// Per-evidence admission decisions under `policy`, in batch (topological) order.
+    ///
+    /// This does not authorize anything; [`Self::authorize`] admits the batch only when every
+    /// record is admissible for at least one purpose.
+    pub fn admission(&self, policy: &PolicyConfig) -> Vec<EvidenceAdmission> {
+        self.evidence
+            .iter()
+            .map(|evidence| EvidenceAdmission::evaluate(policy, evidence))
+            .collect()
+    }
+
     pub fn authorize(
         self,
         policy: &PolicyConfig,
@@ -136,15 +147,15 @@ impl ValidatedEvidenceBatch {
         let mut classes = BTreeSet::new();
         let mut evidence_ids = BTreeSet::new();
 
-        for evidence in &self.evidence {
-            if !evidence_is_admissible(policy, evidence) {
+        for admission in self.admission(policy) {
+            if !admission.is_admitted() {
                 return Err(ImportAuthorizationError::EvidenceClassDenied {
-                    evidence: evidence.id.clone(),
-                    class: evidence.class,
+                    evidence: admission.evidence,
+                    class: admission.class,
                 });
             }
-            classes.insert(evidence.class);
-            evidence_ids.insert(evidence.id.clone());
+            classes.insert(admission.class);
+            evidence_ids.insert(admission.evidence);
         }
 
         let receipt = EvidenceImportReceipt {
@@ -163,14 +174,54 @@ impl ValidatedEvidenceBatch {
     }
 }
 
-fn evidence_is_admissible(policy: &PolicyConfig, evidence: &EvidenceRef) -> bool {
-    [
-        EvidencePurpose::DirectSupport,
-        EvidencePurpose::Corroboration,
-        EvidencePurpose::EntityLinking,
-    ]
-    .into_iter()
-    .any(|purpose| policy.allows_evidence_ref(evidence, purpose))
+const IMPORT_PURPOSES: [EvidencePurpose; 3] = [
+    EvidencePurpose::DirectSupport,
+    EvidencePurpose::Corroboration,
+    EvidencePurpose::EntityLinking,
+];
+
+/// Whether one evidence record may be imported, and for which purposes.
+///
+/// A record is admissible when at least one purpose is authorized. Denied purposes keep the
+/// policy reason so callers can explain a rejection without re-implementing policy.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct EvidenceAdmission {
+    pub evidence: EvidenceId,
+    pub class: EvidenceClass,
+    pub admitted_purposes: BTreeSet<EvidencePurpose>,
+    pub denied_purposes: BTreeMap<EvidencePurpose, EvidenceDenial>,
+}
+
+impl EvidenceAdmission {
+    fn evaluate(policy: &PolicyConfig, evidence: &EvidenceRef) -> Self {
+        let mut admitted_purposes = BTreeSet::new();
+        let mut denied_purposes = BTreeMap::new();
+        for purpose in IMPORT_PURPOSES {
+            match policy.evidence_decision(evidence, purpose) {
+                Ok(()) => {
+                    admitted_purposes.insert(purpose);
+                }
+                Err(denial) => {
+                    denied_purposes.insert(purpose, denial);
+                }
+            }
+        }
+        Self {
+            evidence: evidence.id.clone(),
+            class: evidence.class,
+            admitted_purposes,
+            denied_purposes,
+        }
+    }
+
+    pub fn is_admitted(&self) -> bool {
+        !self.admitted_purposes.is_empty()
+    }
+
+    /// Distinct denial reasons, in a stable order.
+    pub fn denial_reasons(&self) -> BTreeSet<EvidenceDenial> {
+        self.denied_purposes.values().copied().collect()
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -437,7 +488,8 @@ impl fmt::Display for InterchangeError {
                 semantics,
             } => write!(
                 f,
-                "evidence {evidence} cannot import inference-result score semantics {semantics:?}"
+                "evidence {evidence} cannot import inference-result score semantics {}",
+                semantics.as_str()
             ),
             Self::Model(error) => write!(f, "invalid evidence model: {error}"),
         }
@@ -699,5 +751,53 @@ mod tests {
         assert_eq!(authorized.receipt().exporter_revision(), "git:exporter-123");
         assert_eq!(authorized.receipt().batch_revision(), "batch:abc");
         assert_eq!(authorized.receipt().evidence_ids().len(), 1);
+    }
+
+    #[test]
+    fn admission_explains_rejected_and_partially_admitted_records() {
+        let face = transcript_record()
+            .replace("evidence:transcript:1", "evidence:face:1")
+            .replace(
+                r#""class": "transcript""#,
+                r#""class": "face_track_reference""#,
+            )
+            .replace("transcript-segment:1", "face-track:1");
+        let batch = ValidatedEvidenceBatch::parse_json(&base_json(&format!(
+            "{},{face}",
+            transcript_record()
+        )))
+        .unwrap();
+
+        let multimodal =
+            PolicyConfig::from_pairs([("BELIEF_POLICY_PROFILE", "multimodal_research")]).unwrap();
+        let admission = batch.admission(&multimodal);
+        assert_eq!(admission[0].evidence.as_str(), "evidence:face:1");
+        assert!(!admission[0].is_admitted());
+        assert_eq!(
+            admission[0]
+                .denial_reasons()
+                .into_iter()
+                .collect::<Vec<_>>(),
+            vec![EvidenceDenial::BiometricReferencesDisabled(
+                EvidenceClass::FaceTrackReference
+            )]
+        );
+        assert!(admission[1].is_admitted());
+
+        let enabled = PolicyConfig::from_pairs([
+            ("BELIEF_POLICY_PROFILE", "multimodal_research"),
+            ("BELIEF_BIOMETRIC_EVIDENCE", "reference_only"),
+        ])
+        .unwrap();
+        let face_admission = &batch.admission(&enabled)[0];
+        assert!(face_admission.is_admitted());
+        assert_eq!(
+            face_admission
+                .denied_purposes
+                .get(&EvidencePurpose::DirectSupport),
+            Some(&EvidenceDenial::BiometricDirectSupport(
+                EvidenceClass::FaceTrackReference
+            ))
+        );
     }
 }

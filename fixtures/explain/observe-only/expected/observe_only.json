@@ -1,0 +1,95 @@
+{
+  "report": "belief_explain",
+  "report_version": 1,
+  "outcome": "explained",
+  "policy": {
+    "profile": "observe_only",
+    "settings": {
+      "BELIEF_POLICY_PROFILE": "observe_only"
+    }
+  },
+  "rejection": null,
+  "batch": {
+    "schema": "belief_evidence_interchange@1",
+    "exporter": {
+      "name": "survey-corpus",
+      "revision": "git:survey-corpus-fixture"
+    },
+    "revision": "batch:observe-only:v1",
+    "evidence": [
+      {
+        "id": "evidence:assertion:1",
+        "class": "user_assertion",
+        "family": "family:assertion:1",
+        "subject": "corpus-person:1",
+        "score": null,
+        "source": {
+          "repository": "survey-corpus",
+          "scope_id": "form:1",
+          "record_id": "answer:1",
+          "revision": "sha256:answer-1-v1"
+        },
+        "producer": {
+          "name": "survey-export",
+          "revision": "git:survey-export-fixture",
+          "model": null,
+          "config_hash": null
+        },
+        "parents": [],
+        "admission": {
+          "admitted": true,
+          "admitted_purposes": [
+            "direct_support"
+          ],
+          "denied_purposes": {
+            "corroboration": "evidence purpose corroboration is outside profile observe_only",
+            "entity_linking": "evidence purpose entity_linking is outside profile observe_only"
+          },
+          "rejection_reasons": []
+        }
+      }
+    ],
+    "import": {
+      "imported": true,
+      "stored": 1,
+      "reason": null
+    }
+  },
+  "inferences": [
+    {
+      "id": "corpus-person-1:prefers-dark-mode",
+      "class": "preference",
+      "proposition": {
+        "subject": "corpus-person:1",
+        "predicate": "prefers_dark_mode",
+        "object": "true"
+      },
+      "status": "refused",
+      "reason": "inference class preference is outside profile observe_only",
+      "rule": null,
+      "judgments": [
+        {
+          "id": "judgment:dark-mode:1",
+          "outcome": "supports",
+          "confidence": {
+            "value": 0.9,
+            "semantics": "model_confidence"
+          },
+          "correlation_group": "family:assertion:1",
+          "evidence": [
+            {
+              "evidence": "evidence:assertion:1",
+              "purpose": "direct_support"
+            }
+          ],
+          "spec": "fixture-judgment@v1",
+          "model_revision": "fixture-judge:v1",
+          "selection": null
+        }
+      ],
+      "authorization": null,
+      "belief": null,
+      "provenance": null
+    }
+  ]
+}

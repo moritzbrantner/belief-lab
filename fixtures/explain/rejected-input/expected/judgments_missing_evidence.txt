@@ -1,0 +1,5 @@
+Policy profile: semantic_research
+  BELIEF_POLICY_PROFILE=semantic_research
+
+Input rejected (judgment script): judgments reference evidence evidence:missing:1, which is not in the batch
+Failed closed: nothing was imported, inferred, or stored.
