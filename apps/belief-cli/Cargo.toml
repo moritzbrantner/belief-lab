@@ -11,8 +11,10 @@ path = "src/main.rs"
 belief-core = { path = "../../crates/belief-core" }
 belief-policy = { path = "../../crates/belief-policy" }
 belief-store = { path = "../../crates/belief-store" }
+evidence-interchange = { path = "../../crates/evidence-interchange" }
 inference-core = { path = "../../crates/inference-core" }
 inference-baseline = { path = "../../crates/inference-baseline" }
 semantic-decision = { path = "../../crates/semantic-decision" }
 semif-provider = { path = "../../crates/semif-provider" }
+serde = { version = "1", features = ["derive"] }
 serde_json = "1"

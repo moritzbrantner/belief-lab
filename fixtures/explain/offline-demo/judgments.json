@@ -1,0 +1,31 @@
+{
+  "schema": "belief_judgment_script",
+  "schemaVersion": 1,
+  "judgmentSpec": {
+    "name": "demo-support",
+    "revision": "v1"
+  },
+  "modelRevision": "demo-model:v1",
+  "inferences": [
+    {
+      "id": "demo:preference",
+      "class": "preference",
+      "proposition": {
+        "subject": "person:alice",
+        "predicate": "prefers_customization",
+        "object": { "boolean": true }
+      },
+      "judgments": [
+        {
+          "id": "judgment:demo:support",
+          "outcome": "supports",
+          "modelConfidence": 0.9,
+          "correlationGroup": "correlation:demo:statement",
+          "evidence": [
+            { "id": "evidence:demo:statement", "purpose": "corroboration" }
+          ]
+        }
+      ]
+    }
+  ]
+}
