@@ -186,28 +186,65 @@ impl PolicyConfig {
     }
 
     pub fn allows_evidence(&self, class: EvidenceClass, purpose: EvidencePurpose) -> bool {
+        self.evidence_class_decision(class, purpose).is_ok()
+    }
+
+    /// Explains why an evidence class may or may not be used for a purpose.
+    ///
+    /// This is the single owner of evidence authorization; the boolean helpers delegate here.
+    pub fn evidence_class_decision(
+        &self,
+        class: EvidenceClass,
+        purpose: EvidencePurpose,
+    ) -> Result<(), EvidenceDenial> {
         let maximum = ProfileMaximum::for_profile(self.profile);
-        if !maximum.evidence.contains(&class)
-            || !maximum.evidence_purposes.contains(&purpose)
-            || !self.allowed_evidence.contains(&class)
-            || !self.allowed_evidence_purposes.contains(&purpose)
-        {
-            return false;
+        if !maximum.evidence.contains(&class) {
+            return Err(EvidenceDenial::ClassOutsideProfile {
+                class,
+                profile: self.profile,
+            });
+        }
+        if !self.allowed_evidence.contains(&class) {
+            return Err(EvidenceDenial::ClassNotAllowlisted(class));
+        }
+        if !maximum.evidence_purposes.contains(&purpose) {
+            return Err(EvidenceDenial::PurposeOutsideProfile {
+                purpose,
+                profile: self.profile,
+            });
+        }
+        if !self.allowed_evidence_purposes.contains(&purpose) {
+            return Err(EvidenceDenial::PurposeNotAllowlisted(purpose));
         }
 
         if class.is_biometric_reference() {
-            return self.biometric_evidence == BiometricEvidenceMode::ReferenceOnly
-                && self.biometric_evidence <= maximum.biometric_evidence
-                && purpose != EvidencePurpose::DirectSupport;
+            if self.biometric_evidence != BiometricEvidenceMode::ReferenceOnly
+                || self.biometric_evidence > maximum.biometric_evidence
+            {
+                return Err(EvidenceDenial::BiometricReferencesDisabled(class));
+            }
+            if purpose == EvidencePurpose::DirectSupport {
+                return Err(EvidenceDenial::BiometricDirectSupport(class));
+            }
         }
 
-        true
+        Ok(())
     }
 
     pub fn allows_evidence_ref(&self, evidence: &EvidenceRef, purpose: EvidencePurpose) -> bool {
-        self.require_complete_provenance
-            && evidence.has_complete_provenance()
-            && self.allows_evidence(evidence.class, purpose)
+        self.evidence_decision(evidence, purpose).is_ok()
+    }
+
+    /// Explains why a concrete evidence reference may or may not be used for a purpose.
+    pub fn evidence_decision(
+        &self,
+        evidence: &EvidenceRef,
+        purpose: EvidencePurpose,
+    ) -> Result<(), EvidenceDenial> {
+        if !self.require_complete_provenance || !evidence.has_complete_provenance() {
+            return Err(EvidenceDenial::IncompleteProvenance);
+        }
+        self.evidence_class_decision(evidence.class, purpose)
     }
 
     pub fn allows_cross_source_join(&self) -> bool {
@@ -216,20 +253,160 @@ impl PolicyConfig {
     }
 
     pub fn allows_inference(&self, class: InferenceClass) -> bool {
+        self.inference_decision(class).is_ok()
+    }
+
+    /// Explains why an inference class may or may not be executed.
+    ///
+    /// Sensitive-trait and real-world identity inference are denied before any profile or
+    /// configuration is consulted: no shipped profile can authorize them.
+    pub fn inference_decision(&self, class: InferenceClass) -> Result<(), InferenceDenial> {
+        if matches!(
+            class,
+            InferenceClass::SensitiveTrait | InferenceClass::RealWorldIdentity
+        ) {
+            return Err(InferenceDenial::NeverAuthorized(class));
+        }
+
         let maximum = ProfileMaximum::for_profile(self.profile);
-        if !maximum.inferences.contains(&class) || !self.allowed_inferences.contains(&class) {
-            return false;
+        if !maximum.inferences.contains(&class) {
+            return Err(InferenceDenial::ClassOutsideProfile {
+                class,
+                profile: self.profile,
+            });
+        }
+        if !self.allowed_inferences.contains(&class) {
+            return Err(InferenceDenial::ClassNotAllowlisted(class));
         }
 
         match class {
-            InferenceClass::LocalEntityLink => {
-                self.identity_resolution == IdentityResolutionMode::CorpusLocal
+            InferenceClass::LocalEntityLink
+                if self.identity_resolution != IdentityResolutionMode::CorpusLocal =>
+            {
+                Err(InferenceDenial::IdentityResolutionDisabled)
             }
-            InferenceClass::CrossSourceAssociation => {
-                self.allow_cross_source_join && maximum.allow_cross_source_join
+            InferenceClass::CrossSourceAssociation if !self.allows_cross_source_join() => {
+                Err(InferenceDenial::CrossSourceJoinDisabled)
             }
-            InferenceClass::SensitiveTrait | InferenceClass::RealWorldIdentity => false,
-            InferenceClass::Descriptive | InferenceClass::Preference => true,
+            InferenceClass::LocalEntityLink
+            | InferenceClass::CrossSourceAssociation
+            | InferenceClass::Descriptive
+            | InferenceClass::Preference => Ok(()),
+            InferenceClass::SensitiveTrait | InferenceClass::RealWorldIdentity => {
+                Err(InferenceDenial::NeverAuthorized(class))
+            }
+        }
+    }
+}
+
+/// Environment keys read by [`PolicyConfig::from_pairs`], in documentation order.
+pub const POLICY_KEYS: [&str; 8] = [
+    "BELIEF_POLICY_PROFILE",
+    "BELIEF_ALLOWED_EVIDENCE",
+    "BELIEF_ALLOWED_EVIDENCE_PURPOSES",
+    "BELIEF_ALLOWED_INFERENCES",
+    "BELIEF_BIOMETRIC_EVIDENCE",
+    "BELIEF_IDENTITY_RESOLUTION",
+    "BELIEF_ALLOW_CROSS_SOURCE_JOIN",
+    "BELIEF_REQUIRE_COMPLETE_PROVENANCE",
+];
+
+/// Why an evidence reference was not authorized for a purpose.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+pub enum EvidenceDenial {
+    IncompleteProvenance,
+    ClassOutsideProfile {
+        class: EvidenceClass,
+        profile: AuthorizationProfile,
+    },
+    ClassNotAllowlisted(EvidenceClass),
+    PurposeOutsideProfile {
+        purpose: EvidencePurpose,
+        profile: AuthorizationProfile,
+    },
+    PurposeNotAllowlisted(EvidencePurpose),
+    BiometricReferencesDisabled(EvidenceClass),
+    BiometricDirectSupport(EvidenceClass),
+}
+
+impl fmt::Display for EvidenceDenial {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::IncompleteProvenance => f.write_str(
+                "provenance is incomplete (immutable source and producer revisions are required)",
+            ),
+            Self::ClassOutsideProfile { class, profile } => write!(
+                f,
+                "evidence class {} is outside profile {}",
+                class.as_str(),
+                profile.as_str()
+            ),
+            Self::ClassNotAllowlisted(class) => write!(
+                f,
+                "evidence class {} is not in BELIEF_ALLOWED_EVIDENCE",
+                class.as_str()
+            ),
+            Self::PurposeOutsideProfile { purpose, profile } => write!(
+                f,
+                "evidence purpose {} is outside profile {}",
+                purpose.as_str(),
+                profile.as_str()
+            ),
+            Self::PurposeNotAllowlisted(purpose) => write!(
+                f,
+                "evidence purpose {} is not in BELIEF_ALLOWED_EVIDENCE_PURPOSES",
+                purpose.as_str()
+            ),
+            Self::BiometricReferencesDisabled(class) => write!(
+                f,
+                "{} requires BELIEF_BIOMETRIC_EVIDENCE=reference_only",
+                class.as_str()
+            ),
+            Self::BiometricDirectSupport(class) => {
+                write!(f, "{} can never be used as direct_support", class.as_str())
+            }
+        }
+    }
+}
+
+/// Why an inference class was not authorized.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+pub enum InferenceDenial {
+    NeverAuthorized(InferenceClass),
+    ClassOutsideProfile {
+        class: InferenceClass,
+        profile: AuthorizationProfile,
+    },
+    ClassNotAllowlisted(InferenceClass),
+    IdentityResolutionDisabled,
+    CrossSourceJoinDisabled,
+}
+
+impl fmt::Display for InferenceDenial {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::NeverAuthorized(class) => write!(
+                f,
+                "inference class {} is not authorized by any shipped profile",
+                class.as_str()
+            ),
+            Self::ClassOutsideProfile { class, profile } => write!(
+                f,
+                "inference class {} is outside profile {}",
+                class.as_str(),
+                profile.as_str()
+            ),
+            Self::ClassNotAllowlisted(class) => write!(
+                f,
+                "inference class {} is not in BELIEF_ALLOWED_INFERENCES",
+                class.as_str()
+            ),
+            Self::IdentityResolutionDisabled => {
+                f.write_str("local_entity_link requires BELIEF_IDENTITY_RESOLUTION=corpus_local")
+            }
+            Self::CrossSourceJoinDisabled => {
+                f.write_str("cross_source_association requires BELIEF_ALLOW_CROSS_SOURCE_JOIN=true")
+            }
         }
     }
 }
@@ -525,5 +702,86 @@ mod tests {
     fn incomplete_provenance_is_rejected() {
         let policy = config(&[("BELIEF_REQUIRE_COMPLETE_PROVENANCE", "false")]);
         assert!(matches!(policy, Err(ConfigError::UnsafeSetting { .. })));
+    }
+
+    #[test]
+    fn denials_name_the_policy_reason() {
+        let observe = config(&[]).unwrap();
+        assert_eq!(
+            observe
+                .evidence_class_decision(EvidenceClass::Transcript, EvidencePurpose::DirectSupport),
+            Err(EvidenceDenial::ClassOutsideProfile {
+                class: EvidenceClass::Transcript,
+                profile: AuthorizationProfile::ObserveOnly,
+            })
+        );
+        assert_eq!(
+            observe.inference_decision(InferenceClass::Preference),
+            Err(InferenceDenial::ClassOutsideProfile {
+                class: InferenceClass::Preference,
+                profile: AuthorizationProfile::ObserveOnly,
+            })
+        );
+
+        let multimodal = config(&[("BELIEF_POLICY_PROFILE", "multimodal_research")]).unwrap();
+        assert_eq!(
+            multimodal.evidence_class_decision(
+                EvidenceClass::FaceTrackReference,
+                EvidencePurpose::Corroboration
+            ),
+            Err(EvidenceDenial::BiometricReferencesDisabled(
+                EvidenceClass::FaceTrackReference
+            ))
+        );
+        assert_eq!(
+            multimodal.inference_decision(InferenceClass::LocalEntityLink),
+            Err(InferenceDenial::IdentityResolutionDisabled)
+        );
+        assert_eq!(
+            multimodal.inference_decision(InferenceClass::CrossSourceAssociation),
+            Err(InferenceDenial::CrossSourceJoinDisabled)
+        );
+
+        let biometric = config(&[
+            ("BELIEF_POLICY_PROFILE", "multimodal_research"),
+            ("BELIEF_BIOMETRIC_EVIDENCE", "reference_only"),
+        ])
+        .unwrap();
+        assert_eq!(
+            biometric.evidence_class_decision(
+                EvidenceClass::VoiceTrackReference,
+                EvidencePurpose::DirectSupport
+            ),
+            Err(EvidenceDenial::BiometricDirectSupport(
+                EvidenceClass::VoiceTrackReference
+            ))
+        );
+    }
+
+    #[test]
+    fn sensitive_and_real_world_identity_are_denied_under_every_shipped_profile() {
+        let widest = [
+            vec![("BELIEF_POLICY_PROFILE", "observe_only")],
+            vec![("BELIEF_POLICY_PROFILE", "semantic_research")],
+            vec![
+                ("BELIEF_POLICY_PROFILE", "multimodal_research"),
+                ("BELIEF_BIOMETRIC_EVIDENCE", "reference_only"),
+                ("BELIEF_IDENTITY_RESOLUTION", "corpus_local"),
+                ("BELIEF_ALLOW_CROSS_SOURCE_JOIN", "true"),
+            ],
+        ];
+        for pairs in widest {
+            let policy = config(&pairs).unwrap();
+            for class in [
+                InferenceClass::SensitiveTrait,
+                InferenceClass::RealWorldIdentity,
+            ] {
+                assert_eq!(
+                    policy.inference_decision(class),
+                    Err(InferenceDenial::NeverAuthorized(class))
+                );
+                assert!(!policy.allows_inference(class));
+            }
+        }
     }
 }
