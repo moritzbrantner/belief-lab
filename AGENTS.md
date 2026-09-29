@@ -11,7 +11,7 @@ Rust workspace with a thin static WebAssembly workbench; `cargo run` executes a 
 
 | Crate | Role |
 | --- | --- |
-| `apps/belief-cli` | Top-level CLI (`cargo run`, `explain`, `decide`, `doctor`, `setup`, `semantic-demo`) |
+| `apps/belief-cli` | Top-level CLI (`cargo run`, `explain`, `decide`, `doctor`, `setup`, `semantic-demo`, `decide`, `workbench`) |
 | `belief-core` | Evidence, judgments, claims, beliefs, derivations, provenance, score semantics |
 | `belief-policy` | Fail-closed authorization over evidence and inference classes |
 | `evidence-interchange` | Versioned, policy-admitted references to producer-owned evidence |

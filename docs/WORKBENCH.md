@@ -2,7 +2,19 @@
 
 The [GitHub Pages workbench](https://moritzbrantner.github.io/belief-lab/) loads downloadable evidence and judgment JSON, runs the actual Rust explanation pipeline through WebAssembly, and shows admission decisions, beliefs, correlated judgments, and provenance. Files are processed in the browser and are not uploaded. The example selector supports shareable `?example=correlated-evidence` URLs.
 
-Examples are deliberately scripted: their scores are not live model predictions. The local `decide` command executes real models; Pages offers its request file and accepts the saved result for inspection. Raw audio/video extraction remains the producer repositories' responsibility. Upload evidence-interchange JSON, not arbitrary media.
+Examples are deliberately scripted: their scores are not live model predictions. The local `workbench` and `decide` commands execute real models; Pages offers its request file and accepts the saved result for inspection. Raw audio/video extraction remains the producer repositories' responsibility. Upload evidence-interchange JSON, not arbitrary media.
+
+## Run models interactively
+
+```sh
+cargo run -- workbench
+```
+
+Open the complete URL printed by the command. The request is preloaded; select a model and click **Run analysis**. You can edit the request, upload a downloaded request JSON file, inspect scores and source provenance, and download the result. The interface supports English, German, Spanish, light/dark themes, and mobile layouts.
+
+Assets are embedded in the native executable: no Node, WebAssembly build, or separate web server is needed. Startup does not acquire models. The first authorized model request prepares the pinned SemIf environment and chosen model, with progress in the terminal. Subsequent requests reuse those resources. Select the explicitly scripted provider to exercise the same pipeline without models or network access.
+
+The server binds only to `127.0.0.1` on an available port. Its session URL carries a random capability in the fragment; POST requests require that token and the exact local origin. The server serves only embedded assets, bounds uploads to 1 MiB and 15 seconds, and permits one analysis at a time. Closing the tab does not cancel an in-flight model operation; stop the command with Ctrl+C. The local adapter invokes the same validation, authorization, provider resolution, and execution function as `decide`; it is not a remotely hosted inference service.
 
 ## Run a model on a file
 
@@ -29,6 +41,14 @@ Open http://localhost:8765. Assets and downloadable examples are assembled under
 npm --prefix site ci
 (cd site && npx playwright install chromium)
 npm --prefix site test
+```
+
+The local browser acceptance test uses the scripted provider and starts its own native server:
+
+```sh
+npm --prefix site run test:local
+# Explicit real-model browser acceptance (prepares missing resources):
+npm --prefix site run test:models
 ```
 
 The Pages workflow builds and tests pull requests and deploys `main` after its browser checks pass. Rust workspace checks continue independently of browser tools and models.

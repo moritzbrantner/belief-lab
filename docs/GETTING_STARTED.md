@@ -114,6 +114,10 @@ If a model file has an unexpected size and cannot be resumed into the pinned art
 
 Once the pinned checkout, virtual environment, setup receipt, and model are present, rerunning `cargo run -- setup [tier]` does not need the package index or model host. The setup path remains local unless one of those declared inputs needs acquisition or repair.
 
+## Interactive local models
+
+Run `cargo run -- workbench` and open its printed URL. Choose a model and run the preloaded request, or upload a request file. The executable includes the UI; no Node installation or site build is required. The first model analysis prepares the selected pinned model and provider. The scripted provider works offline. See [Workbench](WORKBENCH.md) for details.
+
 ## File-driven semantic scoring and browser examples
 
 ```sh
@@ -130,6 +134,8 @@ cargo run                         offline core demo
 cargo run -- demo                 offline core demo
 cargo run -- explain <evidence.json> [--judgments <file>] [--profile <name>] [--policy K=V]... [--json]
                                   explain an evidence batch offline
+cargo run -- workbench            interactive local model UI
+cargo run -- decide <request.json> one bounded decision as JSON
 cargo run -- doctor [tier]        inspect prerequisites and local state
 cargo run -- setup [tier]         prepare pinned SemIf + model
 cargo run -- semantic-demo [tier] run real local semantic scoring
