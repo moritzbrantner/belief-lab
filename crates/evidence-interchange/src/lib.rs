@@ -12,7 +12,7 @@ pub const EVIDENCE_INTERCHANGE_SCHEMA: &str = "belief_evidence_interchange";
 pub const EVIDENCE_INTERCHANGE_VERSION_V1: u32 = 1;
 
 #[derive(Debug, Clone, Deserialize)]
-#[serde(rename_all = "camelCase")]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
 struct EvidenceBatchV1 {
     schema: String,
     schema_version: u32,
@@ -23,14 +23,14 @@ struct EvidenceBatchV1 {
 }
 
 #[derive(Debug, Clone, Deserialize)]
-#[serde(rename_all = "camelCase")]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
 struct ExporterV1 {
     name: String,
     revision: String,
 }
 
 #[derive(Debug, Clone, Deserialize)]
-#[serde(rename_all = "camelCase")]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
 struct EvidenceRecordV1 {
     id: String,
     #[serde(default)]
@@ -46,7 +46,7 @@ struct EvidenceRecordV1 {
 }
 
 #[derive(Debug, Clone, Deserialize)]
-#[serde(rename_all = "camelCase")]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
 struct SourceV1 {
     repository: String,
     scope_id: String,
@@ -55,7 +55,7 @@ struct SourceV1 {
 }
 
 #[derive(Debug, Clone, Deserialize)]
-#[serde(rename_all = "camelCase")]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
 struct ProducerV1 {
     name: String,
     revision: String,
@@ -66,7 +66,7 @@ struct ProducerV1 {
 }
 
 #[derive(Debug, Clone, Deserialize)]
-#[serde(rename_all = "camelCase")]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
 struct ScoreV1 {
     value: f64,
     semantics: ScoreSemanticsV1,

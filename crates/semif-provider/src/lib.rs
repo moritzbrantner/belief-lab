@@ -3,12 +3,15 @@ use semantic_decision::{
 };
 use serde::{Deserialize, Serialize};
 use serde_json::json;
+use sha2::{Digest, Sha256};
 use std::collections::BTreeMap;
 use std::env;
 use std::fs;
-use std::io::Write;
+use std::io::{Read, Write};
 use std::path::{Path, PathBuf};
-use std::process::Command;
+use std::process::{Command, Stdio};
+use std::time::Duration;
+use wait_timeout::ChildExt;
 
 pub const SEMIF_REPOSITORY: &str = "https://github.com/TheoLeeCJ/SemIf.git";
 pub const SEMIF_SOURCE_REVISION: &str = "1f2dea3e25379f9dfc98cb83c324f00ab5deda37";
@@ -179,7 +182,7 @@ impl SemifProvider {
             .arg(output);
 
         if let SemifBackend::LlamaCpp { gguf, threads } = &self.backend {
-            command.arg("--gguf").arg(gguf);
+            command.env("HF_HUB_OFFLINE", "1").arg("--gguf").arg(gguf);
             if let Some(threads) = threads {
                 command.arg("--llama-threads").arg(threads.to_string());
             }
@@ -222,7 +225,7 @@ impl SemanticDecisionEngine for SemifProvider {
         fs::write(&input, format!("{input_json}\n"))
             .map_err(|error| engine_error("write SemIf request", error))?;
 
-        let process = self.command(&input, &output).output();
+        let process = bounded_output(&mut self.command(&input, &output), Duration::from_secs(600));
         let process = process.map_err(|error| engine_error("start SemIf", error))?;
         if !process.status.success() {
             return Err(DecisionEngineError::new(format!(
@@ -583,14 +586,29 @@ pub fn bootstrap_semif(
         true
     };
 
-    let interpreter =
-        fs::canonicalize(venv_python(directory)).map_err(|error| SemifSetupError::Io {
-            context: "resolve SemIf virtual-environment interpreter".into(),
-            message: error.to_string(),
-        })?;
+    // Preserve the interpreter symlink: resolving it escapes the virtual environment.
+    let interpreter = install_interpreter(directory).map_err(|error| SemifSetupError::Io {
+        context: "resolve SemIf virtual-environment interpreter".into(),
+        message: error.to_string(),
+    })?;
 
     let executable = semif_score_path(directory);
     if !installation_ready || venv_created {
+        // SemIf requires Torch for tokenizer plumbing even with llama.cpp. Use CPU wheels
+        // on Linux to avoid downloading the unrelated CUDA runtime for the CPU setup.
+        if backend == SemifInstallBackend::LlamaCpp && cfg!(target_os = "linux") {
+            run_command(
+                Command::new(&interpreter).args([
+                    "-m",
+                    "pip",
+                    "install",
+                    "torch==2.10.0",
+                    "--index-url",
+                    "https://download.pytorch.org/whl/cpu",
+                ]),
+                "install CPU Torch",
+            )?;
+        }
         run_command(
             Command::new(&interpreter)
                 .current_dir(directory)
@@ -624,7 +642,7 @@ pub fn model_is_ready(tier: SemifModelTier, directory: &Path) -> Result<bool, Se
     if !target.exists() {
         return Ok(false);
     }
-    verify_size(&target, tier.pin().gguf_bytes)?;
+    verify_model(&target, tier.pin())?;
     Ok(true)
 }
 
@@ -638,7 +656,10 @@ pub fn download_model(tier: SemifModelTier, directory: &Path) -> Result<PathBuf,
     let target = model_path(tier, directory);
     if target.exists() {
         match verify_size(&target, pin.gguf_bytes) {
-            Ok(()) => return Ok(target),
+            Ok(()) => {
+                verify_model(&target, pin)?;
+                return Ok(target);
+            }
             Err(_) => {
                 let partial = partial_model_path(tier, directory);
                 if partial.exists() {
@@ -665,6 +686,14 @@ pub fn download_model(tier: SemifModelTier, directory: &Path) -> Result<PathBuf,
         Command::new("curl")
             .arg("--fail")
             .arg("--location")
+            .args([
+                "--connect-timeout",
+                "30",
+                "--max-time",
+                "3600",
+                "--retry",
+                "3",
+            ])
             .arg("--continue-at")
             .arg("-")
             .arg("--output")
@@ -673,7 +702,7 @@ pub fn download_model(tier: SemifModelTier, directory: &Path) -> Result<PathBuf,
         "download pinned GGUF",
     )?;
 
-    verify_size(&partial, pin.gguf_bytes)?;
+    verify_model(&partial, pin)?;
     fs::rename(&partial, &target).map_err(|error| SemifSetupError::Io {
         context: format!("move {} to {}", partial.display(), target.display()),
         message: error.to_string(),
@@ -685,6 +714,31 @@ pub fn download_model(tier: SemifModelTier, directory: &Path) -> Result<PathBuf,
 fn partial_model_path(tier: SemifModelTier, directory: &Path) -> PathBuf {
     let pin = tier.pin();
     directory.join(format!("{}.part", pin.gguf_file))
+}
+
+fn verify_model(path: &Path, pin: SemifModelPin) -> Result<(), SemifSetupError> {
+    verify_size(path, pin.gguf_bytes)?;
+    let hash = || -> Result<String, std::io::Error> {
+        let mut file = fs::File::open(path)?;
+        let mut hasher = Sha256::new();
+        let mut buffer = [0u8; 65536];
+        loop {
+            let count = file.read(&mut buffer)?;
+            if count == 0 {
+                break;
+            }
+            hasher.update(&buffer[..count]);
+        }
+        Ok(format!("{:x}", hasher.finalize()))
+    };
+    let actual = hash().map_err(|e| SemifSetupError::Io {
+        context: format!("hash {}", path.display()),
+        message: e.to_string(),
+    })?;
+    if actual != pin.gguf_sha256 {
+        return Err(SemifSetupError::Io { context:format!("verify {}",path.display()),message:format!("SHA-256 mismatch: expected {}, got {actual}; remove the corrupt file and rerun setup",pin.gguf_sha256) });
+    }
+    Ok(())
 }
 
 fn verify_size(path: &Path, expected: u64) -> Result<(), SemifSetupError> {
@@ -821,10 +875,13 @@ fn revision_exists(directory: &Path) -> Result<bool, SemifSetupError> {
 }
 
 fn run_command(command: &mut Command, purpose: &str) -> Result<(), SemifSetupError> {
-    let status = command.status().map_err(|error| SemifSetupError::Command {
-        context: purpose.into(),
-        message: error.to_string(),
-    })?;
+    let status = command
+        .stdout(Stdio::from(std::io::stderr()))
+        .status()
+        .map_err(|error| SemifSetupError::Command {
+            context: purpose.into(),
+            message: error.to_string(),
+        })?;
     if !status.success() {
         return Err(SemifSetupError::Command {
             context: purpose.into(),
@@ -854,6 +911,22 @@ fn normalize_repository_url(value: &str) -> String {
         .trim_end_matches('/')
         .trim_end_matches(".git")
         .to_ascii_lowercase()
+}
+
+fn install_interpreter(directory: &Path) -> std::io::Result<PathBuf> {
+    std::path::absolute(venv_python(directory))
+}
+
+/// Acquire only the pinned tokenizer, first attempting an entirely local cache load.
+pub fn prepare_tokenizer(tier: SemifModelTier, directory: &Path) -> Result<(), SemifSetupError> {
+    run_command(Command::new(venv_python(directory)).arg("-c").arg(
+        "import sys
+from transformers import AutoTokenizer
+try:
+ AutoTokenizer.from_pretrained(sys.argv[1], revision=sys.argv[2], local_files_only=True, trust_remote_code=False)
+except OSError:
+ AutoTokenizer.from_pretrained(sys.argv[1], revision=sys.argv[2], trust_remote_code=False)"
+    ).arg(tier.pin().source).arg(tier.pin().source_revision), "prepare pinned tokenizer")
 }
 
 fn venv_python(root: &Path) -> PathBuf {
@@ -933,6 +1006,45 @@ impl std::fmt::Display for SemifSetupError {
 }
 
 impl std::error::Error for SemifSetupError {}
+
+/// Files keep verbose native diagnostics from filling subprocess pipes while waiting.
+fn bounded_output(command: &mut Command, limit: Duration) -> std::io::Result<std::process::Output> {
+    use std::io::{Seek, SeekFrom};
+    let mut stdout = tempfile::tempfile()?;
+    let mut stderr = tempfile::tempfile()?;
+    let mut child = command
+        .stdout(stdout.try_clone()?)
+        .stderr(stderr.try_clone()?)
+        .spawn()?;
+    let status = match child.wait_timeout(limit) {
+        Ok(Some(status)) => status,
+        result => {
+            // Always reap the child, including wait errors and timeout.
+            let kill = child.kill();
+            let wait = child.wait();
+            kill?;
+            wait?;
+            return match result {
+                Err(error) => Err(error),
+                _ => Err(std::io::Error::new(
+                    std::io::ErrorKind::TimedOut,
+                    "SemIf exceeded its 10-minute execution limit",
+                )),
+            };
+        }
+    };
+    stdout.seek(SeekFrom::Start(0))?;
+    stderr.seek(SeekFrom::Start(0))?;
+    let mut out = Vec::new();
+    let mut err = Vec::new();
+    stdout.read_to_end(&mut out)?;
+    stderr.read_to_end(&mut err)?;
+    Ok(std::process::Output {
+        status,
+        stdout: out,
+        stderr: err,
+    })
+}
 
 fn engine_error(context: &str, error: impl std::fmt::Display) -> DecisionEngineError {
     DecisionEngineError::new(format!("could not {context}: {error}"))
@@ -1075,6 +1187,45 @@ mod tests {
                     .unwrap(),
             )
             .unwrap()
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn installation_preserves_virtual_environment_interpreter_symlinks() {
+        let temp = tempfile::tempdir().unwrap();
+        let root = temp.path().join("semif");
+        let python = venv_python(&root);
+        fs::create_dir_all(python.parent().unwrap()).unwrap();
+        let target = temp.path().join("system-python");
+        fs::write(&target, b"system interpreter").unwrap();
+        std::os::unix::fs::symlink(&target, &python).unwrap();
+        let executable = install_interpreter(&root).unwrap();
+        assert_eq!(executable, python);
+        assert_ne!(executable, fs::canonicalize(&python).unwrap());
+    }
+
+    #[test]
+    fn same_size_corrupt_model_is_rejected_before_execution() {
+        let temp = tempfile::tempdir().unwrap();
+        let file = temp.path().join("model.gguf");
+        fs::write(&file, b"bad!").unwrap();
+        let mut pin = SemifModelTier::Phone.pin();
+        pin.gguf_bytes = 4;
+        assert!(verify_model(&file, pin)
+            .unwrap_err()
+            .to_string()
+            .contains("SHA-256 mismatch"));
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn provider_execution_has_a_finite_deadline() {
+        let error = bounded_output(
+            Command::new("sh").args(["-c", "exec sleep 5"]),
+            Duration::from_millis(20),
+        )
+        .unwrap_err();
+        assert_eq!(error.kind(), std::io::ErrorKind::TimedOut);
     }
 
     #[test]

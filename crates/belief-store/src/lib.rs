@@ -8,7 +8,7 @@ use belief_core::{
 use belief_policy::AuthorizationProfile;
 use evidence_interchange::{AuthorizedEvidenceBatch, EvidenceImportReceipt};
 use inference_core::{AuthorizationReceipt, InferenceResult};
-use semantic_decision::{SemanticJudgment, SemanticJudgmentProvenance};
+use semantic_decision::{ModelPanel, SemanticJudgment, SemanticJudgmentProvenance};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Validity {
@@ -39,6 +39,7 @@ impl<T> Stored<T> {
 
 #[derive(Debug, Default)]
 pub struct InMemoryBeliefStore {
+    panels: BTreeMap<String, ModelPanel>,
     evidence: BTreeMap<EvidenceId, Stored<EvidenceRef>>,
     judgments: BTreeMap<JudgmentId, Stored<Judgment>>,
     semantic_judgments: BTreeMap<JudgmentId, SemanticJudgmentProvenance>,
@@ -187,6 +188,35 @@ impl InMemoryBeliefStore {
             .insert(judgment.id().clone(), provenance);
         self.judgments
             .insert(judgment.id().clone(), Stored::active(judgment));
+        Ok(())
+    }
+
+    /// Keep all panel members, including disagreement and unknowns, available for explanation.
+    pub fn insert_model_panel(&mut self, panel: ModelPanel) -> Result<(), StoreError> {
+        if self.panels.contains_key(panel.id()) {
+            return Err(StoreError::Duplicate {
+                kind: "model panel",
+                id: panel.id().into(),
+            });
+        }
+        for member in panel.members().values() {
+            if self.judgments.contains_key(member.judgment().id()) {
+                return Err(StoreError::Duplicate {
+                    kind: "judgment",
+                    id: member.judgment().id().to_string(),
+                });
+            }
+            for item in member.provenance().decision().request().evidence() {
+                self.require_active_evidence(&item.evidence.id)?;
+                if self.evidence.get(&item.evidence.id).map(|s| &s.value) != Some(&item.evidence) {
+                    return Err(StoreError::EvidenceConflict(item.evidence.id.clone()));
+                }
+            }
+        }
+        for member in panel.members().values() {
+            self.insert_semantic_judgment(member.clone())?;
+        }
+        self.panels.insert(panel.id().into(), panel);
         Ok(())
     }
 
@@ -396,7 +426,20 @@ impl InMemoryBeliefStore {
                     id: belief.to_string(),
                 })?;
 
+        let model_panels = self
+            .panels
+            .values()
+            .filter(|panel| {
+                panel
+                    .members()
+                    .keys()
+                    .any(|id| derivation.judgments().contains(id))
+            })
+            .cloned()
+            .collect();
+
         Ok(BeliefExplanation {
+            model_panels,
             belief: stored_belief,
             claim,
             derivation,
@@ -616,6 +659,7 @@ pub struct EvidenceImportOutcome {
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct BeliefExplanation {
+    pub model_panels: Vec<ModelPanel>,
     pub belief: Stored<Belief>,
     pub claim: Stored<Claim>,
     pub derivation: Derivation,

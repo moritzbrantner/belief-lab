@@ -76,3 +76,5 @@ Semantic judgments are inserted through `insert_semantic_judgment`, which valida
 `cargo test -p belief-store --test inference_binding` exercises the public API against request mutation, conflicting same-ID references, nine evidence drift variants, claim proposition/origin drift, valid shared evidence, atomic rejection, and post-revocation explanations.
 
 `cargo test -p inference-core authorization_snapshot_is_deduplicated_and_shared_across_receipt_clones` checks snapshot deduplication and pointer sharing at 1, 16, and 256 judgment bases. This is a deterministic structural ratchet, not a wall-clock performance threshold.
+
+Model panels are inserted with `insert_model_panel` after their evidence. The method checks duplicate panel/member identifiers, active dependencies, and full authorized evidence equality before inserting any member. `BeliefExplanation::model_panels` includes all members of panels contributing a selected judgment, preserving disagreement and unknown decisions. Panel snapshots are historical provenance, not a bypass around current evidence validity.

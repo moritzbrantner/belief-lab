@@ -1,0 +1,9 @@
+{
+  "schema": "belief_repository_purpose",
+  "schemaVersion": 1,
+  "role": "downstream_epistemic_system",
+  "owns": ["evidence_references", "policy_admission", "semantic_judgments", "model_panels", "claims", "inference", "beliefs", "derivations", "explanations", "invalidation"],
+  "excludes": ["detector_truth", "asr", "ocr", "ner", "scene_detection", "face_recognition", "voice_recognition", "corpus_persistence"],
+  "interchange": "belief_evidence_interchange@1",
+  "pages": {"path": "site", "capability": "rust_wasm_evidence_workbench", "modelExecution": "local_cli"}
+}

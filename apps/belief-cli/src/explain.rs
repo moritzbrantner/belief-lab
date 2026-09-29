@@ -256,6 +256,10 @@ pub struct BeliefReport {
 /// The chain read back from the store: belief → derivation → claim → judgments → evidence.
 #[derive(Debug, Serialize)]
 pub struct ProvenanceReport {
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub semantic_decisions: Vec<serde_json::Value>,
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub model_panels: Vec<serde_json::Value>,
     pub belief: String,
     pub validity: String,
     pub derivation: DerivationReport,
@@ -322,6 +326,16 @@ pub fn explain(input: &ExplainInput<'_>) -> Result<Report, Box<dyn Error>> {
         inferences: Vec::new(),
     };
 
+    if let Some(key) = input
+        .policy
+        .keys()
+        .find(|key| !belief_policy::POLICY_KEYS.contains(&key.as_str()))
+    {
+        return Ok(report.reject(
+            RejectionStage::PolicyConfig,
+            format!("unknown policy key {key}"),
+        ));
+    }
     let policy = match PolicyConfig::from_pairs(input.policy.clone()) {
         Ok(policy) => policy,
         Err(error) => return Ok(report.reject(RejectionStage::PolicyConfig, error)),
@@ -676,9 +690,15 @@ fn authorization_report(explanation: &BeliefExplanation) -> AuthorizationReport 
     }
 }
 
-fn provenance_report(explanation: &BeliefExplanation) -> ProvenanceReport {
+pub(crate) fn provenance_report(explanation: &BeliefExplanation) -> ProvenanceReport {
     let derivation = &explanation.derivation;
     ProvenanceReport {
+        semantic_decisions: explanation.semantic_judgments.values().map(|p| receipt_report(p.decision())).collect(),
+        model_panels: explanation.model_panels.iter().map(|panel| {
+            let summary = panel.summary();
+            serde_json::json!({"id":panel.id(),"supports":summary.supports,"contradicts":summary.contradicts,"unknown":summary.unknown,
+                "disagreement":summary.disagreement,"members":panel.members().iter().map(|(id,member)| serde_json::json!({"judgmentId":id.as_str(),"decision":receipt_report(member.provenance().decision())})).collect::<Vec<_>>()})
+        }).collect(),
         belief: explanation.belief.value.id().to_string(),
         validity: validity(&explanation.belief),
         derivation: DerivationReport {
@@ -767,4 +787,14 @@ fn validity<T>(stored: &Stored<T>) -> String {
         Validity::Active => "active".into(),
         Validity::Invalidated { reason } => format!("invalidated: {reason}"),
     }
+}
+
+pub(crate) fn receipt_report(
+    receipt: &semantic_decision::SemanticDecisionReceipt,
+) -> serde_json::Value {
+    serde_json::json!({"requestId":receipt.request_id(),"provider":receipt.provider(),"providerRevision":receipt.provider_revision(),
+        "model":receipt.model(),"modelRevision":receipt.model_revision(),"runtime":receipt.runtime(),
+        "promptSha256":receipt.prompt_sha256(),"readout":receipt.readout(),"scores":receipt.scores(),
+        "selectedOption":receipt.selected_option(),"semantics":"conditional_option_probability",
+        "state":receipt.request().state(),"question":receipt.request().question()})
 }

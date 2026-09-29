@@ -2,6 +2,18 @@
 
 Provenance-first experiments for turning heterogeneous evidence into explainable beliefs.
 
+## Try the workbench
+
+[Open the evidence workbench](https://moritzbrantner.github.io/belief-lab/) to load examples or local JSON files and run the Rust policy → inference → explanation pipeline in your browser. Browser examples use scripted judgments and identify that explicitly.
+
+For real model-backed file analysis from a fresh clone:
+
+```sh
+cargo run -- decide examples/decisions/preference.json > result.json
+```
+
+This sets up the pinned provider/model on first use. Load the resulting JSON in the workbench to inspect it. See [Workbench and roadmap coverage](docs/WORKBENCH.md) for browser builds, downloadable inputs, and verification.
+
 ## Quick start
 
 After cloning the repository, the default command is immediately runnable:
