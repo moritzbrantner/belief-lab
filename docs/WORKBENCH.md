@@ -40,3 +40,11 @@ The Pages workflow builds and tests pull requests and deploys `main` after its b
 - #14: versioned one-decision JSON/stdio command with validation and authorization before provider resolution, stable errors, exact provenance, and offline fixture-provider tests.
 
 Verification convention source revision: `e6acb5310afaf15c0cba24f87108f5f4ad1bedc3`. This records the policy used for this implementation; it does not pin future policy consumption.
+
+Real-provider acceptance (explicitly downloads any missing resources, then executes all three CPU model tiers):
+
+```sh
+cargo test -p belief-cli --test real_models -- --ignored --nocapture
+```
+
+After setup, repeat with `HF_HUB_OFFLINE=1 PIP_NO_INDEX=1` to verify reuse of the prepared resources. The ordinary workspace test command skips this acceptance test.

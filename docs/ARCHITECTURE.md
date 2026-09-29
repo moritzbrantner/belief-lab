@@ -63,3 +63,9 @@ This keeps authorization from becoming the owner of the domain model and lets fu
 Semantic providers receive only an `AuthorizedDecisionRequest`: bounded state plus explicit evidence references and purposes that have passed `belief-policy`. Providers do not receive the store or corpus/database authority.
 
 Provider output is recorded as a judgment. Direct option scores use `conditional_option_probability` semantics and therefore cannot be inserted as a belief value. Provider identity, model revision, runtime, prompt hash, readout, option scores, and authorization receipt remain available through the store explanation path.
+
+## Application surfaces
+
+`apps/belief-cli` exposes a shared Rust application library. The native `explain` CLI and the Pages WebAssembly binding call the same validation, policy, inference, store, and report functions. The JavaScript workbench handles file selection and display; it does not implement an alternative inference algorithm. SemIf remains a native-only dependency. Browser examples carry explicitly scripted judgments; real model requests execute through the local `decide` JSON/stdio boundary.
+
+`repository-purpose.json` records the machine-readable ownership/exclusion boundary. Evidence-interchange rejects producer payload extensions; the one-decision request carries bounded content separately with its provenance-bearing references.

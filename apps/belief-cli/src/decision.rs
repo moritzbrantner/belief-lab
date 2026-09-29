@@ -98,8 +98,9 @@ pub fn execute(
     if input.len() > MAX_INPUT_BYTES {
         return Err(invalid("request exceeds 1 MiB"));
     }
+    let validated: Input = serde_json::from_str(input).map_err(invalid)?;
     let original: Value = serde_json::from_str(input).map_err(invalid)?;
-    let input: Input = serde_json::from_value(original.clone()).map_err(invalid)?;
+    let input = validated;
     if input.schema != "belief_semantic_request" || input.schema_version != 1 {
         return Err(Failure::new(
             "unsupported_schema",

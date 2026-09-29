@@ -52,6 +52,13 @@ fn invalid_and_denied_requests_never_resolve_a_provider() {
         .unwrap_err();
         assert_eq!(error.code, code, "{field}");
     }
+    let duplicate = format!("{{\"schema\":\"bad\",{}", &INPUT.trim()[1..]);
+    assert_eq!(
+        execute(&duplicate, |_| panic!("duplicate field accepted"))
+            .unwrap_err()
+            .code,
+        "invalid_request"
+    );
     assert_eq!(
         execute("{", |_| panic!()).unwrap_err().code,
         "invalid_request"

@@ -68,7 +68,7 @@ function render(value) {
     $('results').append(article);
   });
 }
-$('language').addEventListener('change',() => { language = $('language').value; localStorage.setItem('belief-language',language); localize(); status(t('ready')); });
+$('language').addEventListener('change',() => { language = $('language').value; localStorage.setItem('belief-language',language); localize(); status(t(report ? (report.outcome === 'input_rejected' ? 'rejected' : 'complete') : 'ready'), report?.outcome === 'input_rejected'); });
 $('theme').value = localStorage.getItem('belief-theme') || 'system';
 function theme() { document.documentElement.dataset.theme = $('theme').value; localStorage.setItem('belief-theme',$('theme').value); }
 $('theme').addEventListener('change',theme); theme(); localize();
