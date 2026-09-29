@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Belief Lab · Local models</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+  <a href="./" class="brand">Belief Lab <span data-i18n="local">Local models</span></a>
+  <nav>
+    <label><span id="language-label" data-i18n="language">Language</span><select id="language" aria-labelledby="language-label"><option value="en">English</option><option value="de">Deutsch</option><option value="es">Español</option></select></label>
+    <label><span id="theme-label" data-i18n="theme">Theme</span><select id="theme" aria-labelledby="theme-label"><option value="system" data-i18n="system">System</option><option value="light" data-i18n="light">Light</option><option value="dark" data-i18n="dark">Dark</option></select></label>
+  </nav>
+</header>
+<main>
+  <div class="heading">
+    <div><p class="eyebrow" data-i18n="eyebrow">EVIDENCE → MODEL → BELIEF</p><h1 data-i18n="title">Ask the model.</h1><p data-i18n="intro">Load a bounded evidence request and inspect the model’s judgment, the resulting belief, and their provenance.</p></div>
+    <span class="badge" data-i18n="private">Runs on your computer</span>
+  </div>
+  <section aria-labelledby="request-title">
+    <h2 id="request-title" data-i18n="requestTitle">1. Prepare a request</h2>
+    <fieldset id="inputs">
+      <div class="toolbar">
+        <button id="load" data-i18n="load">Load example</button>
+        <label><span id="file-label" data-i18n="file">Request file</span><input id="file" aria-labelledby="file-label" type="file" accept="application/json,.json"></label>
+        <label><span id="model-label" data-i18n="model">Model</span><select id="model" aria-labelledby="model-label">
+          <option value="phone">Qwen3 0.6B · 639 MB</option>
+          <option value="desktop">MiniCPM5 2B · 1.56 GB</option>
+          <option value="high-memory">Qwen3.5 4B · 3.01 GB</option>
+          <option value="fixture" data-i18n="fixture">Scripted provider · no model</option>
+        </select></label>
+      </div>
+      <p class="note" data-i18n="requestHelp">The request includes the bounded source text, question, proposition, evidence references, and explicit policy. Keep references consistent when editing your source content.</p>
+      <label><span data-i18n="requestJson">Decision request JSON</span><textarea id="request" rows="18" spellcheck="false"></textarea></label>
+    </fieldset>
+    <p class="note" data-i18n="downloadHelp">The first run downloads the selected model and prepares SemIf. Later runs reuse local resources. Scoring sends no evidence to a remote model service.</p>
+    <div class="toolbar"><button class="primary" id="run" disabled data-i18n="run">Run analysis</button><button id="download" disabled data-i18n="download">Download result</button></div>
+    <p id="status" role="status" aria-live="polite"></p>
+  </section>
+  <section aria-labelledby="result-title">
+    <h2 id="result-title" data-i18n="resultTitle">2. Inspect the result</h2>
+    <div id="result"></div>
+    <details><summary data-i18n="full">Full result and provenance</summary><pre id="json"></pre></details>
+  </section>
+</main>
+<footer data-i18n="footer">Model option scores are conditional probabilities. Belief soft truth is a heuristic, not a calibrated probability.</footer>
+<script type="module" src="local.js"></script>
+</body>
+</html>

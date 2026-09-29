@@ -24,6 +24,9 @@ crate-type = ["rlib", "cdylib"]
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 semif-provider = { path = "../../crates/semif-provider" }
+axum = "=0.8.8"
+tokio = { version = "1", features = ["rt-multi-thread", "net", "time", "signal"] }
+getrandom = "=0.4.3"
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
 wasm-bindgen = "=0.2.128"

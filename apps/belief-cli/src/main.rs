@@ -1,3 +1,5 @@
+mod workbench;
+
 use belief_cli::explain;
 
 use belief_cli::pipeline;
@@ -74,6 +76,7 @@ fn run_command(args: &[String]) -> Result<(), Box<dyn Error>> {
             print_core_demo(run_core_demo()?);
             Ok(())
         }
+        [command] if command == "workbench" => workbench::run(execute_local),
         [command] if command == "setup" => setup(SemifModelTier::Phone),
         [command, tier] if command == "setup" => setup(parse_tier(tier)?),
         [command] if command == "doctor" => doctor(SemifModelTier::Phone),
@@ -486,6 +489,7 @@ Usage:
   cargo run -- explain <evidence.json> [--judgments <file>] [--profile <name>]
                        [--policy KEY=VALUE]... [--json]
                                     Explain an evidence batch offline (exit 2 = input rejected)
+  cargo run -- workbench            Open a local browser workbench for real models
   cargo run -- decide <request.json|-> Execute one authorized semantic decision as JSON
   cargo run -- setup [tier]         Install/update pinned SemIf and download a model
   cargo run -- semantic-demo [tier] Run a real local SemIf-backed decision
@@ -498,9 +502,7 @@ Model tiers: phone (default), desktop, high-memory"
 }
 
 fn run_decide(args: &[String]) -> ExitCode {
-    use belief_cli::decision::{
-        execute, Failure, FixtureEngine, ProviderSelection, MAX_INPUT_BYTES,
-    };
+    use belief_cli::decision::{Failure, MAX_INPUT_BYTES};
     let run = || -> Result<serde_json::Value, Failure> {
         let [path] = args else {
             return Err(Failure::new(
@@ -518,24 +520,7 @@ fn run_decide(args: &[String]) -> ExitCode {
             .take((MAX_INPUT_BYTES + 1) as u64)
             .read_to_string(&mut input)
             .map_err(|e| Failure::new("input_io", e))?;
-        execute(&input, |selection| match selection {
-            ProviderSelection::Fixture { scores } => Ok(Box::new(FixtureEngine {
-                scores: scores.clone(),
-            })),
-            ProviderSelection::Semif { tier } => {
-                let tier = parse_tier(tier).map_err(|e| Failure::new("invalid_provider", e))?;
-                let paths = LocalPaths::default();
-                setup(tier).map_err(|e| Failure::new("setup_failed", e))?;
-                Ok(Box::new(SemifProvider::from_bootstrap(
-                    &paths.semif,
-                    tier.pin(),
-                    SemifBackend::LlamaCpp {
-                        gguf: model_path(tier, &paths.models),
-                        threads: None,
-                    },
-                )))
-            }
-        })
+        execute_local(&input)
     };
     match run() {
         Ok(value) => {
@@ -547,6 +532,28 @@ fn run_decide(args: &[String]) -> ExitCode {
             ExitCode::from(2)
         }
     }
+}
+
+fn execute_local(input: &str) -> Result<serde_json::Value, belief_cli::decision::Failure> {
+    use belief_cli::decision::{execute, Failure, FixtureEngine, ProviderSelection};
+    execute(input, |selection| match selection {
+        ProviderSelection::Fixture { scores } => Ok(Box::new(FixtureEngine {
+            scores: scores.clone(),
+        })),
+        ProviderSelection::Semif { tier } => {
+            let tier = parse_tier(tier).map_err(|e| Failure::new("invalid_provider", e))?;
+            let paths = LocalPaths::default();
+            setup(tier).map_err(|e| Failure::new("setup_failed", e))?;
+            Ok(Box::new(SemifProvider::from_bootstrap(
+                &paths.semif,
+                tier.pin(),
+                SemifBackend::LlamaCpp {
+                    gguf: model_path(tier, &paths.models),
+                    threads: None,
+                },
+            )))
+        }
+    })
 }
 
 #[cfg(test)]

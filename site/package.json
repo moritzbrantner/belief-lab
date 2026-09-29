@@ -2,6 +2,12 @@
   "name": "belief-workbench-tests",
   "private": true,
   "type": "module",
-  "scripts": {"test": "node browser-test.mjs"},
-  "devDependencies": {"playwright": "1.63.0"}
+  "scripts": {
+    "test": "node browser-test.mjs && cargo build --locked && node local-browser-test.mjs",
+    "test:local": "cargo build --locked && node local-browser-test.mjs",
+    "test:models": "cargo build --locked && node local-browser-test.mjs --real"
+  },
+  "devDependencies": {
+    "playwright": "1.63.0"
+  }
 }
