@@ -188,7 +188,8 @@ fn doctor(tier: SemifModelTier) -> Result<(), Box<dyn Error>> {
         if semif_ready { "ready" } else { "not ready" },
         executable.display()
     );
-    match model_is_ready(tier, &paths.models) {
+    let model_ready = model_is_ready(tier, &paths.models);
+    match &model_ready {
         Ok(true) => println!(
             "  model {}: ready ({})",
             tier.as_str(),
@@ -198,7 +199,7 @@ fn doctor(tier: SemifModelTier) -> Result<(), Box<dyn Error>> {
         Err(error) => println!("  model {}: invalid ({error})", tier.as_str()),
     }
 
-    if !semif_ready || !model_is_ready(tier, &paths.models).unwrap_or(false) {
+    if !semif_ready || !model_ready.unwrap_or(false) {
         println!();
         println!(
             "Run cargo run -- setup {} to prepare local semantic scoring.",

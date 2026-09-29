@@ -16,3 +16,7 @@ resolver = "2"
 [workspace.package]
 edition = "2021"
 version = "0.1.0"
+
+# Model integrity checks stream multi-GB artifacts even in the default `cargo run` path.
+[profile.dev.package.sha2]
+opt-level = 3
