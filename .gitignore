@@ -1,3 +1,5 @@
 /target
 .env
 .local/
+
+site/node_modules/

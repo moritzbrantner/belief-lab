@@ -49,6 +49,7 @@ The optional SemIf-backed path adds:
 - Git;
 - Python 3.10+ with `venv`;
 - `curl`;
+- a C/C++ build toolchain for llama-cpp-python (on Debian/Ubuntu: `build-essential` and `cmake`);
 - network access for the initial SemIf/Python/model downloads;
 - enough disk space for the selected model and its Python environment.
 
@@ -64,7 +65,7 @@ Prepare the default CPU-local setup:
 cargo run -- setup
 ```
 
-This installs the pinned SemIf source revision into `.local/semif`, creates/reuses its virtual environment, installs the `llama.cpp` backend, and downloads the phone-tier GGUF into `.local/models`.
+This installs the pinned SemIf source revision into `.local/semif`, creates/reuses its virtual environment, installs the `llama.cpp` backend (with CPU Torch wheels on Linux), and downloads the phone-tier GGUF into `.local/models`. It also prepares the exact pinned tokenizer in the Hugging Face cache. Scoring then runs with Hugging Face offline mode. Initial native compilation may take several minutes; setup streams progress to stderr.
 
 Then run an actual model-backed decision through the Belief Lab boundary:
 
@@ -103,7 +104,7 @@ Setup is designed to be rerun safely:
 - after a successful package install, Belief Lab records the exact SemIf revision and selected backend in an ignored setup receipt beside the checkout;
 - when the checkout is still clean at the exact pinned revision, the receipt matches, the selected backend imports successfully, the virtual environment passes `pip check`, and the `semif-score` executable exists, a repeated `setup` skips `pip install` entirely;
 - a moved/dirty checkout, missing backend extra, missing/corrupt receipt, stale revision, or different backend is rejected or repaired rather than silently reused;
-- a completed model is reused after exact-size validation;
+- a completed model is reused after exact-size and SHA-256 validation;
 - a partial model download is resumed;
 - an incomplete final model file is moved back to the partial-download path and resumed.
 
@@ -112,6 +113,15 @@ If `.local/semif` exists but is not the expected git checkout, setup stops rathe
 If a model file has an unexpected size and cannot be resumed into the pinned artifact, setup reports the exact path and expected size instead of silently accepting it.
 
 Once the pinned checkout, virtual environment, setup receipt, and model are present, rerunning `cargo run -- setup [tier]` does not need the package index or model host. The setup path remains local unless one of those declared inputs needs acquisition or repair.
+
+## File-driven semantic scoring and browser examples
+
+```sh
+cargo run -- decide examples/decisions/preference.json > result.json
+cargo run -- decide examples/decisions/fixture.json  # deterministic, no model
+```
+
+The first command validates and authorizes before preparing the pinned provider and selected model automatically. The result includes the original request and provider/inference provenance. See [Workbench](WORKBENCH.md) for the Pages examples, browser uploads, and build instructions.
 
 ## Commands
 

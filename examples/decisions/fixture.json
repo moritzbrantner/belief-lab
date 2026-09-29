@@ -1,0 +1,77 @@
+{
+  "schema": "belief_semantic_request",
+  "schemaVersion": 1,
+  "id": "example:preference",
+  "state": "Alice explicitly says: I prefer software that lets me customize how it works.",
+  "question": "Does this evidence support the proposition that Alice prefers customization?",
+  "options": [
+    {
+      "id": "supports",
+      "description": "The evidence supports the proposition."
+    },
+    {
+      "id": "contradicts",
+      "description": "The evidence contradicts the proposition."
+    },
+    {
+      "id": "unknown",
+      "description": "The evidence is insufficient to decide."
+    }
+  ],
+  "class": "preference",
+  "evidence": {
+    "schema": "belief_evidence_interchange",
+    "schemaVersion": 1,
+    "exporter": {
+      "name": "belief-cli-demo",
+      "revision": "git:belief-cli-demo-v1"
+    },
+    "revision": "batch:demo:v1",
+    "evidence": [
+      {
+        "id": "evidence:demo:statement",
+        "subject": "person:alice",
+        "class": "transcript",
+        "familyId": "family:demo:statement",
+        "source": {
+          "repository": "belief-cli-demo",
+          "scopeId": "demo:1",
+          "recordId": "statement:1",
+          "revision": "sha256:demo-source-v1"
+        },
+        "producer": {
+          "name": "belief-cli-demo",
+          "revision": "commit:demo-producer-v1"
+        }
+      }
+    ]
+  },
+  "evidenceUses": [
+    {
+      "id": "evidence:demo:statement",
+      "purpose": "corroboration"
+    }
+  ],
+  "proposition": {
+    "subject": "person:alice",
+    "predicate": "prefers_customization",
+    "object": {
+      "boolean": true
+    }
+  },
+  "judgmentSpec": {
+    "name": "example-support",
+    "revision": "v1"
+  },
+  "policy": {
+    "BELIEF_POLICY_PROFILE": "semantic_research"
+  },
+  "provider": {
+    "kind": "fixture",
+    "scores": {
+      "supports": 0.9,
+      "contradicts": 0.05,
+      "unknown": 0.05
+    }
+  }
+}

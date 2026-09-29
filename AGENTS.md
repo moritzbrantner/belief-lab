@@ -1,7 +1,7 @@
 # Agent Instructions
 
 Provenance-first experiments for turning heterogeneous evidence into explainable beliefs.
-Pure Rust workspace; `cargo run` executes a deterministic offline demo of the full evidence → judgment → policy → inference → store → explanation path.
+Rust workspace with a thin static WebAssembly workbench; `cargo run` executes a deterministic offline demo of the full evidence → judgment → policy → inference → store → explanation path.
 
 ## Read first
 
@@ -11,7 +11,7 @@ Pure Rust workspace; `cargo run` executes a deterministic offline demo of the fu
 
 | Crate | Role |
 | --- | --- |
-| `apps/belief-cli` | Top-level CLI (`cargo run`, `explain`, `doctor`, `setup`, `semantic-demo`) |
+| `apps/belief-cli` | Top-level CLI (`cargo run`, `explain`, `decide`, `doctor`, `setup`, `semantic-demo`) |
 | `belief-core` | Evidence, judgments, claims, beliefs, derivations, provenance, score semantics |
 | `belief-policy` | Fail-closed authorization over evidence and inference classes |
 | `evidence-interchange` | Versioned, policy-admitted references to producer-owned evidence |
@@ -63,3 +63,7 @@ General engineering rules (git and merging, commits, testing, ADRs, docs, depend
 
 - Format, Clippy, `cargo test --workspace` and `cargo run --quiet` pass.
 - The relevant `docs/*.md` is updated when semantics or boundaries change.
+
+## Workbench
+
+`apps/belief-cli` exposes the shared application library used by the native CLI and WebAssembly. `site/` is the thin browser UI; `scripts/build-pages.sh` builds the deployable site and copies downloadable examples. `npm --prefix site test` runs real browser acceptance after building. See `docs/WORKBENCH.md`.

@@ -1,3 +1,6 @@
+mod panel;
+pub use panel::{ModelPanel, PanelSummary};
+
 use std::collections::{BTreeMap, BTreeSet};
 use std::fmt;
 

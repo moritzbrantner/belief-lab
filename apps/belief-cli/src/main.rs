@@ -1,13 +1,14 @@
-mod explain;
-mod judgments;
-mod pipeline;
-mod render;
+use belief_cli::explain;
+
+use belief_cli::pipeline;
+use belief_cli::render;
 
 use std::collections::BTreeMap;
 use std::env;
 use std::error::Error;
 use std::fs;
 use std::io;
+use std::io::Read;
 use std::path::{Path, PathBuf};
 use std::process::{Command, ExitCode};
 
@@ -53,6 +54,9 @@ fn main() -> ExitCode {
 }
 
 fn run(args: Vec<String>) -> Result<ExitCode, Box<dyn Error>> {
+    if args.first().map(String::as_str) == Some("decide") {
+        return Ok(run_decide(&args[1..]));
+    }
     if args.first().map(String::as_str) == Some("explain") {
         return run_explain(&args[1..]);
     }
@@ -150,21 +154,22 @@ fn print_core_demo(summary: DemoSummary) {
 
 fn setup(tier: SemifModelTier) -> Result<(), Box<dyn Error>> {
     let paths = LocalPaths::default();
-    println!(
+    eprintln!(
         "Preparing SemIf {} and the {} model tier...",
         semif_provider::SEMIF_SOURCE_REVISION,
         tier.as_str()
     );
     let outcome = bootstrap_semif(&paths.semif, SemifInstallBackend::LlamaCpp)?;
     let model = download_model(tier, &paths.models)?;
-    println!(
+    semif_provider::prepare_tokenizer(tier, &paths.semif)?;
+    eprintln!(
         "SemIf ready at {} (cloned: {}, venv created: {}).",
         outcome.executable.display(),
         outcome.cloned,
         outcome.venv_created
     );
-    println!("Model ready at {}.", model.display());
-    println!("Run cargo run -- semantic-demo {}.", tier.as_str());
+    eprintln!("Model ready at {}.", model.display());
+    eprintln!("Run cargo run -- semantic-demo {}.", tier.as_str());
     Ok(())
 }
 
@@ -480,6 +485,7 @@ Usage:
   cargo run -- explain <evidence.json> [--judgments <file>] [--profile <name>]
                        [--policy KEY=VALUE]... [--json]
                                     Explain an evidence batch offline (exit 2 = input rejected)
+  cargo run -- decide <request.json|-> Execute one authorized semantic decision as JSON
   cargo run -- setup [tier]         Install/update pinned SemIf and download a model
   cargo run -- semantic-demo [tier] Run a real local SemIf-backed decision
   cargo run -- doctor [tier]        Show local prerequisites and setup state
@@ -488,6 +494,58 @@ Usage:
 Profiles: observe_only (default), semantic_research, multimodal_research
 Model tiers: phone (default), desktop, high-memory"
     );
+}
+
+fn run_decide(args: &[String]) -> ExitCode {
+    use belief_cli::decision::{
+        execute, Failure, FixtureEngine, ProviderSelection, MAX_INPUT_BYTES,
+    };
+    let run = || -> Result<serde_json::Value, Failure> {
+        let [path] = args else {
+            return Err(Failure::new(
+                "usage",
+                "decide requires a request.json file or - for stdin",
+            ));
+        };
+        let reader: Box<dyn Read> = if path == "-" {
+            Box::new(io::stdin())
+        } else {
+            Box::new(fs::File::open(path).map_err(|e| Failure::new("input_io", e))?)
+        };
+        let mut input = String::new();
+        reader
+            .take((MAX_INPUT_BYTES + 1) as u64)
+            .read_to_string(&mut input)
+            .map_err(|e| Failure::new("input_io", e))?;
+        execute(&input, |selection| match selection {
+            ProviderSelection::Fixture { scores } => Ok(Box::new(FixtureEngine {
+                scores: scores.clone(),
+            })),
+            ProviderSelection::Semif { tier } => {
+                let tier = parse_tier(tier).map_err(|e| Failure::new("invalid_provider", e))?;
+                let paths = LocalPaths::default();
+                setup(tier).map_err(|e| Failure::new("setup_failed", e))?;
+                Ok(Box::new(SemifProvider::from_bootstrap(
+                    &paths.semif,
+                    tier.pin(),
+                    SemifBackend::LlamaCpp {
+                        gguf: model_path(tier, &paths.models),
+                        threads: None,
+                    },
+                )))
+            }
+        })
+    };
+    match run() {
+        Ok(value) => {
+            println!("{value}");
+            ExitCode::SUCCESS
+        }
+        Err(error) => {
+            println!("{}", error.report());
+            ExitCode::from(2)
+        }
+    }
 }
 
 #[cfg(test)]

@@ -76,3 +76,29 @@ pub fn derive_belief(
         ignored_correlated_judgments,
     })
 }
+
+/// Panel membership cannot grant additional source weight to additional model evaluations.
+pub fn panel_bases(
+    panel: &semantic_decision::ModelPanel,
+) -> Result<Vec<inference_core::JudgmentBasis>, Box<dyn std::error::Error>> {
+    let group = panel.correlation_group()?;
+    panel
+        .members()
+        .values()
+        .map(|member| {
+            Ok(inference_core::JudgmentBasis::new(
+                member.judgment().clone(),
+                group.clone(),
+                panel
+                    .target()
+                    .request()
+                    .evidence()
+                    .iter()
+                    .map(|item| {
+                        inference_core::EvidenceUse::new(item.evidence.clone(), item.purpose)
+                    })
+                    .collect(),
+            )?)
+        })
+        .collect()
+}
