@@ -29,6 +29,8 @@ Each evidence item carries only enough information for `belief-lab` to identify 
 
 Future evidence-bundle resolvers can retrieve bounded source content when a Jev or other judgment provider actually needs it.
 
+For semantic-map evidence, the referenced object remains scoped to its producer corpus and map revision. A corpus-local concept or semantic region is evidence about what that source material expresses; importing the reference does not promote it to a global concept identity or a world-level truth claim. Cross-source proposition normalization and belief formation remain downstream `belief-lab` responsibilities.
+
 ## Envelope
 
 A v1 batch uses:

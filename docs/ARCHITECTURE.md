@@ -51,6 +51,14 @@ Every evidence reference requires:
 
 Evidence families identify observations that share underlying information. Future inference engines must use them to avoid treating a derived track and each of its component observations as independent confirmations.
 
+## Source-relative semantic evidence
+
+Upstream semantic analysis remains source-relative. In particular, `nlp-stack` semantic-map concepts are corpus-local identities backed by source spans and producer provenance; they are not global world concepts and do not assert that their content is true.
+
+`belief-lab` consumes references to those producer-owned semantic objects rather than copying embeddings, graph payloads, or corpus persistence. A decision request may resolve bounded source content for a specific authorized judgment, but the producer/corpus remains authoritative for the semantic-map object and its revision.
+
+The later world-model step belongs on the epistemic side of this boundary: source-relative observations may be normalized into propositions, compared across sources, judged as support/contradiction/unknown, and incorporated into beliefs. Cross-corpus similarity alone must not collapse two corpus-local concepts into one world identity.
+
 ## Policy boundary
 
 Domain vocabulary such as evidence and inference classes belongs to `belief-core`. `belief-policy` consumes that vocabulary and decides which classes a process may use.
