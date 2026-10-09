@@ -8,6 +8,6 @@
     "test:models": "cargo build --locked && node local-browser-test.mjs --real"
   },
   "devDependencies": {
-    "playwright": "1.63.0"
+    "playwright": "1.64.0"
   }
 }
