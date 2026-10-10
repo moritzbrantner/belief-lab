@@ -729,7 +729,12 @@ fn verify_model(path: &Path, pin: SemifModelPin) -> Result<(), SemifSetupError> 
             }
             hasher.update(&buffer[..count]);
         }
-        Ok(format!("{:x}", hasher.finalize()))
+        // sha2 0.11 digests no longer implement LowerHex; render each byte.
+        Ok(hasher
+            .finalize()
+            .iter()
+            .map(|byte| format!("{byte:02x}"))
+            .collect())
     };
     let actual = hash().map_err(|e| SemifSetupError::Io {
         context: format!("hash {}", path.display()),
