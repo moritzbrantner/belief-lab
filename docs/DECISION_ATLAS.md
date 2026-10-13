@@ -119,3 +119,20 @@ Belief Lab coordinates and consumes upstream outputs but must not duplicate inge
 #### Question 1.2.5 — Long-running source processing
 
 When processing a long recording or collection, should Belief Lab (A) wait and show the final analysis only, (B) show step-by-step progress but only release results at completion, or (C) show progress and incrementally reveal clearly labeled preliminary propositions and results as they become available, without mistaking them for final conclusions?
+
+#### Decision 1.2.6 — Incrementally reveal provisional findings during long-running processing
+
+**Answers:** 1.2.5  
+**Approved by owner:** 2026-10-13, option C.
+
+For a long recording, document, or collection, Belief Lab shows meaningful processing progress and makes **already available, policy-authorized proposition candidates and findings visible incrementally**, rather than withholding all useful results until the complete pipeline finishes. Findings derived from incomplete evidence are clearly identified as **preliminary**; the user can inspect their source spans and start reviewing or correcting candidates while later work continues.
+
+The interface distinguishes ongoing, completed, failed, and unavailable processing stages from final conclusions. New evidence may confirm, revise, or invalidate preliminary inferences; any changes retain traceable source/provenance relationships rather than quietly replacing earlier results. Completing a stage is not the same as completing the entire investigation. Partial failures do not fabricate a success status or turn incomplete evidence into confident truth.
+
+This commits to **progressive user-visible results**, not a particular streaming transport, fabricated percentage, or requiring every upstream producer to yield sub-step events. A producer with an atomic output can still publish that output when it finishes while other stages continue. Reuse existing orchestration/capabilities where suitable; do not duplicate upstream processing or rerun unaffected completed work merely to update progress.
+
+### 1.3. Evaluating propositions across sources
+
+#### Question 1.3.1 — How contradictions should be presented
+
+When sources disagree about a proposition, should Belief Lab (A) show the current derived belief score with its evidence links, (B) prioritize a side-by-side comparison of supporting and contradicting evidence, or (C) show both that evidence comparison and a history of how the belief changed as sources were added?
