@@ -213,3 +213,21 @@ The precise meaning and semantics of the confidence score, including whether con
 #### Question 1.4.4 — What attribution-confidence scores measure
 
 When a claim is connected to a person, should Belief Lab assign (A) one score estimating how likely the person really believes the proposition, (B) one score for how confidently the available source establishes the person's endorsement or reported stance, or (C) distinct scores for identifying the correct speaker/author and for whether that person actually endorses or believes the proposition?
+
+#### Decision 1.4.5 — Canonical confidence and separate conviction for person-belief attribution
+
+**Answers:** 1.4.4  
+**Approved by owner:** 2026-10-13, option C, with the owner's naming choice: the first score is canonical `confidence`, the second is `conviction` (or an equivalent clear name if needed).
+
+A person-to-proposition belief attribution has **two distinct evidence-grounded assessments**, never a truth judgment about the proposition:
+
+- **`confidence` (canonical):** How confident Belief Lab is that the underlying statement, quotation, authored passage or reported position has been attributed to the **correct person**. This assesses the provenance of the speaker/author/source-person association within the identity scope currently permitted by policy; it is not real-world identity resolution.
+- **`conviction`:** How confident Belief Lab is that the correctly identified person **actually holds or endorses the scoped proposition**. A statement may be accurately attributed but merely quoted, criticized, described hypothetically, or reported on someone else's behalf; in these cases source attribution can be strong while belief conviction is weak or unresolved. This assessment is not a measurement of how strongly the person *feels* the belief.
+
+The second score deliberately uses the owner's preferred **conviction** terminology. Both have independently inspectable reasons and evidence, with explicit/reported/inferred attribution types, source spans, provenance and uncertainty. They are not interchangeable and may change independently. A missing or unsupported component remains unresolved rather than receiving an invented number. User corrections retain prior attribution and assessment history. Neither score establishes whether the underlying proposition is true of reality, and neither is the current proposition-level `soft_truth` value or automatically a calibrated posterior probability.
+
+This specifies **product semantics and names**, not a particular numeric scale, inference formula, model/provider, storage representation or mandatory extra infrastructure. Preserve the existing authorization and source/corpus-local identity gates. No sensitive-trait inference or unrestricted real-world identity matching is authorized.
+
+#### Question 1.4.6 — Representing a person's strength of belief
+
+Should Belief Lab (A) measure only `confidence` and `conviction` as defined above, without estimating how strongly a person feels the belief, (B) add a **third, separate** strength-of-belief measure when evidence supports it, or (C) show only qualitative intensity clues from the source without another scored metric?
