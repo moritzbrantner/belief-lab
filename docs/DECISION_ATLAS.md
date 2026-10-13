@@ -371,3 +371,20 @@ This decision preserves **one history of approved person links for the workspace
 #### Question 1.4.22 — Viewing a person's beliefs across investigations
 
 When an investigator opens a person's profile, should Belief Lab (A) show beliefs only from the current investigation, (B) automatically combine attributed beliefs and scores from all investigations into one view, or (C) show the current investigation by default with an optional, clearly source-separated cross-investigation comparison of what the person is believed to hold?
+
+#### Decision 1.4.23 — Local person profile by default, optional cross-investigation comparison
+
+**Answers:** 1.4.22  
+**Approved by owner:** 2026-10-13, option C.
+
+When a user opens a **person's profile within an investigation**, Belief Lab shows that investigation's own source-grounded person-belief attributions, scoped propositions, `confidence (observation)`, `confidence (person)`, `conviction`, supporting evidence, and belief-attribution history **by default**. Sharing confirmed person identities across investigations (Decision 1.4.15) does **not** make their beliefs a single automatic global assessment.
+
+The user can explicitly open an **optional comparison of that person's attributed beliefs across other accessible investigations** whose person identity is confirmed under Decisions 1.4.11, 1.4.13 and 1.4.15. That comparison clearly labels which investigation and original source records each proposition, attribution, score and historical observation belongs to, with provenance and the relevant investigation's own inference semantics. The user can inspect differences, apparent contradictions, context, and changes over time without confusing an investigation-level interpretation with what is independently supported by another investigation.
+
+This is **a comparison view, not evidence pooling**. Do not automatically combine or average confidence or conviction scores from different investigations, import one investigation's evidence into another, count correlated observations as independent confirmation, silently unify context-dependent propositions, or overwrite historical interpretations. An unavailable investigation, unconfirmed person match, or pending application of a corrected identity link (Decision 1.4.21) must be represented accurately; outdated or unresolved attributions must not appear as current verified information.
+
+The cross-investigation view is limited to the data and identities actually available and policy-authorized in the current workspace. This Decision does not mandate accounts, cloud synchronization, a universal belief store, unrestricted profiling or a particular chart layout.
+
+#### Question 1.4.24 — Recognizing a person's changing beliefs over time
+
+Suppose a person expressed proposition P in an older interview, then appears to express a different position later. Should Belief Lab (A) prioritize the latest supported statement as their present stance while retaining earlier history, (B) show each time-scoped attribution separately without estimating a current position, or (C) suggest a reviewable current stance from dated evidence and explicitly distinguish an apparent change of mind from changed, ambiguous, or contradictory evidence?
