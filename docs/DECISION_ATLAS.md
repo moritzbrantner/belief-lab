@@ -170,3 +170,29 @@ Example: A study describing an intervention in **adults** and one describing it 
 #### Question 1.3.5 — Source reliability in belief assessments
 
 When evidence comes from sources of different reliability, should Belief Lab (A) weigh all independent sources equally unless manually excluded, (B) automatically estimate source reliability and use it to influence the assessment, or (C) display reliability considerations transparently and allow the user to review or adjust their influence, rather than applying hidden automatic weights?
+
+### 1.4. Attributing beliefs to people
+
+#### Decision 1.4.1 — Map what people believe; do not adjudicate whether claims are true
+
+**Answers:** 1.3.5 — rejects the question's premise that Belief Lab should weight sources in order to decide a proposition's truth.  
+**Supersedes:** the proposition-truth-assessment interpretation of Decisions 1.1.2, 1.2.2, 1.3.2 and 1.3.4. Their evidence-first workflow, proposition discovery, comparison/history, and context-review choices remain approved **only as applied to belief attribution**.  
+**Approved by owner:** 2026-10-13, explicit product-purpose correction.
+
+Belief Lab's fundamental task is to **connect beliefs and propositions to the people who hold, express or are reported to hold them**, with reviewable source-grounded attribution. It must distinguish:
+
+1. **A source says proposition P.** This records what a document, recording, transcript, or other source expresses and who is cited or speaking, where evidenced.
+2. **Person A believes proposition P.** This is a separate, evidence-backed attribution of a belief to that person; it is not implied solely by seeing P quoted in a source. Attribution may have uncertainty and context requiring user review.
+3. **Proposition P is true of reality.** This is a separate epistemic question, *not* Belief Lab's product goal. It may be handled by another project; Belief Lab must not silently turn its attribution evidence or person/source agreement into proof of P.
+
+For example, the useful comparison is **what the blogger believes and what the individual scientists believe**. A peer-reviewed article is not automatically more truthful than a blog post in Belief Lab's model, and the product does not rank the truth of their underlying factual claims. Reliability of evidence about *who asserted or believes what* may still matter to attribution, but global truth-reliability weighting is out of scope.
+
+Previously approved evidence processing remains valuable: the ingestion/transcription/translation/NLP pipeline finds source-grounded proposition candidates; the review interface helps users distinguish quotations, reported viewpoints and actual endorsements; belief comparisons can show how different people relate to the same proposition; historical views track how an attributed person's expressed stance changed or how its supporting attribution evidence changed. They must **not** present a time series of changing objective truth for P.
+
+The existing Rust model and baseline inference expose proposition-level `soft_truth` semantics, which do **not** establish this person-to-belief product contract. These current implementation mechanics are not to be rebranded as an attribution score or treated as acceptance for the revised product without an explicit domain/acceptance reconciliation. Keep the existing evidence provenance, policy admission, correlation and authorization boundaries. No hidden global identity resolution or sensitive-trait inference is authorized by this Decision; the repository's current restrictions remain in force. Person-identity and attribution rules that materially change scope require further owner decisions.
+
+This is a substantive revision to earlier product intent, not a silent edit to the historical Decisions.
+
+#### Question 1.4.2 — Evidence that someone holds a belief
+
+When a source contains a proposition, should Belief Lab (A) attribute it to a person only when they explicitly endorse it, (B) infer likely beliefs from authored or reported statements automatically, or (C) distinguish explicit endorsement from reported or inferred attribution, showing the uncertainty and allowing user review so quotations are not automatically mistaken for beliefs?
