@@ -87,3 +87,20 @@ Reconnection or replacement must preserve provenance and respect the existing au
 #### Question 1.2.1 — Proposition discovery and user review
 
 After adding a source to an investigation, should Belief Lab (A) automatically extract propositions and run belief analysis with optional later correction, (B) propose candidate propositions and require human approval before analyzing them, or (C) automatically analyze with clearly reviewable suggestions that users can accept, correct or exclude without a mandatory approval gate?
+
+#### Decision 1.2.2 — Automatically analyze reviewable proposition candidates from producer text
+
+**Answers:** 1.2.1  
+**Approved by owner:** 2026-10-13, option C, with the existing-project pipeline requirement.
+
+Belief Lab's evidence-first workflow is an integrated pipeline: text produced or normalized by the owner's existing transcription, translation, corpus, and NLP projects is usable as source-grounded input for identifying proposition candidates. Belief Lab should reuse the upstream producer capabilities and their provenance-bearing outputs rather than reimplementing transcription, translation, OCR, corpus persistence, or a competing proposition extractor.
+
+When a source is added and its text can be obtained through an authorized path, candidate propositions are discovered and eligible analysis proceeds **without requiring the user to approve every candidate first**. The user can inspect the proposed propositions, see where each came from, correct or exclude candidates, and have subsequent analyses respect those choices. Automatic analysis is conditional on existing policy authorization and does not convert a model-produced candidate into an endorsed truth claim.
+
+The pipeline should retain source spans, the source and producer revisions, derived-text lineage (including translations and transcriptions), provider/model receipts when used, and the distinction between source-reported claims, model judgments, and Belief Lab's inferred beliefs. Editing a candidate is a user intervention with its own provenance: do not quietly rewrite the producer's source text or retain dependent judgments as if the edited proposition were unchanged.
+
+**Existing relevant producers:** `audio-analysis` for transcription, `youtube-corpus` for corpus/ingest and source identities, `nlp-stack` for text capabilities, and existing proposition-candidate pipelines such as `philosophy-extractor` and `proposition-api` where applicable. Translation outputs are also valid text evidence when their producing component can supply appropriate provenance. This names candidate integrations, not a claim that their interoperability is already implemented or that each provider must run for every source.
+
+#### Question 1.2.3 — How users start an evidence-processing pipeline
+
+In the primary investigation experience, should users (A) import text or proposition artifacts prepared elsewhere, (B) submit original sources and have the existing producer pipeline process them automatically, or (C) use either prepared text/artifacts or original sources with automatic pipeline processing, depending on their needs?
