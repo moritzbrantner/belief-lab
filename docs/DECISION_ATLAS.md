@@ -196,3 +196,20 @@ This is a substantive revision to earlier product intent, not a silent edit to t
 #### Question 1.4.2 — Evidence that someone holds a belief
 
 When a source contains a proposition, should Belief Lab (A) attribute it to a person only when they explicitly endorse it, (B) infer likely beliefs from authored or reported statements automatically, or (C) distinguish explicit endorsement from reported or inferred attribution, showing the uncertainty and allowing user review so quotations are not automatically mistaken for beliefs?
+
+#### Decision 1.4.3 — Reviewable attributed beliefs with explicit uncertainty and confidence
+
+**Answers:** 1.4.2  
+**Approved by owner:** 2026-10-13, option C, with an explicit confidence-score requirement.
+
+Belief Lab supports **explicitly endorsed**, **reported**, and **inferred** person-to-proposition belief attributions. These are distinct attribution types, not interchangeable evidence of endorsement. Seeing a person quote, discuss, translate, criticize, or report a proposition does not automatically imply that the person believes it. Users can inspect, correct, reject, and review candidate attributions; lack of manual approval does not prevent authorized, source-grounded automatic analysis.
+
+**Every asserted belief attribution must include a confidence score about the attribution**—the strength or confidence of the claim that the named person holds the proposition, *not* a score for whether that proposition conforms to reality. Show the attribution type, source passages, how the attribution was reached, source and producer revisions, model/judgment provenance when used, and relevant uncertainty alongside that score. Distinguish model-output confidence, evidence about what was said, and any derived attribution confidence; do not silently reinterpret the current proposition-level `soft_truth` value or an uncalibrated model score as a probability that a person believes P.
+
+When evidence is too weak, ambiguous, missing or unauthorized to justify an attribution confidence, preserve it as an unresolved candidate or unknown outcome instead of assigning a fabricated score. User corrections remain provenance-bearing revisions; prior attributed beliefs remain historically inspectable. All attributions remain subject to existing fail-closed policy gates and source/corpus-local identity restrictions. No real-world identity resolution or sensitive-trait inference is authorized by this Decision.
+
+The precise meaning and semantics of the confidence score, including whether confidence in *who said something* must be tracked separately from confidence in *whether the person believes it*, are not yet owner-approved and must not be silently chosen during implementation.
+
+#### Question 1.4.4 — What attribution-confidence scores measure
+
+When a claim is connected to a person, should Belief Lab assign (A) one score estimating how likely the person really believes the proposition, (B) one score for how confidently the available source establishes the person's endorsement or reported stance, or (C) distinct scores for identifying the correct speaker/author and for whether that person actually endorses or believes the proposition?
