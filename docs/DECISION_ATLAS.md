@@ -104,3 +104,18 @@ The pipeline should retain source spans, the source and producer revisions, deri
 #### Question 1.2.3 — How users start an evidence-processing pipeline
 
 In the primary investigation experience, should users (A) import text or proposition artifacts prepared elsewhere, (B) submit original sources and have the existing producer pipeline process them automatically, or (C) use either prepared text/artifacts or original sources with automatic pipeline processing, depending on their needs?
+
+#### Decision 1.2.4 — Prepared and original sources share one evidence-first investigation workflow
+
+**Answers:** 1.2.3  
+**Approved by owner:** 2026-10-13, option C.
+
+An investigator can start from either **prepared inputs**—text, transcripts, translations, source-grounded proposition candidates, or other evidence artifacts from upstream producer projects—or **original sources** such as documents, recordings, videos, or source links that the relevant existing producer pipeline processes automatically. The user should not have to run a separate upstream command manually before using the original-source path when a supported producer is available.
+
+Both routes converge on the same reviewable proposition-candidate and belief-analysis experience defined by Decision 1.2.2. Candidates are discovered and may be analyzed automatically when authorized, while users can inspect supporting source spans, correct candidates, and exclude them without a mandatory approval step. Input preparation does not bypass policy. Each accepted source preserves producer/corpus ownership, exact source revisions, derivation lineage (including transcription or translation), evidence families, and provider receipts as applicable.
+
+Belief Lab coordinates and consumes upstream outputs but must not duplicate ingestion, ASR, OCR, transcription, translation, NLP, corpus truth, or candidate-extraction implementations already owned elsewhere. Availability of individual producer formats and services must be accurately reported; an unavailable processing path must not be presented as successfully analyzed. This decides the **supported user entry paths**, not an assertion that all source kinds or adapters are already implemented.
+
+#### Question 1.2.5 — Long-running source processing
+
+When processing a long recording or collection, should Belief Lab (A) wait and show the final analysis only, (B) show step-by-step progress but only release results at completion, or (C) show progress and incrementally reveal clearly labeled preliminary propositions and results as they become available, without mistaking them for final conclusions?
