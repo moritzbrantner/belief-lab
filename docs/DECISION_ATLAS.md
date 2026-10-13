@@ -26,3 +26,16 @@ A claim-first query or interactive belief map may complement this workflow, but 
 #### Question 1.1.3 — Continuity across investigations
 
 When a user adds new evidence over time, should Belief Lab maintain one evolving knowledge base, keep analyses isolated, or allow separate evolving investigations?
+
+#### Decision 1.1.4 — Separate persistent investigations
+
+**Answers:** 1.1.3  
+**Approved by owner:** 2026-10-13, option C.
+
+Belief Lab supports multiple distinct investigations. Each investigation persists across work sessions and accumulates its own evidence, propositions, judgments, and inferred beliefs as more evidence is introduced. Users can return to an earlier investigation and continue its analysis without automatically combining unrelated investigations into a single global belief network.
+
+This decides the **user-visible continuity model**, not a specific persistence technology, account system, cross-device synchronization mechanism, or sharing model. Existing in-memory store behavior does not demonstrate that persistent investigations have been implemented.
+
+#### Question 1.1.5 — Availability of saved investigations
+
+When an investigation is saved, where should the user be able to reopen it? On the same device only (A), through an account across devices (B), or by explicitly moving/importing a portable investigation file (C)?
