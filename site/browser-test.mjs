@@ -82,6 +82,20 @@ if (personReport.people[0].observations.length !== 3 ||
     personReport.people[0].observations[2].kind !== 'quotation_or_criticism') {
   throw Error('Recording new evidence failed to preserve it or invalidate stale confidence');
 }
+// Retrospective acceptance: preserve the investigator's exact quoted bytes,
+// including whitespace, alongside the supplied source offsets (Atlas 1.4.3).
+const exactPassage = '  A source-local quotation.\n';
+await page.getByLabel('Source passage').fill(exactPassage);
+await page.getByLabel('Source span start offset').fill('17');
+await page.getByLabel('Source span end offset').fill(String(17 + exactPassage.length));
+await page.getByRole('button',{name:'Record attribution and compare'}).click();
+await page.getByRole('status').filter({hasText:'Comparison ready.'}).waitFor();
+personReport = JSON.parse(await page.locator('#comparison-json').textContent());
+const exactObservation = personReport.people[0].observations.find((item) => item.id === 'manual-2');
+if (exactObservation?.passage !== exactPassage || exactObservation.span.start !== 17 ||
+    exactObservation.span.end !== 17 + exactPassage.length) {
+  throw Error('Source passage whitespace or offsets changed during recording');
+}
 const [annotationDownload] = await Promise.all([
   page.waitForEvent('download'),
   page.getByRole('button',{name:'Download editable annotations'}).click()
@@ -92,6 +106,9 @@ if (annotationDownload.suggestedFilename() !== 'person-attributions.json') {
 const exportedAnnotations = JSON.parse(await readFile(await annotationDownload.path(), 'utf8'));
 if (!exportedAnnotations.observations.some((item) => item.id === 'manual-1')) {
   throw Error('Editable attribution export omitted the new source-backed observation');
+}
+if (exportedAnnotations.observations.find((item) => item.id === 'manual-2')?.passage !== exactPassage) {
+  throw Error('Editable export changed the exact source passage');
 }
 await page.getByText('Inspect or import prepared source evidence and attribution annotations', {exact:true}).click();
 const edited = JSON.parse(await page.locator('#attribution-input').inputValue());
