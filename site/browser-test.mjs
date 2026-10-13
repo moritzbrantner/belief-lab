@@ -88,6 +88,7 @@ const exportedAnnotations = JSON.parse(await readFile(await annotationDownload.p
 if (!exportedAnnotations.observations.some((item) => item.id === 'manual-1')) {
   throw Error('Editable attribution export omitted the new source-backed observation');
 }
+await page.getByText('Inspect or import prepared source evidence and attribution annotations', {exact:true}).click();
 const edited = JSON.parse(await page.locator('#attribution-input').inputValue());
 edited.assessments[0].confidencePerson.semantics = 'soft_truth';
 await page.locator('#attribution-input').fill(JSON.stringify(edited));
