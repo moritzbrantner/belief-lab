@@ -58,6 +58,11 @@ if (personReport.people[0].confidence_person.value !== 0.91 ||
     personReport.people[0].observations[1].conviction.basis !== 'self_reported') {
   throw Error('Three score meanings were conflated');
 }
+if (personReport.people[0].confidence_person.assessedBy !== 'scripted_example') {
+  throw Error('JSON assessment provenance was not preserved');
+}
+await page.getByText('0.91 · Scripted example', {exact:true}).waitFor();
+await page.getByText('0.98 · Scripted example', {exact:true}).waitFor();
 if (personReport.soft_truth !== undefined || personReport.truth !== undefined) {
   throw Error('Legacy inference score was presented as attribution or truth');
 }

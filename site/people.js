@@ -143,7 +143,10 @@ function recordAttribution() {
   } catch (error) { status(error.message, true); }
 }
 function score(value) {
-  return value ? value.value.toLocaleString(undefined, { maximumFractionDigits: 3 }) + ' · ' + (value.assessed_by === 'scripted_example' ? 'Scripted example' : 'Analyst assessment') : 'Unknown — insufficient evidence';
+  if (!value) return 'Unknown — insufficient evidence';
+  const assessor = value.assessedBy ?? value.assessed_by;
+  const label = assessor === 'scripted_example' ? 'Scripted example' : assessor === 'analyst' ? 'Analyst assessment' : 'Unspecified assessor';
+  return value.value.toLocaleString(undefined, { maximumFractionDigits: 3 }) + ' · ' + label;
 }
 function metric(label, value, description) {
   const div = element('div');
