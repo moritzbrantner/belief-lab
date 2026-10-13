@@ -61,7 +61,7 @@ if (personReport.people[0].confidence_person.value !== 0.91 ||
 if (personReport.soft_truth !== undefined || personReport.truth !== undefined) {
   throw Error('Legacy inference score was presented as attribution or truth');
 }
-await page.getByText('I think the effect may last into 2027, but I', { exact:false }).waitFor();
+await page.getByText("I think the effect may last into 2027, but I'm only about 30% sure.", { exact:true }).waitFor();
 await page.screenshot({path:resolve(root, '../person-belief-comparison.png'),fullPage:true});
 
 await page.getByLabel('Evidence record').selectOption('e-quote');
