@@ -39,3 +39,16 @@ This decides the **user-visible continuity model**, not a specific persistence t
 #### Question 1.1.5 — Availability of saved investigations
 
 When an investigation is saved, where should the user be able to reopen it? On the same device only (A), through an account across devices (B), or by explicitly moving/importing a portable investigation file (C)?
+
+#### Decision 1.1.6 — Portable investigation project files
+
+**Answers:** 1.1.5  
+**Approved by owner:** 2026-10-13, option C.
+
+Each persistent investigation can be saved to a portable project file, explicitly reopened, and transferred to another device without requiring a user account or automatic cloud synchronization. The imported investigation remains independently navigable and can be continued by adding new evidence and updating beliefs, while preserving applicable provenance and explanation history.
+
+This is a product portability requirement, not an authorization to change producer-owned evidence truth, bypass policy gates, or invent a second inference engine. Project file content, whether to embed original source material or only refer to upstream sources, and how inaccessible references appear upon reopening remain unresolved. Existing JSON request/result downloads and the current in-memory store do not constitute implementation of a full portable investigation.
+
+#### Question 1.1.7 — Evidence packaged in a portable project
+
+When exporting an investigation, should its project file contain the original source material for offline reopening (A), only provenance-bearing references to externally held sources (B), or an explicit choice between the two at export time (C)?
