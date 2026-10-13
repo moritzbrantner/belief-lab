@@ -405,3 +405,23 @@ Keep `confidence (observation)`, `confidence (person)`, and the person's own `co
 #### Question 1.4.26 — Old statements without recent evidence
 
 When a person last clearly expressed a belief long ago and no newer evidence is available, should Belief Lab (A) carry that last supported belief forward as their current stance until contradicted, (B) show only the dated historical stance and leave the present position unknown, or (C) display the last documented stance with its date alongside a clearly uncertain, reviewable estimate of the current stance, without inventing a fixed expiry date or treating silence as proof?
+
+#### Decision 1.4.27 — Preserve last documented stance beside uncertain present estimate
+
+**Answers:** 1.4.26  
+**Approved by owner:** 2026-10-13, option C.
+
+When the most recent supported expression of a person's belief is old and no newer evidence is available, Belief Lab shows **two clearly different assessments**:
+
+1. **Last documented stance:** What the person was observed to express about a precisely scoped proposition, with the **date of the expression**, source span, attribution type, and supporting provenance. Distinguish the statement's actual date from the date it was published, transcribed, indexed or discovered. Do not silently promote this historic stance to an established current position.
+2. **Tentative present stance:** A **reviewable, explicitly uncertain inference** about whether the person might still hold the belief today. Explain the historical support, its age, relevant context and evidentiary limitations. This is not a new observation, a self-report of present conviction, or evidence that silence means agreement.
+
+A tentative estimate can be offered when sufficiently grounded, but **unknown is a valid current outcome** if no defensible estimate can be made. Do not assume indefinite belief persistence, impose a fixed expiration time, fabricate a time-decay rate or score, or claim the person changed their mind solely because years passed without new evidence. Elapsed time may inform an explanation of uncertainty, but its mere passage is not independent evidence for or against the belief.
+
+Keep `confidence (observation)`, `confidence (person)` and the person's own `conviction` separate; make it apparent which estimate is historical and which is inferred. Later authorized sources, user corrections or revocations may revise the **current** estimate while preserving historical snapshots, origin evidence and dependency receipts. If a shared person identity has been corrected, follow Decision 1.4.21's investigation-specific adoption rules. In an optional cross-investigation comparison, retain investigation boundaries under Decision 1.4.23; do not globally pool evidence or collapse scores.
+
+This settles the user-visible treatment of **old evidence** without selecting an algorithm, numeric confidence scale, or mandatory automated decay model. Existing source and identity authorization gates remain unchanged.
+
+#### Question 1.4.28 — Denial, uncertainty and absence of belief evidence
+
+For a person's stance toward proposition P, should Belief Lab (A) use a simple believe/disbelieve distinction, (B) distinguish belief, disbelief and an unknown/undecided category, or (C) distinguish **endorses P**, **endorses not-P**, **explicitly suspends judgment**, and **no evidence about a stance**, with each supported by source provenance and uncertainty?
