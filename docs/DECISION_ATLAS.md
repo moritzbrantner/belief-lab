@@ -136,3 +136,20 @@ This commits to **progressive user-visible results**, not a particular streaming
 #### Question 1.3.1 — How contradictions should be presented
 
 When sources disagree about a proposition, should Belief Lab (A) show the current derived belief score with its evidence links, (B) prioritize a side-by-side comparison of supporting and contradicting evidence, or (C) show both that evidence comparison and a history of how the belief changed as sources were added?
+
+#### Decision 1.3.2 — Compare conflicting evidence and show belief evolution
+
+**Answers:** 1.3.1  
+**Approved by owner:** 2026-10-13, option C.
+
+When an investigation includes support and contradiction for a proposition, Belief Lab presents the current belief assessment together with **side-by-side supporting and contradicting evidence**, each traceable to the originating source, relevant passage, judgment and provenance. Unknown, excluded, inaccessible and policy-denied material must not silently count as confirmation or refutation.
+
+The user can also inspect a **history of how that belief changed** as evidence was added, corrected, withdrawn or re-evaluated. Historical snapshots remain distinguishable from the current assessment, including prior source/judgment contributions and the change that led to each revision. A user should be able to see what was known before a source arrived and what changed afterward, without mistaking a historical result for a freshly verified result.
+
+The comparison is not a majority vote: three model judgments over the same evidence and multiple correlated excerpts do not become independent confirmations. Display the inference engine's actual declared score semantics (for example `soft_truth`) and the relevant dependency/authorization context; never turn counts or uncalibrated scores into an invented posterior probability. The user can inspect source identities and the explanation for included and omitted contributions.
+
+This chooses the **product experience**, not a mandated chart style, time-series database, automatic credibility scale, or unsupported certainty. A current workbench report's single inference explanation does not by itself demonstrate the approved across-revision belief history.
+
+#### Question 1.3.3 — Apparent contradictions across contexts
+
+If two sources appear to disagree but describe different years, populations or definitions, should Belief Lab (A) compare them as a contradiction until the user manually separates them, (B) automatically treat them as distinct scoped propositions whenever it detects the difference, or (C) suggest the differing context and offer reviewable separate propositions instead of silently asserting a direct contradiction?
