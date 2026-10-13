@@ -5,6 +5,7 @@ Rust workspace with a thin static WebAssembly workbench; `cargo run` executes a 
 
 ## Read first
 
+- `docs/DECISION_ATLAS.md` is the owner-approved product-intent authority. Preserve its stable Question/Decision IDs; consult it before feature design and never infer owner approval from implemented behavior.
 - `README.md`, then the doc for the area you change: `docs/ARCHITECTURE.md`, `docs/POLICY.md`, `docs/EVIDENCE_INTERCHANGE.md`, `docs/SEMANTIC_DECISIONS.md`, `docs/INFERENCE.md`, `docs/STORE.md`.
 
 ## Layout
