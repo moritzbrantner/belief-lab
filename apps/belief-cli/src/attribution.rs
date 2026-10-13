@@ -227,7 +227,9 @@ pub fn compare(input: &ComparisonInput<'_>) -> Result<ComparisonReport, Box<dyn 
         required(name, value)?;
     }
     if document.people.is_empty() {
-        return Err(invalid("comparison requires at least one source-scoped person"));
+        return Err(invalid(
+            "comparison requires at least one source-scoped person",
+        ));
     }
     let mut people = BTreeMap::<String, PersonInput>::new();
     for person in document.people {
@@ -260,7 +262,11 @@ pub fn compare(input: &ComparisonInput<'_>) -> Result<ComparisonReport, Box<dyn 
         let evidence = &stored.value;
         policy
             .evidence_decision(evidence, EvidencePurpose::DirectSupport)
-            .map_err(|reason| invalid(format!("evidence {evidence_id} not authorized for direct support: {reason}")))?;
+            .map_err(|reason| {
+                invalid(format!(
+                    "evidence {evidence_id} not authorized for direct support: {reason}"
+                ))
+            })?;
         if evidence.subject.as_ref().map(EntityId::as_str) != Some(person.id.as_str())
             || evidence.provenance.source.scope_id() != person.scope_id
         {
@@ -287,12 +293,16 @@ pub fn compare(input: &ComparisonInput<'_>) -> Result<ComparisonReport, Box<dyn 
                 || observation.confidence_observation.is_some()
                 || observation.conviction.is_some())
         {
-            return Err(invalid("quotation/criticism is not evidence of endorsement by itself"));
+            return Err(invalid(
+                "quotation/criticism is not evidence of endorsement by itself",
+            ));
         }
         if stance == Stance::Undetermined
             && (observation.confidence_observation.is_some() || observation.conviction.is_some())
         {
-            return Err(invalid("an undetermined observation must leave both scores unknown"));
+            return Err(invalid(
+                "an undetermined observation must leave both scores unknown",
+            ));
         }
         if let Some(score) = &observation.confidence_observation {
             ObservationConfidence::new(score.value)?;
@@ -354,7 +364,11 @@ pub fn compare(input: &ComparisonInput<'_>) -> Result<ComparisonReport, Box<dyn 
                     producer_name: evidence.provenance.producer.name().to_owned(),
                     producer_revision: evidence.provenance.producer.revision().to_owned(),
                     producer_model: evidence.provenance.producer.model().map(str::to_owned),
-                    producer_config_hash: evidence.provenance.producer.config_hash().map(str::to_owned),
+                    producer_config_hash: evidence
+                        .provenance
+                        .producer
+                        .config_hash()
+                        .map(str::to_owned),
                     policy_profile: policy.profile().as_str().to_owned(),
                     authorized_purpose: EvidencePurpose::DirectSupport.as_str(),
                 },
@@ -363,19 +377,27 @@ pub fn compare(input: &ComparisonInput<'_>) -> Result<ComparisonReport, Box<dyn 
 
     let mut assessments = BTreeMap::<String, PersonAssessment>::new();
     for assessment in document.assessments {
-        let person = people
-            .get(&assessment.person_id)
-            .ok_or_else(|| invalid(format!("unknown assessment person {}", assessment.person_id)))?;
+        let person = people.get(&assessment.person_id).ok_or_else(|| {
+            invalid(format!(
+                "unknown assessment person {}",
+                assessment.person_id
+            ))
+        })?;
         let _ = person;
         if assessments.contains_key(&assessment.person_id) {
-            return Err(invalid(format!("duplicate person assessment {}", assessment.person_id)));
+            return Err(invalid(format!(
+                "duplicate person assessment {}",
+                assessment.person_id
+            )));
         }
         let stance = parsed_stance(&assessment.stance)?;
         if let Some(score) = &assessment.confidence_person {
             PersonConfidence::new(score.value)?;
             score.validate()?;
             if stance == Stance::Undetermined {
-                return Err(invalid("a numerical person confidence needs a definite reviewed stance"));
+                return Err(invalid(
+                    "a numerical person confidence needs a definite reviewed stance",
+                ));
             }
         }
         let unique = assessment.observation_ids.iter().collect::<BTreeSet<_>>();
@@ -387,14 +409,16 @@ pub fn compare(input: &ComparisonInput<'_>) -> Result<ComparisonReport, Box<dyn 
                 .get(id)
                 .ok_or_else(|| invalid(format!("unknown assessment observation {id}")))?;
             if observed.person_id != assessment.person_id {
-                return Err(invalid(format!("observation {id} belongs to another person")));
+                return Err(invalid(format!(
+                    "observation {id} belongs to another person"
+                )));
             }
         }
         if assessment.confidence_person.is_some()
             && !assessment.observation_ids.iter().any(|id| {
-                markers.get(id).is_some_and(|item| {
-                    item.stance == stance && item.has_confidence
-                })
+                markers
+                    .get(id)
+                    .is_some_and(|item| item.stance == stance && item.has_confidence)
             })
         {
             return Err(invalid(
@@ -412,9 +436,11 @@ pub fn compare(input: &ComparisonInput<'_>) -> Result<ComparisonReport, Box<dyn 
         let has_dispute = observations.iter().any(|x| x.stance == "disputes");
         let conflicting = has_endorsement && has_dispute;
         let assessment = assessments.remove(&id);
-        if conflicting && assessment.as_ref().is_some_and(|x| {
-            x.confidence_person.is_some() && !x.reviewed_conflicts
-        }) {
+        if conflicting
+            && assessment
+                .as_ref()
+                .is_some_and(|x| x.confidence_person.is_some() && !x.reviewed_conflicts)
+        {
             return Err(invalid(format!(
                 "person {id} has conflicting evidence; numerical assessment requires reviewedConflicts=true"
             )));
@@ -432,7 +458,9 @@ pub fn compare(input: &ComparisonInput<'_>) -> Result<ComparisonReport, Box<dyn 
             display_name: person.display_name,
             scope_id: person.scope_id,
             stance,
-            confidence_person: assessment.as_ref().and_then(|x| x.confidence_person.clone()),
+            confidence_person: assessment
+                .as_ref()
+                .and_then(|x| x.confidence_person.clone()),
             supporting_observation_ids,
             has_conflicting_positions: conflicting,
             observations,
