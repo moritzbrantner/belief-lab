@@ -425,3 +425,23 @@ This settles the user-visible treatment of **old evidence** without selecting an
 #### Question 1.4.28 — Denial, uncertainty and absence of belief evidence
 
 For a person's stance toward proposition P, should Belief Lab (A) use a simple believe/disbelieve distinction, (B) distinguish belief, disbelief and an unknown/undecided category, or (C) distinguish **endorses P**, **endorses not-P**, **explicitly suspends judgment**, and **no evidence about a stance**, with each supported by source provenance and uncertainty?
+
+#### Decision 1.4.29 — Distinguish endorsement, negation, explicit suspension and no stance evidence
+
+**Answers:** 1.4.28  
+**Approved by owner:** 2026-10-13, option C.
+
+For a **specific person, proposition P, time and context**, Belief Lab distinguishes four different kinds of stance information:
+
+1. **Endorses P:** Admissible source evidence supports attributing an affirmative belief in P to this person. Preserve whether endorsement was direct, reported or inferred; do not claim objective truth of P.
+2. **Endorses not-P:** Evidence supports attributing an affirmative belief in the **negation of P** to this person. This is not equivalent to failing to endorse P, asking critical questions about P, criticizing its evidence, or merely quoting somebody else's contrary view. It does not establish the objective truth of not-P.
+3. **Explicitly suspends judgment:** The person's sourced expression shows they have deliberately withheld or suspended a settled position about P. **Explicit suspension requires evidence of that expressed stance**; mere hesitation in an observer's assessment, tentative conviction, unknown confidence, or a source's silence must not be relabeled as an explicit decision to remain undecided.
+4. **No evidence of a stance:** Available permitted material does not establish that the person endorses P, endorses not-P, or explicitly suspends judgment. This is **unknown**, not an asserted belief or evidence that the person is indecisive.
+
+These states are **not four exhaustive claims about a person's internal mind**. In particular, “no evidence” is the absence of a justified attribution rather than a new source observation, and a lack of opposition is not affirmative endorsement. Any evidenced expression is source-, person-, time- and context-scoped, retains its provenance and explicit/reported/inferred attribution type under Decision 1.4.3, and distinguishes `confidence (observation)`, `confidence (person)` and `conviction` under Decisions 1.4.7 and 1.4.9. Unsupported values remain unknown rather than assigned fabricated scores.
+
+Historical states and current-stance suggestions must preserve the separate meanings in Decisions 1.4.25 and 1.4.27. Directly conflicting source observations remain individually inspectable and **must not be automatically collapsed to one of the four outcomes** merely because a UI expects a single label. Relevant time- or context-scoped distinctions remain reviewable under Decision 1.3.4. This decision defines user-visible conceptual distinctions, not a required enum, a particular scoring algorithm, unrestricted identity matching, or a truth assessment of the proposition.
+
+#### Question 1.4.30 — Contradictory stances in the same context
+
+When admissible observations appear to show the same person both endorsing P and endorsing not-P in an overlapping time and context, should Belief Lab (A) select the best-supported stance as the present position while showing the contrary sources, (B) present both attributed stances without a combined assessment, or (C) show a **reviewable conflicted/unresolved assessment**, preserving both sets of evidence and suggesting contextual explanations where supported, without automatically choosing one side?
