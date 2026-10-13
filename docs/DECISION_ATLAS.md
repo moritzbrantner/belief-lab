@@ -52,3 +52,21 @@ This is a product portability requirement, not an authorization to change produc
 #### Question 1.1.7 — Evidence packaged in a portable project
 
 When exporting an investigation, should its project file contain the original source material for offline reopening (A), only provenance-bearing references to externally held sources (B), or an explicit choice between the two at export time (C)?
+
+#### Decision 1.1.8 — Choose between full and reference-only project exports
+
+**Answers:** 1.1.7  
+**Approved by owner:** 2026-10-13, option C.
+
+When exporting an investigation, the user chooses between two portable project-file modes:
+
+- **Full bundle:** include the investigation and available, permitted source material so the evidence can be inspected after moving the project to another device, including offline when all needed material was bundled.
+- **References-only:** include the investigation, its saved analysis, provenance, and references to externally held source material without duplicating originals. This keeps the export smaller but does not guarantee that the referenced originals can be accessed offline.
+
+Both modes must preserve the investigation's evidence relationships, explanations, and ability to continue the investigation when the necessary evidence is available. Neither mode changes producer ownership, makes imported assertions automatically true, bypasses policy admission, or implies that a source which cannot legitimately be included is embedded. The precise treatment of missing external sources is still unresolved.
+
+**Implementation distinction:** The current ability to download evidence or judgment JSON is not the complete portable-investigation export/import workflow.
+
+#### Question 1.1.9 — Missing referenced evidence on import
+
+When a reference-only project is opened on a different device but some original sources cannot be reached, should Belief Lab (A) open the saved investigation and flag missing sources, (B) refuse to open it until all sources are restored, or (C) open it with missing sources flagged and guide the user to reconnect or replace them before dependent results are recomputed?
