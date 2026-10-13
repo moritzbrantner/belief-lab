@@ -77,6 +77,17 @@ if (personReport.people[0].observations.length !== 3 ||
     personReport.people[0].observations[2].kind !== 'quotation_or_criticism') {
   throw Error('Recording new evidence failed to preserve it or invalidate stale confidence');
 }
+const [annotationDownload] = await Promise.all([
+  page.waitForEvent('download'),
+  page.getByRole('button',{name:'Download editable annotations'}).click()
+]);
+if (annotationDownload.suggestedFilename() !== 'person-attributions.json') {
+  throw Error('Attribution annotation export has an unexpected name');
+}
+const exportedAnnotations = JSON.parse(await readFile(await annotationDownload.path(), 'utf8'));
+if (!exportedAnnotations.observations.some((item) => item.id === 'manual-1')) {
+  throw Error('Editable attribution export omitted the new source-backed observation');
+}
 const edited = JSON.parse(await page.locator('#attribution-input').inputValue());
 edited.assessments[0].confidencePerson.semantics = 'soft_truth';
 await page.locator('#attribution-input').fill(JSON.stringify(edited));

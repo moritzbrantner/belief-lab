@@ -80,3 +80,5 @@ This is a prepared-source attribution surface, not a live producer integration o
 Run `npm --prefix site test` after `scripts/build-pages.sh` for a real-browser comparison, analyst-entry, score-separation and rejection regression. The test captures `target/person-belief-comparison.png` for owner acceptance.
 
 Person annotations bind to the tuple `(sourceRepository, scopeId, subjectId)`. Identical names or subject tokens from different repositories never implicitly unify; the browser creates separate view records for collisions.
+
+After recording, **Download editable annotations** saves the source-linked annotation JSON (including revisions and manually added observations) for later reimport; **Download comparison** saves the validated Rust report. No account or server-side investigation storage is implied.

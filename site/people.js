@@ -228,6 +228,17 @@ for (const [id, field] of [['evidence-file', 'evidence-input'], ['attribution-fi
 $('load-example').addEventListener('click', loadExample);
 $('compare').addEventListener('click', runComparison);
 $('record').addEventListener('click', recordAttribution);
+$('download-annotations').addEventListener('click', () => {
+  try {
+    const annotations = JSON.parse($('attribution-input').value);
+    if (annotations.schema !== 'belief_person_attributions' || annotations.schemaVersion !== 1) {
+      throw Error('Open a valid person-attribution document before downloading.');
+    }
+    const url = URL.createObjectURL(new Blob([JSON.stringify(annotations, null, 2) + '\n'], { type: 'application/json' }));
+    const anchor = element('a'); anchor.href = url; anchor.download = 'person-attributions.json'; anchor.click();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  } catch (error) { status(error.message, true); }
+});
 $('download-comparison').addEventListener('click', () => {
   if (!comparison) return;
   const url = URL.createObjectURL(new Blob([JSON.stringify(comparison, null, 2)], { type: 'application/json' }));
@@ -239,5 +250,6 @@ try {
   initialized = true;
   $('compare').disabled = false;
   $('record').disabled = false;
+  $('download-annotations').disabled = false;
   await loadExample();
 } catch (error) { status('Could not start the Rust attribution pipeline: ' + error.message, true); }
