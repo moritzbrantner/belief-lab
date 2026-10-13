@@ -445,3 +445,20 @@ Historical states and current-stance suggestions must preserve the separate mean
 #### Question 1.4.30 — Contradictory stances in the same context
 
 When admissible observations appear to show the same person both endorsing P and endorsing not-P in an overlapping time and context, should Belief Lab (A) select the best-supported stance as the present position while showing the contrary sources, (B) present both attributed stances without a combined assessment, or (C) show a **reviewable conflicted/unresolved assessment**, preserving both sets of evidence and suggesting contextual explanations where supported, without automatically choosing one side?
+
+#### Decision 1.4.31 — Keep genuinely contradictory person stances reviewably conflicted
+
+**Answers:** 1.4.30  
+**Approved by owner:** 2026-10-13, option C.
+
+When admissible observations of the **same person, scoped proposition P, overlapping time and compatible context** support both **endorses P** and **endorses not-P**, Belief Lab presents a **reviewable conflicted/unresolved assessment** rather than automatically selecting the more recent, more numerous, or apparently stronger side. Show both sets of source-grounded attributions with their original text/spans, provenance, expression dates, attribution types, distinct confidence dimensions and any separately supported conviction estimates.
+
+The conflict is an **assessment of contradictory evidence**, not a fifth directly observed stance of the person. It must never be relabeled as **explicitly suspends judgment** without evidence that the person actually expressed suspension, nor collapsed into **no evidence of a stance** when relevant opposing evidence plainly exists. Preserve the four stance distinctions in Decision 1.4.29 while displaying the uncertainty or conflict in the derived current-stance view. Do not claim that contradictory attributed expressions necessarily prove that the person is irrational, changed their mind or endorses the objective truth of either proposition.
+
+Belief Lab may **suggest reviewable contextual explanations** when supported—for example distinctions in time, intended referent, scope, condition, translation, quotation, irony, reported speaker or source revisions. An explanation is a hypothesis, not permission to silently split, merge, erase, reinterpret or downgrade source observations. The user can inspect, correct, reject or explicitly reconcile conflicting attributions while retaining original evidence and revision history. If the context truly differs, keep the properly scoped propositions separate under Decision 1.3.4 and preserve their provenance.
+
+Correlated or duplicated reports must not count as independent extra votes. Inadequate identity or source authorization can leave a conflict unresolved rather than fabricating certainty. A later source or authorized correction may update the **assessment** without overwriting the historical record or silently preferring one side. Keep `confidence (observation)`, `confidence (person)` and `conviction` distinct. This defines user-visible semantics and acceptance, not an algorithm, score cutoff, mandatory review gate or objective-truth judgment.
+
+#### Question 1.4.32 — Relating differently worded propositions
+
+If several sources phrase potentially related propositions differently, should Belief Lab (A) compare only explicitly identical scoped propositions, keeping all other wordings separate, (B) suggest reviewable **paraphrase/equivalence** links while preserving each original wording and context, or (C) also suggest **implication or partial-overlap** relationships without silently treating the propositions as equivalent or attributing implied beliefs to a person?
