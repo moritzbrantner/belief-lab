@@ -78,3 +78,5 @@ The browser form records a new observation from an already imported evidence ref
 This is a prepared-source attribution surface, not a live producer integration or provenance verification service. The excerpt text/offsets are annotations supplied by the user, not independently matched to upstream bytes. The scripted fixture scores are demonstrative, not empirical or calibrated. The old `soft_truth` workbench remains a distinct historical/reference view. Investigation storage, corrections over time, comparison-context review and identity linking are not implemented here.
 
 Run `npm --prefix site test` after `scripts/build-pages.sh` for a real-browser comparison, analyst-entry, score-separation and rejection regression. The test captures `target/person-belief-comparison.png` for owner acceptance.
+
+Person annotations bind to the tuple `(sourceRepository, scopeId, subjectId)`. Identical names or subject tokens from different repositories never implicitly unify; the browser creates separate view records for collisions.

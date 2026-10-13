@@ -48,7 +48,9 @@ pub struct ScopedProposition {
 struct PersonInput {
     id: String,
     display_name: String,
-    /// An identifier local to the source/corpus, not a global identity.
+    /// Source-local subject token, never a cross-repository identity.
+    subject_id: String,
+    source_repository: String,
     scope_id: String,
 }
 
@@ -133,6 +135,8 @@ pub struct PersonReport {
     pub id: String,
     pub display_name: String,
     pub scope_id: String,
+    pub source_repository: String,
+    pub subject_id: String,
     pub stance: String,
     pub confidence_person: Option<AssessedScore>,
     pub supporting_observation_ids: Vec<String>,
@@ -232,11 +236,22 @@ pub fn compare(input: &ComparisonInput<'_>) -> Result<ComparisonReport, Box<dyn 
         ));
     }
     let mut people = BTreeMap::<String, PersonInput>::new();
+    let mut source_people = BTreeSet::new();
     for person in document.people {
         required("person.id", &person.id)?;
         required("person.displayName", &person.display_name)?;
         required("person.scopeId", &person.scope_id)?;
+        required("person.sourceRepository", &person.source_repository)?;
+        required("person.subjectId", &person.subject_id)?;
         EntityId::new(person.id.clone())?;
+        EntityId::new(person.subject_id.clone())?;
+        if !source_people.insert((
+            person.source_repository.clone(),
+            person.scope_id.clone(),
+            person.subject_id.clone(),
+        )) {
+            return Err(invalid("duplicate source-local person"));
+        }
         if people.insert(person.id.clone(), person).is_some() {
             return Err(invalid("duplicate person id"));
         }
@@ -267,12 +282,13 @@ pub fn compare(input: &ComparisonInput<'_>) -> Result<ComparisonReport, Box<dyn 
                     "evidence {evidence_id} not authorized for direct support: {reason}"
                 ))
             })?;
-        if evidence.subject.as_ref().map(EntityId::as_str) != Some(person.id.as_str())
+        if evidence.subject.as_ref().map(EntityId::as_str) != Some(person.subject_id.as_str())
+            || evidence.provenance.source.repository() != person.source_repository
             || evidence.provenance.source.scope_id() != person.scope_id
         {
             return Err(invalid(format!(
-                "evidence {evidence_id} is not bound to person {} in source scope {}",
-                person.id, person.scope_id
+                "evidence {evidence_id} is not bound to source-local person {} in repository {} / scope {}",
+                person.subject_id, person.source_repository, person.scope_id
             )));
         }
         if observation.passage.trim().is_empty()
@@ -457,6 +473,8 @@ pub fn compare(input: &ComparisonInput<'_>) -> Result<ComparisonReport, Box<dyn 
             id,
             display_name: person.display_name,
             scope_id: person.scope_id,
+            source_repository: person.source_repository,
+            subject_id: person.subject_id,
             stance,
             confidence_person: assessment
                 .as_ref()

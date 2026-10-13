@@ -160,3 +160,52 @@ fn persons_with_same_display_name_remain_distinct_source_local_records() {
         report["people"][1]["scope_id"]
     );
 }
+
+#[test]
+fn repository_and_scope_are_required_for_source_local_person_binding() {
+    // Reusing a corpus-local subject token and scope in a different repository is
+    // not an authorized cross-source person link.
+    let mut evidence: Value = serde_json::from_str(EVIDENCE).unwrap();
+    let mut annotations: Value = serde_json::from_str(ATTRIBUTIONS).unwrap();
+    let mut other = evidence["evidence"][0].clone();
+    other["id"] = json!("e-other-corpus");
+    other["source"]["repository"] = json!("different-corpus");
+    evidence["evidence"].as_array_mut().unwrap().push(other);
+    annotations["observations"].as_array_mut().unwrap().push(json!({
+        "id":"from-another-corpus",
+        "personId":"blogger-a",
+        "evidenceId":"e-other-corpus",
+        "kind":"explicit_endorsement",
+        "stance":"disputes",
+        "passage":"I dispute the proposition.",
+        "span":{"start":0,"end":26},
+        "confidenceObservation":{"value":0.8,"assessedBy":"scripted_example"}
+    }));
+    let e = serde_json::to_string(&evidence).unwrap();
+    let a = serde_json::to_string(&annotations).unwrap();
+    assert!(run(&e, &a, "semantic_research")
+        .unwrap_err()
+        .contains("not bound to source-local person"));
+
+    annotations["observations"][4]["personId"] = json!("blogger-other");
+    annotations["people"].as_array_mut().unwrap().push(json!({
+        "id":"blogger-other",
+        "subjectId":"blogger-a",
+        "sourceRepository":"different-corpus",
+        "scopeId":"blog-post-1",
+        "displayName":"Blogger A"
+    }));
+    let report = run(&e, &serde_json::to_string(&annotations).unwrap(), "semantic_research")
+        .unwrap();
+    assert_eq!(report["people"].as_array().unwrap().len(), 3);
+    assert_eq!(report["people"][0]["source_repository"], "sample-corpus");
+    assert_eq!(report["people"][1]["source_repository"], "different-corpus");
+    assert_eq!(report["people"][0]["subject_id"], "blogger-a");
+    assert_eq!(report["people"][1]["subject_id"], "blogger-a");
+    assert_ne!(report["people"][0]["id"], report["people"][1]["id"]);
+
+    let misbound = edit_attributions(|value| {
+        value["people"][0]["sourceRepository"] = json!("different-corpus");
+    });
+    assert!(run(EVIDENCE, &misbound, "semantic_research").is_err());
+}

@@ -50,7 +50,10 @@ function updatePersonName() {
     const batch = JSON.parse($('evidence-input').value);
     const document = JSON.parse($('attribution-input').value);
     const selected = batch.evidence.find((entry) => entry.id === $('source-evidence').value);
-    const person = document.people.find((entry) => entry.id === selected.subject && entry.scopeId === selected.source.scopeId);
+    const person = document.people.find((entry) =>
+      entry.subjectId === selected.subject &&
+      entry.scopeId === selected.source.scopeId &&
+      entry.sourceRepository === selected.source.repository);
     $('person-name').value = person?.displayName || '';
   } catch { $('person-name').value = ''; }
 }
@@ -99,27 +102,37 @@ function recordAttribution() {
     if (obs === null && (certainty !== null || personConfidence !== null)) {
       throw Error('A person-confidence or conviction score needs a scored observation.');
     }
-    const existing = annotation.people.find((person) => person.id === evidence.subject);
-    if (existing && existing.scopeId !== evidence.source.scopeId) {
-      throw Error('The same ID occurs in another scope. Do not automatically merge people.');
-    }
-    if (existing) existing.displayName = name;
-    else annotation.people.push({ id: evidence.subject, scopeId: evidence.source.scopeId, displayName: name });
+    let existing = annotation.people.find((person) =>
+      person.subjectId === evidence.subject &&
+      person.scopeId === evidence.source.scopeId &&
+      person.sourceRepository === evidence.source.repository);
+    if (!existing) {
+      let personId = evidence.subject;
+      let suffix = 1;
+      while (annotation.people.some((person) => person.id === personId)) {
+        personId = evidence.subject + '-source-' + suffix++;
+      }
+      existing = {
+        id: personId, subjectId: evidence.subject, scopeId: evidence.source.scopeId,
+        sourceRepository: evidence.source.repository, displayName: name
+      };
+      annotation.people.push(existing);
+    } else existing.displayName = name;
     let next = 1;
     while (annotation.observations.some((item) => item.id === 'manual-' + next)) next++;
     const id = 'manual-' + next;
     const observation = {
-      id, personId: evidence.subject, evidenceId: evidence.id, kind, stance, passage,
+      id, personId: existing.id, evidenceId: evidence.id, kind, stance, passage,
       span: { start, end }
     };
     if (obs !== null) observation.confidenceObservation = { value: obs, assessedBy: 'analyst' };
     if (certainty !== null) observation.conviction = { value: certainty, basis, assessedBy: 'analyst' };
     annotation.observations.push(observation);
     // Any previous person-confidence assessment would omit this new evidence; make it unknown.
-    annotation.assessments = annotation.assessments.filter((item) => item.personId !== evidence.subject);
+    annotation.assessments = annotation.assessments.filter((item) => item.personId !== existing.id);
     if (personConfidence !== null) {
       annotation.assessments.push({
-        personId: evidence.subject, stance,
+        personId: existing.id, stance,
         confidencePerson: { value: personConfidence, assessedBy: 'analyst' },
         observationIds: [id],
         reviewedConflicts: $('review-conflicts').checked
@@ -153,7 +166,7 @@ function render(report) {
   for (const person of report.people) {
     const card = element('article'); card.className = 'person-card';
     card.append(element('h3', person.display_name), element('p', 'Attributed position: ' + person.stance));
-    card.append(element('small', 'Source-local person ' + person.id + ' · ' + person.scope_id));
+    card.append(element('small', 'Source-local person ' + person.subject_id + ' · ' + person.source_repository + ' / ' + person.scope_id));
     card.append(metric('Confidence (person)', score(person.confidence_person), 'How sure we are this person holds this position across cited observations. Not the truth of the proposition.'));
     if (person.has_conflicting_positions) card.append(element('p', 'Conflicting positions in the evidence — inspect each observation.'));
     if (!person.observations.length) card.append(element('p', 'No admitted observations. Attribution unknown.'));

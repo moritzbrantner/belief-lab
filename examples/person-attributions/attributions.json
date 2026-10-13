@@ -10,12 +10,16 @@
     {
       "id": "blogger-a",
       "displayName": "Blogger A",
-      "scopeId": "blog-post-1"
+      "scopeId": "blog-post-1",
+      "subjectId": "blogger-a",
+      "sourceRepository": "sample-corpus"
     },
     {
       "id": "researcher-b",
       "displayName": "Researcher B",
-      "scopeId": "interview-2"
+      "scopeId": "interview-2",
+      "subjectId": "researcher-b",
+      "sourceRepository": "sample-corpus"
     }
   ],
   "observations": [
