@@ -82,10 +82,10 @@ function recordAttribution() {
     const evidence = batch.evidence.find((record) => record.id === $('source-evidence').value);
     if (!evidence?.subject || !evidence.source?.scopeId) throw Error('Selected evidence must identify a source-local person.');
     const name = $('person-name').value.trim();
-    const passage = $('passage').value.trim();
+    const passage = $('passage').value;
     const start = Number($('offset-start').value);
     const end = Number($('offset-end').value);
-    if (!name || !passage || !Number.isSafeInteger(start) || !Number.isSafeInteger(end) || start < 0 || end <= start) {
+    if (!name || !passage.trim() || !Number.isSafeInteger(start) || !Number.isSafeInteger(end) || start < 0 || end <= start) {
       throw Error('Provide a name, an exact passage, and valid source offsets.');
     }
     if (passage.length > 4096) throw Error('Passage exceeds 4096 bytes.');
