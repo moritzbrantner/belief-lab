@@ -354,3 +354,20 @@ This decides the observable **human-controlled conflict handling**. It does not 
 #### Question 1.4.20 — Corrections to shared person links
 
 If an already confirmed person link is later rejected or corrected, should Belief Lab (A) apply the correction only to future investigations, leaving existing derived person-belief views unchanged, (B) automatically re-evaluate **affected identity-dependent views** in all investigations while preserving their original source evidence and historical explanations, or (C) ask the user separately which existing investigations should apply the correction?
+
+#### Decision 1.4.21 — Ask which investigations should apply a corrected shared person link
+
+**Answers:** 1.4.20  
+**Approved by owner:** 2026-10-13, option C.
+
+When an investigator corrects or revokes a previously confirmed person link that was shared across investigations, Belief Lab identifies the **affected investigations** and lets the user decide **separately which existing investigations should apply the correction** to their derived person-belief views. Do not automatically recompute all investigations or silently apply the correction to every existing belief assessment merely because the confirmed identity link was shared. Also do not limit corrections to future work only; selected existing investigations can adopt them.
+
+The shared person-link registry records the owner's corrected/revoked identity association and its provenance and prior approval history. This changes which identity assertions remain currently confirmed; it does **not** itself rewrite the underlying source-local identities or historical investigation records. In each *selected* investigation, re-evaluate only the affected, authorized identity-dependent person-belief attributions, `confidence (person)`, derivations and views as appropriate; preserve previous results and explanations as historical revisions rather than erasing them. `confidence (observation)`, `conviction`, independent evidence and unrelated calculations must not be silently modified or recomputed without an actual dependency.
+
+For an affected investigation the user has **not selected**, retain the previous recorded analyses as historical snapshots, **visibly identify any affected current views as pending correction or outdated**, and do not continue to treat an identity assertion now known to be revoked as verified evidence in fresh analysis. The user can later review and apply the correction per investigation. Independent and unaffected work remains available. An investigation that was not currently loaded must still surface its pending correction when reopened where the shared-link history is available; there is no promise of background propagation to an inaccessible offline device or an external project export.
+
+This decision preserves **one history of approved person links for the workspace**, per Decision 1.4.15, while keeping investigation-specific adoption of corrected identity-derived belief results under user control. It does not create per-investigation contradictory global person identities, propagate unrelated belief evidence between investigations, authorize biometric matching, or bypass hard policy gates. Reviewable source evidence and user choices are required for subsequent changes.
+
+#### Question 1.4.22 — Viewing a person's beliefs across investigations
+
+When an investigator opens a person's profile, should Belief Lab (A) show beliefs only from the current investigation, (B) automatically combine attributed beliefs and scores from all investigations into one view, or (C) show the current investigation by default with an optional, clearly source-separated cross-investigation comparison of what the person is believed to hold?
