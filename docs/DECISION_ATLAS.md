@@ -317,3 +317,23 @@ Automatic reuse applies only where the confirmed link is **available in that wor
 #### Question 1.4.16 — Portable investigations and shared person links
 
 When a portable investigation moves to another device without its original shared person-link registry, should Belief Lab (A) retain the investigation and flag missing identity links until manually restored, (B) automatically include the relevant confirmed person links in each portable project and reuse them on import, or (C) offer an explicit export/import choice to include those confirmed links or keep only references, with missing links clearly identified when unavailable? In all cases, link provenance and the identity policy must be respected.
+
+#### Decision 1.4.17 — Choose whether portable projects bundle confirmed person links
+
+**Answers:** 1.4.16  
+**Approved by owner:** 2026-10-13, option C.
+
+When exporting an investigation as a portable project, the user can **explicitly choose** whether to:
+
+- **Include relevant confirmed person links**: package the user-approved identity associations needed by that investigation, together with their original source-local identifiers, confirmation evidence, provenance, and appropriate revision/history, so those links can be available when the project is reopened on another device.
+- **Keep only person-link references**: export the investigation and pointers to existing workspace-approved identity links without copying the confirmed associations themselves. This option may leave some identity links unavailable after transfer.
+
+The person-link choice is **independent of** Decision 1.1.8's choice to bundle original evidence or export source references only. The export UI should clearly disclose both choices and which source materials and person links are actually included. Neither option should accidentally export the entire workspace's person registry, unrelated investigations' belief records, or sources beyond what the user chose and policy permits.
+
+Import must **open the investigation even when referenced person links are unavailable**, preserving the original source-local people and saved historical attributions, clearly identifying missing links and offering a path to reconnect or restore permitted identity evidence. It must not fabricate a unified person, silently combine their beliefs, or discard original link approval history. Bundled confirmed links may be reused after import subject to the applicable identity policy; they represent historical user-confirmed associations, not authorization to infer or approve **new** matches. Rejected, withdrawn or conflicting links must never be silently overwritten. The precise user-facing treatment of a conflict with an already existing destination-workspace identity link remains unresolved.
+
+Confirmed links that are available in the destination workspace participate in Decision 1.4.15's reuse across investigations, while each investigation retains independent sources, attributions, scores and history. This Decision neither adds accounts/cloud synchronization nor disables existing hard identity-resolution policy gates. No biometric person matching or sensitive-trait inference is approved.
+
+#### Question 1.4.18 — Conflicting identity links on import
+
+Suppose a portable project includes a confirmed link saying records A and B identify the same person, but the destination workspace has a contradictory confirmed link. Should Belief Lab (A) replace the destination's link with the imported link, (B) keep the destination link and silently ignore the imported association, or (C) show the conflicting evidence and confirmation histories and require the user to resolve the conflict before changing shared identity links?
