@@ -337,3 +337,20 @@ Confirmed links that are available in the destination workspace participate in D
 #### Question 1.4.18 — Conflicting identity links on import
 
 Suppose a portable project includes a confirmed link saying records A and B identify the same person, but the destination workspace has a contradictory confirmed link. Should Belief Lab (A) replace the destination's link with the imported link, (B) keep the destination link and silently ignore the imported association, or (C) show the conflicting evidence and confirmation histories and require the user to resolve the conflict before changing shared identity links?
+
+#### Decision 1.4.19 — Require review before resolving conflicting imported person links
+
+**Answers:** 1.4.18  
+**Approved by owner:** 2026-10-13, option C.
+
+When a portable investigation contains a confirmed person-identity link that contradicts a link already confirmed in the destination workspace, Belief Lab must **show the competing links, their source records, supporting non-biometric evidence, and both confirmation/revision histories** so the investigator can make an informed choice. Neither association has automatic precedence because it was imported, already existed, was more recently confirmed, or appears to have more supporting observations.
+
+**The shared identity registry remains unchanged until the user explicitly resolves the conflict.** Do not silently overwrite, discard, auto-merge, or treat the imported link as another approved relationship during the unresolved state. Preserve the imported association, original source-local IDs, and its evidence as a **pending, reviewable conflict**, distinct from the effective destination-workspace links. A confirmed resolution, rejection or later reversal preserves a traceable history; affected conclusions must not silently retain stale identity-derived assumptions.
+
+Under Decisions 1.1.10 and 1.4.17, the investigation **can still be imported and opened** with the conflict clearly flagged. Unrelated source material, historical attributions and independently authorized analysis remain inspectable; person identity dependent work must not assume the disputed link was approved. A conflict is not an excuse to replace or erase the destination's source identities, independently stored investigation evidence or historical explanations.
+
+This decides the observable **human-controlled conflict handling**. It does not prescribe a database merge algorithm, force a global account/cloud registry, allow biometric identification, weaken currently enforced identity policy, or mean the proposed implementation already exists. Linking identities remains separate from assessing whether a proposition is objectively true.
+
+#### Question 1.4.20 — Corrections to shared person links
+
+If an already confirmed person link is later rejected or corrected, should Belief Lab (A) apply the correction only to future investigations, leaving existing derived person-belief views unchanged, (B) automatically re-evaluate **affected identity-dependent views** in all investigations while preserving their original source evidence and historical explanations, or (C) ask the user separately which existing investigations should apply the correction?
