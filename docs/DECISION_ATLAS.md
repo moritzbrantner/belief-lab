@@ -300,3 +300,20 @@ After confirmation, `confidence (observation)`, `confidence (person)`, and `conv
 #### Question 1.4.14 — Reuse of confirmed person links across investigations
 
 When the same person appears in different persistent investigations, should Belief Lab (A) keep their confirmed identity links entirely separate per investigation, (B) automatically reuse confirmed links and person identities across every investigation, or (C) keep investigations independent by default but let users explicitly transfer or reuse approved person links between them?
+
+#### Decision 1.4.15 — Automatically reuse confirmed person links across investigations
+
+**Answers:** 1.4.14  
+**Approved by owner:** 2026-10-13, option B.
+
+A **confirmed source-person link is shared across all investigations** in the same Belief Lab workspace. Once the investigator has explicitly approved that two source-local person records refer to the same person, subsequent investigations that encounter those **already linked records** recognize and reuse the approved identity association automatically; the user does not have to approve that exact association again in each investigation.
+
+This does **not** authorize automatically approving *new* candidate matches. A previously unseen source-person record may be suggested using only the non-biometric evidence approved by Decision 1.4.13, but joining it to an existing person still requires human confirmation under Decision 1.4.11. Confirmed and proposed links must remain distinguishable, explainable, rejectable or reversible with preserved link evidence and history.
+
+This creates a **shared person-identity/link layer**, not a single global investigation or universal belief store. Decisions 1.1.4 and 1.1.6 still apply: each investigation retains its own evidence, proposition candidates, person-belief attributions, `confidence (observation)`, `confidence (person)`, `conviction`, explanations and history. Reusing an identity link does **not** silently pool sources, transfer beliefs between investigations, defeat policy authorization or count an observation from another investigation as corroboration. Likewise, a person link does not assess a proposition's objective truth.
+
+Automatic reuse applies only where the confirmed link is **available in that workspace**. This Decision does not introduce accounts, internet synchronization or guaranteed cross-device propagation. Portable project exports and imports must remain usable when the workspace-level identity links are unavailable, preserving original source-local IDs and clear provenance; the exact packaging and import behavior of confirmed shared links is separately undecided. Existing identity-resolution denials remain effective until explicitly reviewed policy/domain changes implement the approved product direction.
+
+#### Question 1.4.16 — Portable investigations and shared person links
+
+When a portable investigation moves to another device without its original shared person-link registry, should Belief Lab (A) retain the investigation and flag missing identity links until manually restored, (B) automatically include the relevant confirmed person links in each portable project and reuse them on import, or (C) offer an explicit export/import choice to include those confirmed links or keep only references, with missing links clearly identified when unavailable? In all cases, link provenance and the identity policy must be respected.
