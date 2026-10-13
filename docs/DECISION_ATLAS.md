@@ -388,3 +388,20 @@ The cross-investigation view is limited to the data and identities actually avai
 #### Question 1.4.24 — Recognizing a person's changing beliefs over time
 
 Suppose a person expressed proposition P in an older interview, then appears to express a different position later. Should Belief Lab (A) prioritize the latest supported statement as their present stance while retaining earlier history, (B) show each time-scoped attribution separately without estimating a current position, or (C) suggest a reviewable current stance from dated evidence and explicitly distinguish an apparent change of mind from changed, ambiguous, or contradictory evidence?
+
+#### Decision 1.4.25 — Reviewable current-stance suggestions from dated evidence
+
+**Answers:** 1.4.24  
+**Approved by owner:** 2026-10-13, option C.
+
+When the same person has expressed apparently differing views over time, Belief Lab can **suggest a reviewable assessment of the person's current stance** toward a carefully scoped proposition. The assessment identifies its supporting, conflicting and missing evidence, associated person and source identities, relevant dates, and uncertainty. It is a **source-grounded estimate**, not a claim of direct access to the person's beliefs or a finding that the proposition is objectively true.
+
+Keep **dated observations and historical belief attributions** intact. Where the evidence supports it, distinguish: (1) a person's documented stance at a particular time, (2) evidence that the person may have genuinely changed their mind, and (3) changes in our evidence or interpretation—for example a newly discovered interview, an edited transcript, a retracted report, or differing definitions and contexts. Later publication, discovery or processing does not necessarily mean a later expression by the person. Record expression/event date and publication or ingestion dates distinctly when known; do not fabricate timestamps or an event order.
+
+**The latest statement must not automatically win.** A later utterance may be quoted, hypothetical, ambiguous, about a different time/population, or contradicted by equally relevant later evidence. Belief Lab offers contextualized interpretations and marks conflicting or insufficient evidence clearly; users can inspect, correct, reject or exclude current-stance suggestions without mandatory approval for every authorized provisional analysis. Unknown current stance is a valid outcome.
+
+Keep `confidence (observation)`, `confidence (person)`, and the person's own `conviction` distinct, respecting self-reported versus inferred conviction and source-dependency groups. Revision or withdrawal changes only affected, authorized derivations and preserves earlier explanations/history. When person identities are linked across investigations, follow the selected per-investigation adoption rules of Decision 1.4.21 and the scoped comparison of Decision 1.4.23; neither global identity nor a later source permits silent pooling of all investigations' belief evidence. Existing identity and inference policy restrictions remain in force.
+
+#### Question 1.4.26 — Old statements without recent evidence
+
+When a person last clearly expressed a belief long ago and no newer evidence is available, should Belief Lab (A) carry that last supported belief forward as their current stance until contradicted, (B) show only the dated historical stance and leave the present position unknown, or (C) display the last documented stance with its date alongside a clearly uncertain, reviewable estimate of the current stance, without inventing a fixed expiry date or treating silence as proof?
