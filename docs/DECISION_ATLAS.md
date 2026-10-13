@@ -283,3 +283,20 @@ After an owner-approved link, relevant person-belief attributions may be conside
 #### Question 1.4.12 — Evidence allowed for matching people across sources
 
 Which evidence should Belief Lab use to **suggest** that two source-local person records refer to the same individual: (A) explicit stable author/person identifiers only; (B) identifiers plus non-biometric contextual evidence such as names, affiliations and source relationships; or (C) also face or voice similarity where a producer supplies it, subject to separately reviewed permission and human confirmation? None of these permits automatic linking without review.
+
+#### Decision 1.4.13 — Suggest person matches using identifiers and non-biometric context
+
+**Answers:** 1.4.12  
+**Approved by owner:** 2026-10-13, option B.
+
+For source-local person records that may refer to the same person, Belief Lab can propose cross-source links using **explicit identifiers and non-biometric contextual evidence**, such as names, author profiles, affiliations, source relationships, publication context or other legitimately available textual metadata. Matching names or occupations are only clues, not sufficient proof that two person records represent the same individual.
+
+For every suggested link, the investigator can inspect the original person records and the particular evidence supporting the proposal, including source/producer revisions, possible conflicting identifiers, and uncertainty. Belief Lab must **not merge identities or their attributed beliefs automatically**. The user explicitly confirms or rejects each link, can undo confirmed links, and can later inspect why an identity connection was made. Confirmed links retain their original source-scoped record identities and do not erase historical belief-attribution evidence.
+
+**No biometric matching** is authorized as a person-link suggestion method by this Decision: do not use facial similarity, voiceprints or face/voice matching as an alternative to non-biometric textual/metadata evidence. The product direction in Decision 1.4.11 allows useful user-reviewed cross-source person linking, but the presently enforced `belief-policy` and `AGENTS.md` hard denials remain effective until separately reviewed code/policy changes. An environment setting alone must not enable prohibited operations. No sensitive-trait inference, unreviewed real-world identification, or unrestricted mass profiling is approved.
+
+After confirmation, `confidence (observation)`, `confidence (person)`, and `conviction` retain their independent provenance and meaning. A match proposal's evidence or confidence must not be substituted for confidence that the person holds a proposition. Matching people is not evidence that their propositions are true.
+
+#### Question 1.4.14 — Reuse of confirmed person links across investigations
+
+When the same person appears in different persistent investigations, should Belief Lab (A) keep their confirmed identity links entirely separate per investigation, (B) automatically reuse confirmed links and person identities across every investigation, or (C) keep investigations independent by default but let users explicitly transfer or reuse approved person links between them?
