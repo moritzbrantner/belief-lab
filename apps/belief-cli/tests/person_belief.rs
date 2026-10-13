@@ -216,3 +216,31 @@ fn repository_and_scope_are_required_for_source_local_person_binding() {
     });
     assert!(run(EVIDENCE, &misbound, "semantic_research").is_err());
 }
+
+#[test]
+fn definite_person_stance_requires_reviewed_confidence() {
+    let attribution = edit_attributions(|value| {
+        value["assessments"][0]
+            .as_object_mut()
+            .unwrap()
+            .remove("confidencePerson");
+    });
+    assert!(run(EVIDENCE, &attribution, "semantic_research")
+        .unwrap_err()
+        .contains("definite person stance requires"));
+}
+
+#[test]
+fn contrary_or_unscored_evidence_cannot_be_labeled_as_support() {
+    let attribution = edit_attributions(|value| {
+        // The example's quotation-only observation is not scored as endorsement.
+        let id = value["observations"][1]["id"].clone();
+        value["assessments"][0]["observationIds"]
+            .as_array_mut()
+            .unwrap()
+            .push(id);
+    });
+    assert!(run(EVIDENCE, &attribution, "semantic_research")
+        .unwrap_err()
+        .contains("supporting observation"));
+}
