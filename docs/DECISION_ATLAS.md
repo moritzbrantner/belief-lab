@@ -231,3 +231,23 @@ This specifies **product semantics and names**, not a particular numeric scale, 
 #### Question 1.4.6 — Representing a person's strength of belief
 
 Should Belief Lab (A) measure only `confidence` and `conviction` as defined above, without estimating how strongly a person feels the belief, (B) add a **third, separate** strength-of-belief measure when evidence supports it, or (C) show only qualitative intensity clues from the source without another scored metric?
+
+#### Decision 1.4.7 — Observation confidence, person confidence, and conviction are separate
+
+**Answers:** 1.4.6 — the owner's corrected scheme includes a separately scored estimate of the person's certainty about the proposition.  
+**Supersedes:** Decision 1.4.5's two-score semantics and its prior meanings of canonical `confidence` and `conviction`. Retain Decision 1.4.5 as historical approved intent, but use these corrected definitions going forward.  
+**Approved by owner:** 2026-10-13, explicit correction with three named measures.
+
+Belief Lab distinguishes **three assessments** associated with a source-grounded person-to-proposition belief attribution:
+
+1. **`confidence (observation)`:** *How certain we are that this specific observation implies the attributed belief.* It concerns the evidence from an individual quote, report, authored statement or other authorized observation **for a scoped person and proposition**. A person merely quoting or criticizing P must not receive a high observation-to-belief score simply because the quotation was recorded or attributed correctly.
+2. **`confidence (person)`:** *How certain we are that this person actually has that belief*, taking into account the available admissible observations and their dependencies. This is the **canonical person-belief attribution confidence**, not confidence merely that a statement came from the correct speaker. Multiple observations of the same underlying content or from correlated sources must not be counted as independent confirmation.
+3. **`conviction`:** *How certain the person themselves is about the proposition.* This concerns the **person's own degree of certainty in P**, not our confidence that the person endorses P. A person may clearly hold a tentative belief: `confidence (person)` can then be high while `conviction` is low.
+
+Each measure must be shown with its meaning and evidence/derivation, kept distinct in storage, explanations and historical comparisons, and allowed to be unknown when the available evidence cannot justify a value. The numbers are **not interchangeable** and none estimates whether P conforms to reality. Source-to-person attribution and source provenance remain essential evidence and authorization checks, but **speaker-identification confidence is not one of these three defined belief scores**. Real-world identity resolution and sensitive-trait inference are not authorized by this Decision.
+
+This establishes the owner's **product meanings**, not an implementation formula, calibration guarantee, mandatory numeric range, or a permission to invent evidence. The previous `soft_truth` baseline is not silently any of these values, and an inference provider's raw model score is not automatically a calibrated person-belief confidence or conviction. Belief attribution stays explicit/reported/inferred and reviewable as in Decision 1.4.3.
+
+#### Question 1.4.8 — How conviction should be inferred
+
+For estimating how certain someone is about a proposition, should Belief Lab (A) assign conviction only when the person directly expresses their certainty, leaving it unknown otherwise, (B) infer conviction automatically from wording, repeated actions or other observations, or (C) use both but clearly distinguish self-reported conviction from inferred conviction and make the estimate reviewable?
