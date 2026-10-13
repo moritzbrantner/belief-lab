@@ -70,3 +70,20 @@ Both modes must preserve the investigation's evidence relationships, explanation
 #### Question 1.1.9 — Missing referenced evidence on import
 
 When a reference-only project is opened on a different device but some original sources cannot be reached, should Belief Lab (A) open the saved investigation and flag missing sources, (B) refuse to open it until all sources are restored, or (C) open it with missing sources flagged and guide the user to reconnect or replace them before dependent results are recomputed?
+
+#### Decision 1.1.10 — Open partial investigations and guide missing-source recovery
+
+**Answers:** 1.1.9  
+**Approved by owner:** 2026-10-13, option C.
+
+Opening an investigation does not fail merely because some external evidence references are inaccessible. Belief Lab opens the saved investigation, visibly identifies each missing source, and guides the user to reconnect the original material or provide replacement evidence. Preserved conclusions, derivations and explanations remain inspectable as **saved historical results**, with their missing-source limitations made clear; they must not be presented as freshly verified current conclusions or silently recalculated.
+
+Reconnection or replacement must preserve provenance and respect the existing authorization/invalidation boundaries. Replacing a missing source is new evidence rather than silently substituting material under an older authorized source identity. Beliefs that depend on missing evidence cannot be newly recomputed as if that evidence were present; after sources are restored or replacement evidence is admitted, updated results can be generated with traceable derivations, without erasing the original history.
+
+**Scope distinction:** This is the owner-approved user experience for importing reference-only portable investigations; it does not authorize a particular persistence technology or automatically available external source resolver.
+
+### 1.2. Discovering propositions from evidence
+
+#### Question 1.2.1 — Proposition discovery and user review
+
+After adding a source to an investigation, should Belief Lab (A) automatically extract propositions and run belief analysis with optional later correction, (B) propose candidate propositions and require human approval before analyzing them, or (C) automatically analyze with clearly reviewable suggestions that users can accept, correct or exclude without a mandatory approval gate?
