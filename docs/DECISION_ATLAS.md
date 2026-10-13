@@ -251,3 +251,18 @@ This establishes the owner's **product meanings**, not an implementation formula
 #### Question 1.4.8 — How conviction should be inferred
 
 For estimating how certain someone is about a proposition, should Belief Lab (A) assign conviction only when the person directly expresses their certainty, leaving it unknown otherwise, (B) infer conviction automatically from wording, repeated actions or other observations, or (C) use both but clearly distinguish self-reported conviction from inferred conviction and make the estimate reviewable?
+
+#### Decision 1.4.9 — Distinguish self-reported and inferred conviction
+
+**Answers:** 1.4.8  
+**Approved by owner:** 2026-10-13, option C.
+
+Belief Lab may derive the **conviction** measure from either a person's **direct expression of their own certainty** about a proposition or an **inference** supported by their wording, repeated statements, behavior or other policy-admitted observations. Every conviction assessment must distinguish **self-reported** from **inferred** certainty, show the relevant source passages and provenance, and be reviewable and correctable. A person's own stated degree of certainty is a report about their conviction; the model's inference is a separate interpretation, and neither establishes whether the proposition is objectively true.
+
+Do not silently promote indirect clues into a self-report, presume that repetition proves high conviction, or fabricate a numeric value when the evidence is insufficient. A single assessed conviction can have multiple supporting or conflicting observations; preserve their dependencies, allow changes as evidence is added, and retain historical explanations. Context matters: quotation, satire, hypothetical statements, changed stance and the date or subject of a claim must not be mistaken for unqualified current personal certainty.
+
+This decision operates within Decision 1.4.7's three distinct measures: `confidence (observation)` assesses how strongly one observation implies a person-belief attribution; `confidence (person)` assesses whether the person holds that belief across admissible observations; **`conviction` concerns how certain the person themselves is of the proposition**. The inference must not use the prior proposition-level `soft_truth` value as a shortcut or bypass the existing policy and source-identity constraints.
+
+#### Question 1.4.10 — Linking person records across sources
+
+When two documents appear to involve the same person, should Belief Lab (A) keep source-local people separate unless the user manually links them, (B) permit explicit user-confirmed links from trusted source identities without automatically proposing matches, or (C) suggest possible links from authorized source context but require review before combining their attributed beliefs, subject to the existing identity-resolution restrictions?
