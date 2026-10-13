@@ -407,6 +407,11 @@ pub fn compare(input: &ComparisonInput<'_>) -> Result<ComparisonReport, Box<dyn 
             )));
         }
         let stance = parsed_stance(&assessment.stance)?;
+        if stance != Stance::Undetermined && assessment.confidence_person.is_none() {
+            return Err(invalid(
+                "a definite person stance requires a reviewed confidencePerson score",
+            ));
+        }
         if let Some(score) = &assessment.confidence_person {
             PersonConfidence::new(score.value)?;
             score.validate()?;
@@ -427,6 +432,13 @@ pub fn compare(input: &ComparisonInput<'_>) -> Result<ComparisonReport, Box<dyn 
             if observed.person_id != assessment.person_id {
                 return Err(invalid(format!(
                     "observation {id} belongs to another person"
+                )));
+            }
+            if assessment.confidence_person.is_some()
+                && (observed.stance != stance || !observed.has_confidence)
+            {
+                return Err(invalid(format!(
+                    "supporting observation {id} must have a score for the assessed stance"
                 )));
             }
         }
