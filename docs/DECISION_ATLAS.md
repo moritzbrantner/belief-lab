@@ -266,3 +266,20 @@ This decision operates within Decision 1.4.7's three distinct measures: `confide
 #### Question 1.4.10 — Linking person records across sources
 
 When two documents appear to involve the same person, should Belief Lab (A) keep source-local people separate unless the user manually links them, (B) permit explicit user-confirmed links from trusted source identities without automatically proposing matches, or (C) suggest possible links from authorized source context but require review before combining their attributed beliefs, subject to the existing identity-resolution restrictions?
+
+#### Decision 1.4.11 — Suggest cross-source person links with mandatory human confirmation
+
+**Answers:** 1.4.10  
+**Approved by owner:** 2026-10-13, option C, explicitly requesting relaxation of existing identity-resolution restrictions.
+
+When two permitted sources appear to refer to the **same person**, Belief Lab should offer **reviewable suggestions** for linking the source-scoped person records. Show the grounds and uncertainty for each suggested link. A potential match is *not* an established shared identity and must **not automatically combine the persons' attributed beliefs**. Only a user's explicit confirmation establishes the cross-source person link for use in the investigation. The user can reject or undo a link, and Belief Lab preserves the original source identities, source/producer revisions, attribution evidence and historical link decisions rather than silently rewriting earlier records.
+
+The owner wants to **relax the previous blanket product restriction** that would prevent useful cross-source identification of a person, including cases where the same real-world author or speaker appears in several sources. This is a **change of product intent**, not a claim that the current code or policy already supports it. The existing `belief-policy` and `AGENTS.md` limitations still govern running software until an explicitly reviewed implementation updates the authorization boundaries. Cross-source joining, person linking, and any optional source evidence must remain separately checked; an `.env` override cannot bypass deployed hard policy denials. This Decision does **not** grant unreviewed automatic identity merges, biometric identification, sensitive-trait inference, or unbounded profiling; their scope and authorization have not been approved.
+
+After an owner-approved link, relevant person-belief attributions may be considered together **only as evidence that these source records refer to that person**, keeping `confidence (observation)`, `confidence (person)` and `conviction` distinct as approved by Decision 1.4.7, and applying self-reported versus inferred conviction distinctions from Decision 1.4.9. Correlated observations remain correlated; resolving an identity does not establish the proposition's truth. Existing Decisions about separate investigations still apply; no global merging of investigations is implied.
+
+**Implementation distinction:** A future issue must independently verify the proposal → source inspection → user confirmation/rejection → link/unlink → attribution history flow in the real workbench, including lookalike names and conflicting evidence. A separately reviewed policy/domain change is required for any formerly prohibited cross-source real-person operation. Do not treat this documentation-only decision as a live policy relaxation.
+
+#### Question 1.4.12 — Evidence allowed for matching people across sources
+
+Which evidence should Belief Lab use to **suggest** that two source-local person records refer to the same individual: (A) explicit stable author/person identifiers only; (B) identifiers plus non-biometric contextual evidence such as names, affiliations and source relationships; or (C) also face or voice similarity where a producer supplies it, subject to separately reviewed permission and human confirmation? None of these permits automatic linking without review.
