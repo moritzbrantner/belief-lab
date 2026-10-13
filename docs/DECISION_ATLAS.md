@@ -153,3 +153,20 @@ This chooses the **product experience**, not a mandated chart style, time-series
 #### Question 1.3.3 — Apparent contradictions across contexts
 
 If two sources appear to disagree but describe different years, populations or definitions, should Belief Lab (A) compare them as a contradiction until the user manually separates them, (B) automatically treat them as distinct scoped propositions whenever it detects the difference, or (C) suggest the differing context and offer reviewable separate propositions instead of silently asserting a direct contradiction?
+
+#### Decision 1.3.4 — Suggest and review contextual distinctions before asserting contradictions
+
+**Answers:** 1.3.3  
+**Approved by owner:** 2026-10-13, option C.
+
+When sources appear to disagree but refer to different time periods, populations, locations, conditions or meanings of a term, Belief Lab identifies the **potential context mismatch**, shows which source passages support that interpretation, and offers **reviewable, separately scoped proposition candidates**. A suggested mismatch is not automatically approved by the user, nor is it a proven contradiction or proof that the sources are consistent.
+
+Users can inspect, correct, accept or reject the suggested distinction. Until a comparison is justified for the same proposition under compatible context, Belief Lab should not silently merge the source claims into an unconditional support-versus-contradiction assessment. Uncertainty about whether contexts really differ remains visible rather than silently resolving either way.
+
+Reviewing a context distinction updates or separates the *Belief Lab* propositions, relationships and dependent judgments with traceable revisions; it does not modify producer-owned original text, source revisions or already-stored historical explanations. Any resulting new inferences still pass policy admission and use the actual evidence-family/correlation and score semantics.
+
+Example: A study describing an intervention in **adults** and one describing it in **children** can appear to disagree. Belief Lab proposes separately scoped propositions and lets the user compare them, without automatically claiming a genuine conflict or falsely declaring the findings equivalent.
+
+#### Question 1.3.5 — Source reliability in belief assessments
+
+When evidence comes from sources of different reliability, should Belief Lab (A) weigh all independent sources equally unless manually excluded, (B) automatically estimate source reliability and use it to influence the assessment, or (C) display reliability considerations transparently and allow the user to review or adjust their influence, rather than applying hidden automatic weights?
