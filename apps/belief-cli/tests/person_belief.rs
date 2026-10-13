@@ -171,16 +171,19 @@ fn repository_and_scope_are_required_for_source_local_person_binding() {
     other["id"] = json!("e-other-corpus");
     other["source"]["repository"] = json!("different-corpus");
     evidence["evidence"].as_array_mut().unwrap().push(other);
-    annotations["observations"].as_array_mut().unwrap().push(json!({
-        "id":"from-another-corpus",
-        "personId":"blogger-a",
-        "evidenceId":"e-other-corpus",
-        "kind":"explicit_endorsement",
-        "stance":"disputes",
-        "passage":"I dispute the proposition.",
-        "span":{"start":0,"end":26},
-        "confidenceObservation":{"value":0.8,"assessedBy":"scripted_example"}
-    }));
+    annotations["observations"]
+        .as_array_mut()
+        .unwrap()
+        .push(json!({
+            "id":"from-another-corpus",
+            "personId":"blogger-a",
+            "evidenceId":"e-other-corpus",
+            "kind":"explicit_endorsement",
+            "stance":"disputes",
+            "passage":"I dispute the proposition.",
+            "span":{"start":0,"end":26},
+            "confidenceObservation":{"value":0.8,"assessedBy":"scripted_example"}
+        }));
     let e = serde_json::to_string(&evidence).unwrap();
     let a = serde_json::to_string(&annotations).unwrap();
     assert!(run(&e, &a, "semantic_research")
@@ -195,8 +198,12 @@ fn repository_and_scope_are_required_for_source_local_person_binding() {
         "scopeId":"blog-post-1",
         "displayName":"Blogger A"
     }));
-    let report = run(&e, &serde_json::to_string(&annotations).unwrap(), "semantic_research")
-        .unwrap();
+    let report = run(
+        &e,
+        &serde_json::to_string(&annotations).unwrap(),
+        "semantic_research",
+    )
+    .unwrap();
     assert_eq!(report["people"].as_array().unwrap().len(), 3);
     assert_eq!(report["people"][0]["source_repository"], "sample-corpus");
     assert_eq!(report["people"][1]["source_repository"], "different-corpus");
