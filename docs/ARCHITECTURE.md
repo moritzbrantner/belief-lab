@@ -77,3 +77,11 @@ Provider output is recorded as a judgment. Direct option scores use `conditional
 `apps/belief-cli` exposes a shared Rust application library. The native `explain` CLI and the Pages WebAssembly binding call the same validation, policy, inference, store, and report functions. The JavaScript workbench handles file selection and display; it does not implement an alternative inference algorithm. SemIf remains a native-only dependency. Browser examples carry explicitly scripted judgments; real model requests execute through the local `decide` JSON/stdio boundary.
 
 `repository-purpose.json` records the machine-readable ownership/exclusion boundary. Evidence-interchange rejects producer payload extensions; the one-decision request carries bounded content separately with its provenance-bearing references.
+
+## Person-belief attribution (first vertical slice)
+
+The `people.html` workbench calls the Rust `belief_cli::attribution::compare` entrypoint through WebAssembly. The application admits producer-owned references using `ValidatedEvidenceBatch::authorize`, records them in `InMemoryBeliefStore`, and checks each source-local person/evidence association and direct-support purpose with `belief-policy`. Its source excerpt and original-source offsets are supplied by the investigator, not obtained or verified by the importer.
+
+The separately typed `ObservationConfidence`, `PersonConfidence` and `Conviction` in `belief-core::attribution` cannot be confused with baseline `ScoreSemantics::SoftTruth`. Numeric assessments are explicitly analyst-supplied or scripted examples; there is **no heuristic averaging or automatically calibrated confidence**. The record remains unknown where no assessment is justified. A confirmed person-belief confidence cites reviewed observations; source family IDs remain available to review correlated observations without counting them as independent confirmations.
+
+This source-local slice cannot perform real-world or cross-source person identity linking. It does not mutate the legacy inference or historical explanation path. Persisted attribution corrections, full investigation histories and shared person-link policy updates remain separate work.

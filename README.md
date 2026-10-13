@@ -1,6 +1,12 @@
 # Belief Lab
 
-Provenance-first experiments for turning heterogeneous evidence into explainable beliefs.
+Source-grounded investigation of **which people express or hold which beliefs**, without deciding whether the propositions are objectively true. The legacy proposition-level baseline remains available as a separately labeled heuristic, not as an attribution score.
+
+## Compare attributed beliefs
+
+[Open the person-belief comparison](https://moritzbrantner.github.io/belief-lab/people.html) to examine who endorses or disputes one scoped proposition. The example distinguishes **confidence (observation)**, **confidence (person)**, and **conviction**, shows exact *supplied* source passages plus producer revisions, and leaves unsupported values unknown. You can record a new analyst annotation from an imported producer evidence reference.
+
+This first slice works with prepared `belief_evidence_interchange@1` references and separately supplied excerpts/assessments. It does not fetch or verify the original source text, extract source claims, infer calibrated person confidence, create shared identities, or retain an investigation history. The example's numerical assessments are **scripted**, not independently derived; recording a real annotation marks its assessments as analyst-provided. These boundaries are deliberate pending the fuller work under issues #35–#37. See [Workbench](docs/WORKBENCH.md).
 
 ## Try the workbench
 

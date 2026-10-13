@@ -68,3 +68,13 @@ cargo test -p belief-cli --test real_models -- --ignored --nocapture
 ```
 
 After setup, repeat with `HF_HUB_OFFLINE=1 PIP_NO_INDEX=1` to verify reuse of the prepared resources. The ordinary workspace test command skips this acceptance test.
+
+## Person-belief comparison on Pages
+
+Open `people.html` from the Pages workbench. The prepared `examples/person-attributions/` fixture contains a single scoped proposition, two distinct source-local people, explicit, reported, inferred, and quotation-only observations, exact investigator-supplied passages with offsets, and a three-score separation example. The people disagree, but the report contains **no truth verdict**.
+
+The browser form records a new observation from an already imported evidence reference; it requires a source-local subject, scope, passage and offsets. Confidence (observation) and confidence (person) are separately assessed, conviction is self-reported or inferred, and empty values stay unknown. Recording a new observation invalidates the person's previous overall assessment instead of trusting it on changed evidence. Provenance shows source/producer revisions and the admitted evidence purpose. No JavaScript inference is performed.
+
+This is a prepared-source attribution surface, not a live producer integration or provenance verification service. The excerpt text/offsets are annotations supplied by the user, not independently matched to upstream bytes. The scripted fixture scores are demonstrative, not empirical or calibrated. The old `soft_truth` workbench remains a distinct historical/reference view. Investigation storage, corrections over time, comparison-context review and identity linking are not implemented here.
+
+Run `npm --prefix site test` after `scripts/build-pages.sh` for a real-browser comparison, analyst-entry, score-separation and rejection regression. The test captures `target/person-belief-comparison.png` for owner acceptance.
