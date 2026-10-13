@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Belief Lab · Compare attributed beliefs</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+  <a class="brand" href="./">Belief Lab <span> / </span> Person-belief comparison</a>
+  <nav>
+    <a href="./">Evidence workbench</a>
+    <label>Theme <select id="theme"><option value="system">System</option><option value="light">Light</option><option value="dark">Dark</option></select></label>
+    <a href="https://github.com/moritzbrantner/belief-lab">GitHub ↗</a>
+  </nav>
+</header>
+<main>
+  <div class="heading"><div>
+    <p class="eyebrow">PERSON ↔ PROPOSITION ↔ SOURCE</p>
+    <h1>Who believes what?</h1>
+    <p>Compare source-backed positions that people express or are reported to hold. This does not determine whether the proposition is objectively true.</p>
+  </div></div>
+  <section aria-labelledby="inputs-heading">
+    <h2 id="inputs-heading">1. Open an investigation</h2>
+    <div class="toolbar">
+      <button id="load-example">Load two-person example</button>
+      <button id="compare" class="primary" disabled>Compare positions</button>
+      <button id="download-comparison" disabled>Download comparison</button>
+    </div>
+    <p class="note">The example contains <strong>scripted assessment scores</strong>, not model predictions. The browser uses Rust evidence import, authorization and attribution validation. The source excerpts below are supplied annotations; this workbench does not independently fetch or verify original source text.</p>
+    <details>
+      <summary>Inspect or import prepared source evidence and attribution annotations</summary>
+      <div class="editors">
+        <label>Producer evidence interchange JSON <input id="evidence-file" type="file" accept=".json,application/json"><textarea id="evidence-input" aria-label="Producer evidence interchange JSON" spellcheck="false"></textarea></label>
+        <label>Person-attribution annotations JSON <input id="attribution-file" type="file" accept=".json,application/json"><textarea id="attribution-input" aria-label="Person-attribution annotations JSON" spellcheck="false"></textarea></label>
+      </div>
+    </details>
+  </section>
+  <section aria-labelledby="record-heading">
+    <h2 id="record-heading">2. Record a source-backed position</h2>
+    <p class="note">Select a prepared evidence record with a source-local person ID. Enter the exact passage and its offsets in the original source. This records an analyst annotation, not a source-verified extraction. Leave any score empty when evidence is insufficient.</p>
+    <div class="attribution-form">
+      <label>Evidence record <select id="source-evidence"></select></label>
+      <label>Person display name <input id="person-name" autocomplete="off" placeholder="As identified in this source"></label>
+      <label>Attribution type <select id="kind"><option value="explicit_endorsement">Explicit endorsement</option><option value="reported_position">Reported position</option><option value="inferred_belief">Inferred belief</option><option value="quotation_or_criticism">Quotation / criticism (not endorsement)</option></select></label>
+      <label>Observed stance <select id="stance"><option value="endorses">Endorses</option><option value="disputes">Disputes</option><option value="undetermined">Undetermined</option></select></label>
+      <label class="wide">Source passage <textarea id="passage" rows="3" spellcheck="false" placeholder="Copy the exact relevant words"></textarea></label>
+      <label>Source span start offset <input id="offset-start" type="number" min="0" step="1" value="0"></label>
+      <label>Source span end offset <input id="offset-end" type="number" min="1" step="1"></label>
+      <label>Confidence (observation) <input id="observation-score" type="number" min="0" max="1" step="0.01" placeholder="Unknown"></label>
+      <label>Confidence (person) <input id="person-score" type="number" min="0" max="1" step="0.01" placeholder="Unknown"></label>
+      <label>Conviction basis <select id="conviction-basis"><option value="">Unknown</option><option value="self_reported">Self-reported</option><option value="inferred">Inferred</option></select></label>
+      <label>Conviction <input id="conviction-score" type="number" min="0" max="1" step="0.01" placeholder="Unknown"></label>
+      <label class="wide"><input id="review-conflicts" type="checkbox"> I reviewed conflicting positions before assigning confidence (person)</label>
+    </div>
+    <div class="toolbar"><button id="record" disabled>Record attribution and compare</button></div>
+    <p class="note">Recording new evidence invalidates any previous person-confidence assessment for that source-local person until explicitly reassessed.</p>
+    <p id="people-status" role="status" aria-live="polite">Loading the Rust attribution pipeline…</p>
+  </section>
+  <section aria-labelledby="comparison-heading">
+    <h2 id="comparison-heading">3. Compare attributed positions</h2>
+    <div id="proposition"></div>
+    <div id="comparison" class="person-grid"></div>
+    <details><summary>Full structured Rust report</summary><pre id="comparison-json"></pre></details>
+  </section>
+</main>
+<footer>No objective truth verdict. An observation's implication, a person's attributed belief, and their own conviction are different questions. Legacy <code>soft_truth</code> remains a separate, heuristic inference score.</footer>
+<script type="module" src="people.js"></script>
+</body>
+</html>
