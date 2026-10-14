@@ -462,3 +462,20 @@ Correlated or duplicated reports must not count as independent extra votes. Inad
 #### Question 1.4.32 — Relating differently worded propositions
 
 If several sources phrase potentially related propositions differently, should Belief Lab (A) compare only explicitly identical scoped propositions, keeping all other wordings separate, (B) suggest reviewable **paraphrase/equivalence** links while preserving each original wording and context, or (C) also suggest **implication or partial-overlap** relationships without silently treating the propositions as equivalent or attributing implied beliefs to a person?
+
+#### Decision 1.4.33 — Reviewable semantic links between differently worded propositions
+
+**Answers:** 1.4.32  
+**Approved by owner:** 2026-10-14, option C. This is the final owner decision in the current steering session.
+
+Belief Lab may **suggest reviewable relationships** between differently worded, source-grounded propositions, not merely literal identity or paraphrase. Preserve each original proposition, its source passage, speaker/person scope, provenance and revisions, rather than silently overwriting one wording with another. Suggestions must distinguish these relationship types:
+
+- **Paraphrase or contextual equivalence:** The wordings may express substantially the same claim **within explicitly compatible definitions, time, populations, conditions and context**. Equivalence is a suggested, evidence-grounded assessment and may be rejected or corrected; textual similarity alone does not prove sameness.
+- **Directional implication:** P may imply Q under stated interpretations or conditions. Show the direction (`P → Q`), the source-grounded reasoning or semantic judgment behind the suggestion, its context and uncertainty. Do not infer the reverse (`Q → P`) without separate evidence.
+- **Partial overlap or related claims:** P and Q share some subject matter, conditions, consequences or components but are **not** established as interchangeable or logically entailing one another. Allow an explicit reviewable relationship without erasing their distinct meanings.
+
+Suggested semantic relationships can help users discover aligned or apparently conflicting evidence and compare scoped propositions, including across different sources. They remain **user-inspectable, correctable and rejectable**; absent or insufficient support leaves the relationship unresolved. Honor prior Decision 1.3.4 on context mismatches and Decisions 1.4.25/1.4.31 on time-scoped and conflicting stance evidence. Do not automatically merge propositions, declare a contradiction, treat overlap as equivalence, or count derivative or repeated sources as independent corroboration.
+
+**A person being attributed belief P does not by itself establish that the person endorses Q**, even if a proposed relationship says P implies Q. The person may not recognize the implication, may have a narrower intended context, or may expressly reject Q. Keep inferred semantic relationships distinct from **source-grounded person-belief attributions**, the separately defined `confidence (observation)`, `confidence (person)`, and `conviction`, and any assessment of objective truth. Any suggested attribution of Q would need its own authorized evidence and uncertainty; it must never be generated solely by following a proposition-link edge.
+
+This settles the **user-visible product capability**, not a required implication engine, scoring formula, text-embedding provider or automatic acceptance policy. Existing policy and producer-provenance boundaries remain in force. No additional steering Question is opened in this session.
