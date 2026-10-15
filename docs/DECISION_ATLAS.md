@@ -405,3 +405,77 @@ Keep `confidence (observation)`, `confidence (person)`, and the person's own `co
 #### Question 1.4.26 — Old statements without recent evidence
 
 When a person last clearly expressed a belief long ago and no newer evidence is available, should Belief Lab (A) carry that last supported belief forward as their current stance until contradicted, (B) show only the dated historical stance and leave the present position unknown, or (C) display the last documented stance with its date alongside a clearly uncertain, reviewable estimate of the current stance, without inventing a fixed expiry date or treating silence as proof?
+
+#### Decision 1.4.27 — Preserve last documented stance beside uncertain present estimate
+
+**Answers:** 1.4.26  
+**Approved by owner:** 2026-10-13, option C.
+
+When the most recent supported expression of a person's belief is old and no newer evidence is available, Belief Lab shows **two clearly different assessments**:
+
+1. **Last documented stance:** What the person was observed to express about a precisely scoped proposition, with the **date of the expression**, source span, attribution type, and supporting provenance. Distinguish the statement's actual date from the date it was published, transcribed, indexed or discovered. Do not silently promote this historic stance to an established current position.
+2. **Tentative present stance:** A **reviewable, explicitly uncertain inference** about whether the person might still hold the belief today. Explain the historical support, its age, relevant context and evidentiary limitations. This is not a new observation, a self-report of present conviction, or evidence that silence means agreement.
+
+A tentative estimate can be offered when sufficiently grounded, but **unknown is a valid current outcome** if no defensible estimate can be made. Do not assume indefinite belief persistence, impose a fixed expiration time, fabricate a time-decay rate or score, or claim the person changed their mind solely because years passed without new evidence. Elapsed time may inform an explanation of uncertainty, but its mere passage is not independent evidence for or against the belief.
+
+Keep `confidence (observation)`, `confidence (person)` and the person's own `conviction` separate; make it apparent which estimate is historical and which is inferred. Later authorized sources, user corrections or revocations may revise the **current** estimate while preserving historical snapshots, origin evidence and dependency receipts. If a shared person identity has been corrected, follow Decision 1.4.21's investigation-specific adoption rules. In an optional cross-investigation comparison, retain investigation boundaries under Decision 1.4.23; do not globally pool evidence or collapse scores.
+
+This settles the user-visible treatment of **old evidence** without selecting an algorithm, numeric confidence scale, or mandatory automated decay model. Existing source and identity authorization gates remain unchanged.
+
+#### Question 1.4.28 — Denial, uncertainty and absence of belief evidence
+
+For a person's stance toward proposition P, should Belief Lab (A) use a simple believe/disbelieve distinction, (B) distinguish belief, disbelief and an unknown/undecided category, or (C) distinguish **endorses P**, **endorses not-P**, **explicitly suspends judgment**, and **no evidence about a stance**, with each supported by source provenance and uncertainty?
+
+#### Decision 1.4.29 — Distinguish endorsement, negation, explicit suspension and no stance evidence
+
+**Answers:** 1.4.28  
+**Approved by owner:** 2026-10-13, option C.
+
+For a **specific person, proposition P, time and context**, Belief Lab distinguishes four different kinds of stance information:
+
+1. **Endorses P:** Admissible source evidence supports attributing an affirmative belief in P to this person. Preserve whether endorsement was direct, reported or inferred; do not claim objective truth of P.
+2. **Endorses not-P:** Evidence supports attributing an affirmative belief in the **negation of P** to this person. This is not equivalent to failing to endorse P, asking critical questions about P, criticizing its evidence, or merely quoting somebody else's contrary view. It does not establish the objective truth of not-P.
+3. **Explicitly suspends judgment:** The person's sourced expression shows they have deliberately withheld or suspended a settled position about P. **Explicit suspension requires evidence of that expressed stance**; mere hesitation in an observer's assessment, tentative conviction, unknown confidence, or a source's silence must not be relabeled as an explicit decision to remain undecided.
+4. **No evidence of a stance:** Available permitted material does not establish that the person endorses P, endorses not-P, or explicitly suspends judgment. This is **unknown**, not an asserted belief or evidence that the person is indecisive.
+
+These states are **not four exhaustive claims about a person's internal mind**. In particular, “no evidence” is the absence of a justified attribution rather than a new source observation, and a lack of opposition is not affirmative endorsement. Any evidenced expression is source-, person-, time- and context-scoped, retains its provenance and explicit/reported/inferred attribution type under Decision 1.4.3, and distinguishes `confidence (observation)`, `confidence (person)` and `conviction` under Decisions 1.4.7 and 1.4.9. Unsupported values remain unknown rather than assigned fabricated scores.
+
+Historical states and current-stance suggestions must preserve the separate meanings in Decisions 1.4.25 and 1.4.27. Directly conflicting source observations remain individually inspectable and **must not be automatically collapsed to one of the four outcomes** merely because a UI expects a single label. Relevant time- or context-scoped distinctions remain reviewable under Decision 1.3.4. This decision defines user-visible conceptual distinctions, not a required enum, a particular scoring algorithm, unrestricted identity matching, or a truth assessment of the proposition.
+
+#### Question 1.4.30 — Contradictory stances in the same context
+
+When admissible observations appear to show the same person both endorsing P and endorsing not-P in an overlapping time and context, should Belief Lab (A) select the best-supported stance as the present position while showing the contrary sources, (B) present both attributed stances without a combined assessment, or (C) show a **reviewable conflicted/unresolved assessment**, preserving both sets of evidence and suggesting contextual explanations where supported, without automatically choosing one side?
+
+#### Decision 1.4.31 — Keep genuinely contradictory person stances reviewably conflicted
+
+**Answers:** 1.4.30  
+**Approved by owner:** 2026-10-13, option C.
+
+When admissible observations of the **same person, scoped proposition P, overlapping time and compatible context** support both **endorses P** and **endorses not-P**, Belief Lab presents a **reviewable conflicted/unresolved assessment** rather than automatically selecting the more recent, more numerous, or apparently stronger side. Show both sets of source-grounded attributions with their original text/spans, provenance, expression dates, attribution types, distinct confidence dimensions and any separately supported conviction estimates.
+
+The conflict is an **assessment of contradictory evidence**, not a fifth directly observed stance of the person. It must never be relabeled as **explicitly suspends judgment** without evidence that the person actually expressed suspension, nor collapsed into **no evidence of a stance** when relevant opposing evidence plainly exists. Preserve the four stance distinctions in Decision 1.4.29 while displaying the uncertainty or conflict in the derived current-stance view. Do not claim that contradictory attributed expressions necessarily prove that the person is irrational, changed their mind or endorses the objective truth of either proposition.
+
+Belief Lab may **suggest reviewable contextual explanations** when supported—for example distinctions in time, intended referent, scope, condition, translation, quotation, irony, reported speaker or source revisions. An explanation is a hypothesis, not permission to silently split, merge, erase, reinterpret or downgrade source observations. The user can inspect, correct, reject or explicitly reconcile conflicting attributions while retaining original evidence and revision history. If the context truly differs, keep the properly scoped propositions separate under Decision 1.3.4 and preserve their provenance.
+
+Correlated or duplicated reports must not count as independent extra votes. Inadequate identity or source authorization can leave a conflict unresolved rather than fabricating certainty. A later source or authorized correction may update the **assessment** without overwriting the historical record or silently preferring one side. Keep `confidence (observation)`, `confidence (person)` and `conviction` distinct. This defines user-visible semantics and acceptance, not an algorithm, score cutoff, mandatory review gate or objective-truth judgment.
+
+#### Question 1.4.32 — Relating differently worded propositions
+
+If several sources phrase potentially related propositions differently, should Belief Lab (A) compare only explicitly identical scoped propositions, keeping all other wordings separate, (B) suggest reviewable **paraphrase/equivalence** links while preserving each original wording and context, or (C) also suggest **implication or partial-overlap** relationships without silently treating the propositions as equivalent or attributing implied beliefs to a person?
+
+#### Decision 1.4.33 — Reviewable semantic links between differently worded propositions
+
+**Answers:** 1.4.32  
+**Approved by owner:** 2026-10-14, option C. This is the final owner decision in the current steering session.
+
+Belief Lab may **suggest reviewable relationships** between differently worded, source-grounded propositions, not merely literal identity or paraphrase. Preserve each original proposition, its source passage, speaker/person scope, provenance and revisions, rather than silently overwriting one wording with another. Suggestions must distinguish these relationship types:
+
+- **Paraphrase or contextual equivalence:** The wordings may express substantially the same claim **within explicitly compatible definitions, time, populations, conditions and context**. Equivalence is a suggested, evidence-grounded assessment and may be rejected or corrected; textual similarity alone does not prove sameness.
+- **Directional implication:** P may imply Q under stated interpretations or conditions. Show the direction (`P → Q`), the source-grounded reasoning or semantic judgment behind the suggestion, its context and uncertainty. Do not infer the reverse (`Q → P`) without separate evidence.
+- **Partial overlap or related claims:** P and Q share some subject matter, conditions, consequences or components but are **not** established as interchangeable or logically entailing one another. Allow an explicit reviewable relationship without erasing their distinct meanings.
+
+Suggested semantic relationships can help users discover aligned or apparently conflicting evidence and compare scoped propositions, including across different sources. They remain **user-inspectable, correctable and rejectable**; absent or insufficient support leaves the relationship unresolved. Honor prior Decision 1.3.4 on context mismatches and Decisions 1.4.25/1.4.31 on time-scoped and conflicting stance evidence. Do not automatically merge propositions, declare a contradiction, treat overlap as equivalence, or count derivative or repeated sources as independent corroboration.
+
+**A person being attributed belief P does not by itself establish that the person endorses Q**, even if a proposed relationship says P implies Q. The person may not recognize the implication, may have a narrower intended context, or may expressly reject Q. Keep inferred semantic relationships distinct from **source-grounded person-belief attributions**, the separately defined `confidence (observation)`, `confidence (person)`, and `conviction`, and any assessment of objective truth. Any suggested attribution of Q would need its own authorized evidence and uncertainty; it must never be generated solely by following a proposition-link edge.
+
+This settles the **user-visible product capability**, not a required implication engine, scoring formula, text-embedding provider or automatic acceptance policy. Existing policy and producer-provenance boundaries remain in force. No additional steering Question is opened in this session.
