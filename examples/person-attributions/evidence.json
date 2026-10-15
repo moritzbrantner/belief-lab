@@ -1,0 +1,75 @@
+{
+  "schema": "belief_evidence_interchange",
+  "schemaVersion": 1,
+  "exporter": {
+    "name": "sample-corpus",
+    "revision": "git:sample-exporter-v1"
+  },
+  "revision": "sha256:person-belief-comparison-example-v1",
+  "evidence": [
+    {
+      "id": "e-blog",
+      "subject": "blogger-a",
+      "class": "transcript",
+      "familyId": "blog-post-1",
+      "source": {
+        "repository": "sample-corpus",
+        "scopeId": "blog-post-1",
+        "recordId": "paragraph-1",
+        "revision": "sha256:blog-post-v1"
+      },
+      "producer": {
+        "name": "sample-excerpt-curation",
+        "revision": "git:fixture-v1"
+      }
+    },
+    {
+      "id": "e-quote",
+      "subject": "blogger-a",
+      "class": "transcript",
+      "familyId": "blog-post-1",
+      "source": {
+        "repository": "sample-corpus",
+        "scopeId": "blog-post-1",
+        "recordId": "paragraph-2",
+        "revision": "sha256:blog-post-v1"
+      },
+      "producer": {
+        "name": "sample-excerpt-curation",
+        "revision": "git:fixture-v1"
+      }
+    },
+    {
+      "id": "e-report",
+      "subject": "researcher-b",
+      "class": "transcript",
+      "familyId": "interview-2",
+      "source": {
+        "repository": "sample-corpus",
+        "scopeId": "interview-2",
+        "recordId": "paragraph-1",
+        "revision": "sha256:interview-v1"
+      },
+      "producer": {
+        "name": "sample-excerpt-curation",
+        "revision": "git:fixture-v1"
+      }
+    },
+    {
+      "id": "e-inferred",
+      "subject": "researcher-b",
+      "class": "transcript",
+      "familyId": "interview-2",
+      "source": {
+        "repository": "sample-corpus",
+        "scopeId": "interview-2",
+        "recordId": "paragraph-2",
+        "revision": "sha256:interview-v1"
+      },
+      "producer": {
+        "name": "sample-excerpt-curation",
+        "revision": "git:fixture-v1"
+      }
+    }
+  ]
+}

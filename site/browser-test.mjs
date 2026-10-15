@@ -43,6 +43,88 @@ await page.locator('#theme').selectOption('dark');
 await page.setViewportSize({width:390,height:844});
 if (await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth)) throw Error('Mobile horizontal overflow');
 
+
+// Real Pages WebAssembly boundary: record and compare source-scoped person beliefs.
+await page.setViewportSize({width:1240,height:900});
+await page.goto('http://127.0.0.1:' + server.address().port + '/people.html');
+await page.getByRole('status').filter({hasText:'Comparison ready.'}).waitFor();
+let personReport = JSON.parse(await page.locator('#comparison-json').textContent());
+if (personReport.people.length !== 2 || personReport.people[0].stance !== 'endorses' || personReport.people[1].stance !== 'disputes') {
+  throw Error('People do not have independently attributed opposing positions');
+}
+if (personReport.people[0].confidence_person.value !== 0.91 ||
+    personReport.people[0].observations[1].confidence_observation.value !== 0.98 ||
+    personReport.people[0].observations[1].conviction.value !== 0.3 ||
+    personReport.people[0].observations[1].conviction.basis !== 'self_reported') {
+  throw Error('Three score meanings were conflated');
+}
+if (personReport.people[0].confidence_person.assessedBy !== 'scripted_example') {
+  throw Error('JSON assessment provenance was not preserved');
+}
+await page.getByText('0.91 · Scripted example', {exact:true}).waitFor();
+await page.getByText('0.98 · Scripted example', {exact:true}).waitFor();
+if (personReport.soft_truth !== undefined || personReport.truth !== undefined) {
+  throw Error('Legacy inference score was presented as attribution or truth');
+}
+await page.getByText("I think the effect may last into 2027, but I'm only about 30% sure.", { exact:true }).waitFor();
+await page.screenshot({path:resolve(root, '../person-belief-comparison.png'),fullPage:true});
+
+await page.getByLabel('Evidence record').selectOption('e-quote');
+await page.getByLabel('Attribution type').selectOption('quotation_or_criticism');
+await page.getByLabel('Observed stance').selectOption('undetermined');
+await page.getByLabel('Source passage').fill('A researcher was quoted, but the author did not endorse that statement.');
+await page.getByLabel('Source span end offset').fill('73');
+await page.getByRole('button',{name:'Record attribution and compare'}).click();
+await page.getByRole('status').filter({hasText:'Comparison ready.'}).waitFor();
+personReport = JSON.parse(await page.locator('#comparison-json').textContent());
+if (personReport.people[0].observations.length !== 3 ||
+    personReport.people[0].confidence_person !== null ||
+    personReport.people[0].observations[2].kind !== 'quotation_or_criticism') {
+  throw Error('Recording new evidence failed to preserve it or invalidate stale confidence');
+}
+// Retrospective acceptance: preserve the investigator's exact quoted bytes,
+// including whitespace, alongside the supplied source offsets (Atlas 1.4.3).
+const exactPassage = '  A source-local quotation.\n';
+await page.getByLabel('Source passage').fill(exactPassage);
+await page.getByLabel('Source span start offset').fill('17');
+await page.getByLabel('Source span end offset').fill(String(17 + exactPassage.length));
+await page.getByRole('button',{name:'Record attribution and compare'}).click();
+await page.getByRole('status').filter({hasText:'Comparison ready.'}).waitFor();
+personReport = JSON.parse(await page.locator('#comparison-json').textContent());
+const exactObservation = personReport.people[0].observations.find((item) => item.id === 'manual-2');
+if (exactObservation?.passage !== exactPassage || exactObservation.span.start !== 17 ||
+    exactObservation.span.end !== 17 + exactPassage.length) {
+  throw Error('Source passage whitespace or offsets changed during recording');
+}
+const [annotationDownload] = await Promise.all([
+  page.waitForEvent('download'),
+  page.getByRole('button',{name:'Download editable annotations'}).click()
+]);
+if (annotationDownload.suggestedFilename() !== 'person-attributions.json') {
+  throw Error('Attribution annotation export has an unexpected name');
+}
+const exportedAnnotations = JSON.parse(await readFile(await annotationDownload.path(), 'utf8'));
+if (!exportedAnnotations.observations.some((item) => item.id === 'manual-1')) {
+  throw Error('Editable attribution export omitted the new source-backed observation');
+}
+if (exportedAnnotations.observations.find((item) => item.id === 'manual-2')?.passage !== exactPassage) {
+  throw Error('Editable export changed the exact source passage');
+}
+await page.getByText('Inspect or import prepared source evidence and attribution annotations', {exact:true}).click();
+const edited = JSON.parse(await page.locator('#attribution-input').inputValue());
+edited.assessments[0].confidencePerson.semantics = 'soft_truth';
+await page.locator('#attribution-input').fill(JSON.stringify(edited));
+await page.getByRole('button',{name:'Compare positions'}).click();
+await page.getByRole('status').filter({hasText:'unknown field'}).waitFor();
+
+await page.locator('#attribution-input').fill('not JSON');
+await page.getByRole('button',{name:'Compare positions'}).click();
+await page.locator('#people-status[data-error=true]').waitFor();
+await page.setViewportSize({width:390,height:844});
+if (await page.evaluate(() => document.documentElement.scrollWidth > innerWidth)) {
+  throw Error('Person-belief comparison overflows mobile viewport');
+}
+
 if(errors.length) throw Error(errors.join('\n'));
-console.log('Browser passed: all 5 examples, malformed input, localization, theme, mobile layout.');
+console.log('Browser passed: evidence and person attribution, source spans, scores, contradictions, input rejection, mobile layout.');
 } finally { await browser.close(); await new Promise(resolve => server.close(resolve)); }

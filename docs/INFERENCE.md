@@ -68,3 +68,7 @@ Authorization is persisted as provenance rather than discarded after the gate.
 An authorized request carries a receipt containing the selected policy profile, inference class, source scopes, evidence ids and purposes, and whether the request crossed source scopes. `InferenceResult` fields are private and a result can only be created through its validating constructor with an `AuthorizedInferenceRequest`.
 
 The store persists that receipt with the belief and exposes it through `explain_belief`. This prevents callers from bypassing policy by constructing a result with a public struct literal and makes the authorization context auditable alongside the evidence derivation.
+
+## Person-belief attribution is a different score contract
+
+The baseline `soft_truth` engine operates on proposition-level heuristic signals. It neither estimates `confidence (observation)` nor `confidence (person)` for any source-scoped person, nor the person's `conviction`. The first Pages person-comparison slice uses separate typed scores and explicitly supplied reviewed assessments with attached source/provenance records. Unknown values remain unknown, and no transformation from baseline scores is performed.

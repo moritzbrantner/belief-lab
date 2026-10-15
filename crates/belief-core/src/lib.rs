@@ -1,3 +1,5 @@
+pub mod attribution;
+
 use std::collections::BTreeSet;
 use std::fmt;
 
