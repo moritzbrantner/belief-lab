@@ -490,6 +490,7 @@ impl ProfileMaximum {
                 evidence: set([
                     E::UserAssertion,
                     E::Metadata,
+                    E::SourceText,
                     E::Transcript,
                     E::Ocr,
                     E::ObjectDetection,
@@ -506,6 +507,7 @@ impl ProfileMaximum {
                 evidence: set([
                     E::UserAssertion,
                     E::Metadata,
+                    E::SourceText,
                     E::Transcript,
                     E::Ocr,
                     E::ObjectDetection,

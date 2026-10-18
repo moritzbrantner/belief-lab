@@ -31,6 +31,21 @@ Future evidence-bundle resolvers can retrieve bounded source content when a Jev 
 
 For semantic-map evidence, the referenced object remains scoped to its producer corpus and map revision. A corpus-local concept or semantic region is evidence about what that source material expresses; importing the reference does not promote it to a global concept identity or a world-level truth claim. Cross-source proposition normalization and belief formation remain downstream `belief-lab` responsibilities.
 
+## Document text references
+
+`source_text` identifies producer-owned document text. It is distinct from a speech
+`transcript`, `ocr`, metadata, and an investigator's `user_assertion`. Imported source
+text does not assert that an author endorses a proposition or that the proposition
+is true. Philosophical candidates and extraction-confidence scores remain in their
+producer contract; they do not become source text, person-confidence or conviction.
+
+The reference-only envelope carries the same immutable provenance and parentage
+as other evidence classes. Text and locators stay in the producer artifact; bounded
+excerpts for a judgment are separate inputs. Semantic and multimodal research may
+admit these references under their existing purposes; observe-only denies them.
+Explicit evidence/purpose restrictions and the non-biometric confirmation rules
+apply normally. Older v1 consumers that do not recognize this class fail closed.
+
 ## Envelope
 
 A v1 batch uses:
@@ -117,6 +132,21 @@ This creates a stable contract for a future PostgreSQL implementation.
 
 `belief_evidence_interchange@1` is deliberately narrower. An adapter may map those richer contracts into belief evidence references, but `belief-lab` does not copy their domain schemas or become authoritative for them.
 
-The fixture at `fixtures/evidence-interchange/youtube-multimodal-v1.json` demonstrates references to transcript, NER, scene, OCR, face-track, and voice-track evidence exported by a corpus while preserving the original producer ownership.
+The illustrative fixture at `fixtures/evidence-interchange/youtube-multimodal-v1.json`
+demonstrates references to transcript, NER, scene, OCR, face-track and voice-track
+evidence. It is not real producer compatibility evidence.
+
+`fixtures/evidence-interchange/youtube-corpus-export-v1.json` is an unmodified
+producer-owned deterministic transcript export, pinned to youtube-corpus commit
+`ae69211c175eb8817f467559a4cb936b7a39de2d`. Its fixture README records its origin
+and checksum. The real CLI golden case and `producer_compatibility` integration
+test exercise parsing, policy admission, exact reference/receipt storage and
+idempotent re-import, entirely offline. No producer payload schemas or algorithms
+are copied. The companion
+`philosophy-extractor-export-v1.json` fixture exercises the producer's real
+corpus-core/source-span adapter: representation metadata and source-text segments
+retain native document-search IDs/revisions and independent extraction/segmentation
+receipts. Its source and checksum are recorded in the fixture README. Philosophical
+interpretations and scores stay outside the reference contract.
 
 The v1 envelope and reference records reject unknown fields. Producer payloads such as transcript text, embeddings, bounding boxes, and detector-specific objects must remain in producer-owned data. Bounded content for a semantic decision travels separately as request state with explicit evidence references; it does not extend the evidence interchange schema.

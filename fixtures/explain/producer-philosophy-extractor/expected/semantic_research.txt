@@ -1,0 +1,17 @@
+Policy profile: semantic_research
+  BELIEF_POLICY_PROFILE=semantic_research
+
+Evidence batch sha256:245098396059fa73a79022cccf73e6cdc6b9ca45fbc6035d664fde32698dee14 (belief_evidence_interchange@1) exported by philosophy-extractor @ git:88cd7c05f2130d2056209f7db751774a581fcf72
+  admitted evidence:philosophy-source:sha256:1f72de82400594792abb45915ef304d55baaf600d5c884fd5c2ef12ee1fc7fdb [metadata] for direct_support, corroboration
+  admitted evidence:philosophy-source:sha256:4f721427a1eaf86fbbf4ba74dc9fa9c250adaac14ad0dffa05d3e1222c6d48e8 [metadata] for direct_support, corroboration
+  admitted evidence:philosophy-source:sha256:f106360ef2dad54abada574d3b1e4177d0fe8f033467c0ca28f41001d099c4fd [metadata] for direct_support, corroboration
+  admitted evidence:philosophy-source:sha256:21f20e34776ed1b48781cf2556f1d2e4be4cdb84355a5610792b8309a8962a88 [source_text] for direct_support, corroboration
+  admitted evidence:philosophy-source:sha256:47931b707d87f7c3a66c1793697209c4d222b0da3467c99c5e245638f69b0be9 [source_text] for direct_support, corroboration
+  admitted evidence:philosophy-source:sha256:53fe0172f85558b26da7e1a08f194ffac3b035fd49bfea3cd210bed147d50747 [source_text] for direct_support, corroboration
+  admitted evidence:philosophy-source:sha256:6783d00003313c3fc422ac61b8fd45134cd67263339af518ee69d9b8ef8fd9b3 [source_text] for direct_support, corroboration
+  admitted evidence:philosophy-source:sha256:aa3f962098b0f3e8826418fe2e072d95a4f7a5d736b73f5a7f77b7e93c96b02d [source_text] for direct_support, corroboration
+  admitted evidence:philosophy-source:sha256:b2f43784afb36d0f9cf833841c6061e92e204ffc7d11aeff8d149198a5a02c56 [source_text] for direct_support, corroboration
+  admitted evidence:philosophy-source:sha256:f2a96e7b7f6688e28a1bcb15cda66fa374cc6acc84868e83e6ef3acda8b69bd6 [source_text] for direct_support, corroboration
+Import: stored 10 evidence records.
+
+No judgment script supplied; no inference was requested.

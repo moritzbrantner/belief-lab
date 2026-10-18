@@ -1,0 +1,14 @@
+{
+  "description": "Unmodified Philosophy Extractor source-reference adapter output from real document-search corpus records; document text remains distinct from philosophical interpretations.",
+  "runs": [
+    {
+      "name": "semantic_research",
+      "args": [
+        "../../evidence-interchange/philosophy-extractor-export-v1.json",
+        "--profile",
+        "semantic_research"
+      ],
+      "exit": 0
+    }
+  ]
+}

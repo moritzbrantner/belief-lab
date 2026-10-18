@@ -1,0 +1,14 @@
+Policy profile: semantic_research
+  BELIEF_POLICY_PROFILE=semantic_research
+
+Evidence batch sha256:0cf7dd698939b8e56c4eae13e4232f8e442db0c41931e78bd920985d13d5b824 (belief_evidence_interchange@1) exported by youtube-corpus @ git:fixture
+  admitted evidence:youtube-corpus:transcript-segment:5e000000-0000-4000-8000-0000000000a0 [transcript] for direct_support, corroboration
+  admitted evidence:youtube-corpus:transcript-segment:5e000000-0000-4000-8000-0000000000a1 [transcript] for direct_support, corroboration
+  admitted evidence:youtube-corpus:transcript-segment:5e000000-0000-4000-8000-0000000000b0 [transcript] for direct_support, corroboration
+  admitted evidence:youtube-corpus:transcript-segment:5e000000-0000-4000-8000-0000000000b1 [transcript] for direct_support, corroboration
+  admitted evidence:youtube-corpus:transcript-segment:5e000000-0000-4000-8000-0000000000c0 [transcript] for direct_support, corroboration
+  admitted evidence:youtube-corpus:transcript-segment:5e000000-0000-4000-8000-0000000000c1 [transcript] for direct_support, corroboration
+  admitted evidence:youtube-corpus:transcript-segment:5e000000-0000-4000-8000-0000000000c2 [transcript] for direct_support, corroboration
+Import: stored 7 evidence records.
+
+No judgment script supplied; no inference was requested.

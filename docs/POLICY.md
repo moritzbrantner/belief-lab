@@ -7,7 +7,7 @@
 | Profile | Evidence | Inference | Identity / cross-source |
 | --- | --- | --- | --- |
 | `observe_only` | user assertions, metadata | none | disabled |
-| `semantic_research` | adds transcripts, OCR, object/scene detections, named entities | descriptive, preference | disabled |
+| `semantic_research` | adds source text, transcripts, OCR, object/scene detections, named entities | descriptive, preference | disabled |
 | `multimodal_research` | adds face/voice track references | adds corpus-local entity links and cross-source associations | available only through separate opt-ins |
 
 No shipped profile authorizes `sensitive_trait` or `real_world_identity` inference. Adding either requires a code change and review; changing `.env` is intentionally insufficient.
@@ -26,7 +26,7 @@ unique evidence IDs, and complete, acyclic support ancestry. Support is ordered 
 A `HumanConfirmation` consumes that exact proposal together with the confirming investigator
 and their nonempty reason. `PolicyConfig::confirm_person_link` authorizes every support record
 and ancestor as `corroboration`, respects evidence/purpose allowlists and the descriptive-inference
-allowlist, and permits only user assertions, metadata, transcripts, OCR and named-entity references.
+allowlist, and permits only user assertions, metadata, source text, transcripts, OCR and named-entity references.
 Face/voice tracks, object/scene detections and biometric-derived support are refused even when
 the older multimodal gates are enabled. Transcribed speech itself is not voiceprint matching.
 
