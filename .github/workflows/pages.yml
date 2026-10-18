@@ -25,7 +25,7 @@ jobs:
       # Cache the matching generator binary instead of compiling it on every run.
       - name: Restore wasm-bindgen CLI
         id: wasm-bindgen-cache
-        uses: actions/cache@v6.1.0
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ~/.cargo/bin/wasm-bindgen
           key: ${{ runner.os }}-${{ runner.arch }}-wasm-bindgen-cli-0.2.128
@@ -36,7 +36,7 @@ jobs:
       - run: cd site && npx playwright install --with-deps chromium
       - run: npm --prefix site test
       - if: github.event_name == 'pull_request'
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: person-belief-browser-screenshot
           path: |
