@@ -40,6 +40,8 @@
   <section aria-labelledby="record-heading">
     <h2 id="record-heading">2. Record a source-backed position</h2>
     <p class="note">Select a prepared evidence record with a source-local person ID. Enter the exact passage and its offsets in the original source. This records an analyst annotation, not a source-verified extraction. Leave any score empty when evidence is insufficient.</p>
+    <label>Revision reason <input id="revision-reason" autocomplete="off" placeholder="Why are you changing these annotations?"></label>
+    <p id="correction-status" role="status"></p>
     <div class="attribution-form">
       <label>Evidence record <select id="source-evidence"></select></label>
       <label>Person display name <input id="person-name" autocomplete="off" placeholder="As identified in this source"></label>
@@ -54,14 +56,27 @@
       <label>Conviction <input id="conviction-score" type="number" min="0" max="1" step="0.01" placeholder="Unknown"></label>
       <label class="wide"><input id="review-conflicts" type="checkbox"> I reviewed conflicting positions before assigning confidence (person)</label>
     </div>
-    <div class="toolbar"><button id="record" disabled>Record attribution and compare</button></div>
+    <div class="toolbar"><button id="record" disabled>Record attribution and compare</button><button id="cancel-correction" hidden>Cancel correction</button></div>
     <p class="note">Recording new evidence invalidates any previous person-confidence assessment for that source-local person until explicitly reassessed.</p>
     <p id="people-status" role="status" aria-live="polite">Loading the Rust attribution pipeline…</p>
   </section>
+  <section aria-labelledby="assessment-heading">
+    <h2 id="assessment-heading">3. Reassess a person</h2>
+    <div class="attribution-form">
+      <label>Person to reassess <select id="assessment-person"></select></label>
+      <label>Assessed stance <select id="assessment-stance"><option value="endorses">Endorses</option><option value="disputes">Disputes</option><option value="undetermined">Undetermined</option></select></label>
+      <label>Reviewed confidence (person) <input id="assessment-score" type="number" min="0" max="1" step="0.01" placeholder="Unknown"></label>
+      <label>Supporting observations <select id="assessment-support" multiple size="4"></select></label>
+      <label><input id="assessment-reviewed" type="checkbox"> I reviewed conflicting positions for this assessment</label>
+    </div>
+    <button id="reassess" disabled>Reassess person and compare</button>
+  </section>
   <section aria-labelledby="comparison-heading">
-    <h2 id="comparison-heading">3. Compare attributed positions</h2>
+    <h2 id="comparison-heading">4. Compare attributed positions</h2>
     <div id="proposition"></div>
     <div id="comparison" class="person-grid"></div>
+    <p id="current-revision"></p>
+    <div id="history"></div>
     <details><summary>Full structured Rust report</summary><pre id="comparison-json"></pre></details>
   </section>
 </main>
