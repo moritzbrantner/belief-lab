@@ -180,6 +180,7 @@ impl PolicyConfig {
             match item.class {
                 EvidenceClass::UserAssertion
                 | EvidenceClass::Metadata
+                | EvidenceClass::SourceText
                 | EvidenceClass::Transcript
                 | EvidenceClass::Ocr
                 | EvidenceClass::NamedEntity => {}

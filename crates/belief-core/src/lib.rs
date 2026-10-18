@@ -42,6 +42,8 @@ id_type!(InferenceRunId);
 pub enum EvidenceClass {
     UserAssertion,
     Metadata,
+    /// Producer-owned document text, distinct from speech transcripts and OCR.
+    SourceText,
     Transcript,
     Ocr,
     ObjectDetection,
@@ -56,6 +58,7 @@ impl EvidenceClass {
         match value {
             "user_assertion" => Some(Self::UserAssertion),
             "metadata" => Some(Self::Metadata),
+            "source_text" => Some(Self::SourceText),
             "transcript" => Some(Self::Transcript),
             "ocr" => Some(Self::Ocr),
             "object_detection" => Some(Self::ObjectDetection),
@@ -71,6 +74,7 @@ impl EvidenceClass {
         match self {
             Self::UserAssertion => "user_assertion",
             Self::Metadata => "metadata",
+            Self::SourceText => "source_text",
             Self::Transcript => "transcript",
             Self::Ocr => "ocr",
             Self::ObjectDetection => "object_detection",

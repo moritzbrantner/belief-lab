@@ -31,6 +31,21 @@ Future evidence-bundle resolvers can retrieve bounded source content when a Jev 
 
 For semantic-map evidence, the referenced object remains scoped to its producer corpus and map revision. A corpus-local concept or semantic region is evidence about what that source material expresses; importing the reference does not promote it to a global concept identity or a world-level truth claim. Cross-source proposition normalization and belief formation remain downstream `belief-lab` responsibilities.
 
+## Document text references
+
+`source_text` identifies producer-owned document text. It is distinct from a speech
+`transcript`, `ocr`, metadata, and an investigator's `user_assertion`. Imported source
+text does not assert that an author endorses a proposition or that the proposition
+is true. Philosophical candidates and extraction-confidence scores remain in their
+producer contract; they do not become source text, person-confidence or conviction.
+
+The reference-only envelope carries the same immutable provenance and parentage
+as other evidence classes. Text and locators stay in the producer artifact; bounded
+excerpts for a judgment are separate inputs. Semantic and multimodal research may
+admit these references under their existing purposes; observe-only denies them.
+Explicit evidence/purpose restrictions and the non-biometric confirmation rules
+apply normally. Older v1 consumers that do not recognize this class fail closed.
+
 ## Envelope
 
 A v1 batch uses:

@@ -47,3 +47,31 @@ fn producer_export_does_not_bypass_current_evidence_policy() {
     let policy = PolicyConfig::from_pairs([("BELIEF_POLICY_PROFILE", "observe_only")]).unwrap();
     assert!(batch.authorize(&policy).is_err());
 }
+
+#[test]
+fn document_text_has_its_own_class_and_respects_research_and_explicit_allowlists() {
+    // Use the real import path to test the added class, rather than relabeling
+    // document text as a transcript or investigator assertion in an adapter.
+    let input = YOUTUBE_EXPORT.replace("\"class\": \"transcript\"", "\"class\": \"source_text\"");
+    let batch = ValidatedEvidenceBatch::parse_json(&input).unwrap();
+    assert!(batch
+        .evidence()
+        .iter()
+        .all(|e| e.class == EvidenceClass::SourceText));
+    for profile in ["semantic_research", "multimodal_research"] {
+        let policy = PolicyConfig::from_pairs([("BELIEF_POLICY_PROFILE", profile)]).unwrap();
+        assert!(batch.clone().authorize(&policy).is_ok());
+    }
+    for pairs in [
+        vec![("BELIEF_POLICY_PROFILE", "observe_only")],
+        vec![
+            ("BELIEF_POLICY_PROFILE", "semantic_research"),
+            ("BELIEF_ALLOWED_EVIDENCE", "transcript"),
+        ],
+    ] {
+        let policy = PolicyConfig::from_pairs(pairs).unwrap();
+        assert!(batch.clone().authorize(&policy).is_err());
+    }
+    let denied = input.replace("source_text", "philosophical_truth");
+    assert!(ValidatedEvidenceBatch::parse_json(&denied).is_err());
+}
