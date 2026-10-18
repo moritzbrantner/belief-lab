@@ -142,7 +142,11 @@ producer-owned deterministic transcript export, pinned to youtube-corpus commit
 and checksum. The real CLI golden case and `producer_compatibility` integration
 test exercise parsing, policy admission, exact reference/receipt storage and
 idempotent re-import, entirely offline. No producer payload schemas or algorithms
-are copied. The separate Philosophy Extractor compatibility path remains open
-under #11.
+are copied. The companion
+`philosophy-extractor-export-v1.json` fixture exercises the producer's real
+corpus-core/source-span adapter: representation metadata and source-text segments
+retain native document-search IDs/revisions and independent extraction/segmentation
+receipts. Its source and checksum are recorded in the fixture README. Philosophical
+interpretations and scores stay outside the reference contract.
 
 The v1 envelope and reference records reject unknown fields. Producer payloads such as transcript text, embeddings, bounding boxes, and detector-specific objects must remain in producer-owned data. Bounded content for a semantic decision travels separately as request state with explicit evidence references; it does not extend the evidence interchange schema.

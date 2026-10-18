@@ -55,7 +55,7 @@ The Pages workflow builds and tests pull requests and deploys `main` after its b
 
 ## Roadmap coverage
 
-- #11: declared ownership in `repository-purpose.json`, strict reference-only imports, offline core, checksum-verified setup, and an intentional Pages workbench. The corpus fixture is illustrative; producer-export compatibility remains conditional on real producer exports becoming available.
+- #11: declared ownership in `repository-purpose.json`, strict reference-only imports, offline core, checksum-verified setup, and an intentional Pages workbench. Real producer-owned youtube-corpus and Philosophy Extractor reference exports now run through the actual parser, policy and store in offline native tests and CLI golden cases. The separate multimodal example remains illustrative; this does not implement original-source upload or automatic proposition extraction.
 - #13: exact-target model panels, deterministic descriptive summaries, source-family correlation through `panel_bases`, and preservation of all members in store explanations. Panels do not schedule providers or turn votes into probabilities.
 - #14: versioned one-decision JSON/stdio command with validation and authorization before provider resolution, stable errors, exact provenance, and offline fixture-provider tests.
 

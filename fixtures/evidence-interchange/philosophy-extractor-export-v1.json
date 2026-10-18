@@ -1,0 +1,182 @@
+{
+  "evidence": [
+    {
+      "class": "metadata",
+      "familyId": "family:source-record:sha256:70db6b2b0673f4bb870ddffaa9a354ca6796cf8554103acaefc92a59809d800a",
+      "id": "evidence:philosophy-source:sha256:1f72de82400594792abb45915ef304d55baaf600d5c884fd5c2ef12ee1fc7fdb",
+      "producer": {
+        "name": "document-search/html-extraction",
+        "revision": "git:28463de"
+      },
+      "source": {
+        "recordId": "representation:dc1992e89cb326eff9a755237d145f0afdf2afa06d539da13362a814da6f449d",
+        "repository": "document-search",
+        "revision": "sha256:9aa3639b613bb704774c8c9f44ff7a5e9885b3d1c841724754e89c4a92c3f321",
+        "scopeId": "source:474bf16046a6c338affc60eac0d392c4cb4320d606fee7caab448b4a79b18c50"
+      }
+    },
+    {
+      "class": "source_text",
+      "familyId": "family:source-record:sha256:dd3fb0208df05a898c2e02c1098b0b6f871901b3e7125087a78ae77974eeb1e5",
+      "id": "evidence:philosophy-source:sha256:21f20e34776ed1b48781cf2556f1d2e4be4cdb84355a5610792b8309a8962a88",
+      "parentEvidenceIds": [
+        "evidence:philosophy-source:sha256:1f72de82400594792abb45915ef304d55baaf600d5c884fd5c2ef12ee1fc7fdb"
+      ],
+      "producer": {
+        "name": "document-search/html-extraction",
+        "revision": "git:28463de"
+      },
+      "source": {
+        "recordId": "segment:14226abbf8eb1fdccd7ea5b00268bd17ef87fb8ff861cddb188dbc4e013ff041",
+        "repository": "document-search",
+        "revision": "sha256:3d5a103832bef59dffa373ad19d5e22abdb6a5ce12131e44bad3a9fce2d93d11",
+        "scopeId": "source:474bf16046a6c338affc60eac0d392c4cb4320d606fee7caab448b4a79b18c50"
+      }
+    },
+    {
+      "class": "source_text",
+      "familyId": "family:source-record:sha256:46a1a24aa1b45ecf334083eb20a775433461824f7e732330282f2eaa97a5790d",
+      "id": "evidence:philosophy-source:sha256:47931b707d87f7c3a66c1793697209c4d222b0da3467c99c5e245638f69b0be9",
+      "parentEvidenceIds": [
+        "evidence:philosophy-source:sha256:f106360ef2dad54abada574d3b1e4177d0fe8f033467c0ca28f41001d099c4fd"
+      ],
+      "producer": {
+        "name": "document-search/html-extraction",
+        "revision": "git:28463de"
+      },
+      "source": {
+        "recordId": "segment:832a68cdc002fc69c60c00910fdd50d6c0a2bcf15631a11b3b726ab38e2d1551",
+        "repository": "document-search",
+        "revision": "sha256:6c1748bc3743dabad428212ab32c7c5b6fca0cb9548973cd926c23aab6d9f077",
+        "scopeId": "source:1741566f80a0c2716c38f4a70df51387e8d5521fef2248a3b01fa50a179e713d"
+      }
+    },
+    {
+      "class": "metadata",
+      "familyId": "family:source-record:sha256:ef6088fa9b992c09bd6f5a6121076223373998a67e81d10a7ccee6730cfc7e37",
+      "id": "evidence:philosophy-source:sha256:4f721427a1eaf86fbbf4ba74dc9fa9c250adaac14ad0dffa05d3e1222c6d48e8",
+      "producer": {
+        "name": "document-search/html-extraction",
+        "revision": "git:28463de"
+      },
+      "source": {
+        "recordId": "representation:e6229248f7e571fdf582803a9102b1fe906f720fa56eeece2a674898731ae74d",
+        "repository": "document-search",
+        "revision": "sha256:e77e24eb13850cc1cb40d6b689d3a93d57517bc30758e39b29640f6a416a67b1",
+        "scopeId": "source:747a508aa301ae998bdf40d634807a143bb47353c1fcd3121f38bf5e52be48af"
+      }
+    },
+    {
+      "class": "source_text",
+      "familyId": "family:source-record:sha256:ef0ea4c76838e804d3e51f5681f2fcbd783d37b6e839dda9810e114421ec7caa",
+      "id": "evidence:philosophy-source:sha256:53fe0172f85558b26da7e1a08f194ffac3b035fd49bfea3cd210bed147d50747",
+      "parentEvidenceIds": [
+        "evidence:philosophy-source:sha256:f106360ef2dad54abada574d3b1e4177d0fe8f033467c0ca28f41001d099c4fd"
+      ],
+      "producer": {
+        "name": "document-search/html-extraction",
+        "revision": "git:28463de"
+      },
+      "source": {
+        "recordId": "segment:19218c8c57af1fd044c77a3ff21b8c7249f02eeb90353bb9e7198353315ec134",
+        "repository": "document-search",
+        "revision": "sha256:34d05f779eb313595895bdf99641066c8f858afce65fa237beb3a84eb02fc897",
+        "scopeId": "source:1741566f80a0c2716c38f4a70df51387e8d5521fef2248a3b01fa50a179e713d"
+      }
+    },
+    {
+      "class": "source_text",
+      "familyId": "family:source-record:sha256:5181df29faee54c8924979087864b3f7a927e7394238733ef2d9f5a8e41d7dc5",
+      "id": "evidence:philosophy-source:sha256:6783d00003313c3fc422ac61b8fd45134cd67263339af518ee69d9b8ef8fd9b3",
+      "parentEvidenceIds": [
+        "evidence:philosophy-source:sha256:f106360ef2dad54abada574d3b1e4177d0fe8f033467c0ca28f41001d099c4fd"
+      ],
+      "producer": {
+        "name": "document-search/html-extraction",
+        "revision": "git:28463de"
+      },
+      "source": {
+        "recordId": "segment:aaf3e88a754831eb342e4b52f239561bff9eeb8eda70c6b7863159ef8b0f2cf6",
+        "repository": "document-search",
+        "revision": "sha256:fd89dc64a426ba038c1eb37f3d607c4657269675f196c431a2abaa8d6f1c89c9",
+        "scopeId": "source:1741566f80a0c2716c38f4a70df51387e8d5521fef2248a3b01fa50a179e713d"
+      }
+    },
+    {
+      "class": "source_text",
+      "familyId": "family:source-record:sha256:f992ad3e7e94fba5eb698d77966e2787c042c2d5acbc9a0c4f603263dc3e6363",
+      "id": "evidence:philosophy-source:sha256:aa3f962098b0f3e8826418fe2e072d95a4f7a5d736b73f5a7f77b7e93c96b02d",
+      "parentEvidenceIds": [
+        "evidence:philosophy-source:sha256:1f72de82400594792abb45915ef304d55baaf600d5c884fd5c2ef12ee1fc7fdb"
+      ],
+      "producer": {
+        "name": "document-search/html-extraction",
+        "revision": "git:28463de"
+      },
+      "source": {
+        "recordId": "segment:c4531ac2e3937d05edd5dd2c2706e26486abcafc2b38b176c9211ab88c2e2870",
+        "repository": "document-search",
+        "revision": "sha256:455c6528133b45e3a5b34bb1862096fe0293c093f1417b878d68bf88e6c066e7",
+        "scopeId": "source:474bf16046a6c338affc60eac0d392c4cb4320d606fee7caab448b4a79b18c50"
+      }
+    },
+    {
+      "class": "source_text",
+      "familyId": "family:source-record:sha256:5237ddc3c60a190dc0ce32903eb8f10d2b71958cdcf730cf258ee91c26c8efcd",
+      "id": "evidence:philosophy-source:sha256:b2f43784afb36d0f9cf833841c6061e92e204ffc7d11aeff8d149198a5a02c56",
+      "parentEvidenceIds": [
+        "evidence:philosophy-source:sha256:4f721427a1eaf86fbbf4ba74dc9fa9c250adaac14ad0dffa05d3e1222c6d48e8"
+      ],
+      "producer": {
+        "name": "document-search/html-extraction",
+        "revision": "git:28463de"
+      },
+      "source": {
+        "recordId": "segment:5481becbfff056c552f0ace8842f2c9aea1f081b1e07214dfafd62ce31418c97",
+        "repository": "document-search",
+        "revision": "sha256:faec79a54ef325f130c9bd8a2a30ec165fdcca62e58b160f7104c0dc70c20e31",
+        "scopeId": "source:747a508aa301ae998bdf40d634807a143bb47353c1fcd3121f38bf5e52be48af"
+      }
+    },
+    {
+      "class": "metadata",
+      "familyId": "family:source-record:sha256:8096622f218de9b1184baba5cab90045fee2f14ed9cfeee6839f91c548600067",
+      "id": "evidence:philosophy-source:sha256:f106360ef2dad54abada574d3b1e4177d0fe8f033467c0ca28f41001d099c4fd",
+      "producer": {
+        "name": "document-search/html-extraction",
+        "revision": "git:28463de"
+      },
+      "source": {
+        "recordId": "representation:bfe5e6e54224057810c157a67ada0669611b84447bef05cff521dfa808b931c0",
+        "repository": "document-search",
+        "revision": "sha256:da736ad7a544965ca1006f024b5031615cec28b08b01ff28e6c9d90b12ae2568",
+        "scopeId": "source:1741566f80a0c2716c38f4a70df51387e8d5521fef2248a3b01fa50a179e713d"
+      }
+    },
+    {
+      "class": "source_text",
+      "familyId": "family:source-record:sha256:482d333866a62b3b770a8997cde1d8aa3054d3d36eac11044855187962fc2656",
+      "id": "evidence:philosophy-source:sha256:f2a96e7b7f6688e28a1bcb15cda66fa374cc6acc84868e83e6ef3acda8b69bd6",
+      "parentEvidenceIds": [
+        "evidence:philosophy-source:sha256:4f721427a1eaf86fbbf4ba74dc9fa9c250adaac14ad0dffa05d3e1222c6d48e8"
+      ],
+      "producer": {
+        "name": "document-search/html-extraction",
+        "revision": "git:28463de"
+      },
+      "source": {
+        "recordId": "segment:3bb622591f64567489aeb0af42f40d88b75b0f86876f471456fc458a4b893454",
+        "repository": "document-search",
+        "revision": "sha256:ad523acac6956c0aec84542706e166b5a413c4a1bf10a86ff4c4dd21b5a75966",
+        "scopeId": "source:747a508aa301ae998bdf40d634807a143bb47353c1fcd3121f38bf5e52be48af"
+      }
+    }
+  ],
+  "exporter": {
+    "name": "philosophy-extractor",
+    "revision": "git:88cd7c05f2130d2056209f7db751774a581fcf72"
+  },
+  "revision": "sha256:245098396059fa73a79022cccf73e6cdc6b9ca45fbc6035d664fde32698dee14",
+  "schema": "belief_evidence_interchange",
+  "schemaVersion": 1
+}
