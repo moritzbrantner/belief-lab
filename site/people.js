@@ -4,6 +4,7 @@ const $ = (id) => document.getElementById(id);
 const examplePath = 'examples/person-attributions/';
 let comparison = null;
 let initialized = false;
+let correctionTarget = null;
 function element(tag, value) {
   const item = document.createElement(tag);
   if (value !== undefined) item.textContent = String(value);
@@ -16,6 +17,8 @@ function status(value, failed = false) {
 function clearComparison() {
   comparison = null;
   $('comparison').replaceChildren();
+  $('history').replaceChildren();
+  $('current-revision').textContent = '';
   $('proposition').replaceChildren();
   $('comparison-json').textContent = '';
   $('download-comparison').disabled = true;
@@ -48,7 +51,7 @@ function updateEvidenceOptions() {
 function updatePersonName() {
   try {
     const batch = JSON.parse($('evidence-input').value);
-    const document = JSON.parse($('attribution-input').value);
+    const document = currentAnnotation();
     const selected = batch.evidence.find((entry) => entry.id === $('source-evidence').value);
     const person = document.people.find((entry) =>
       entry.subjectId === selected.subject &&
@@ -58,6 +61,7 @@ function updatePersonName() {
   } catch { $('person-name').value = ''; }
 }
 async function loadExample() {
+  cancelCorrection();
   clearComparison();
   try {
     const [batch, attributions] = await Promise.all([getExample('evidence.json'), getExample('attributions.json')]);
@@ -65,7 +69,7 @@ async function loadExample() {
     $('attribution-input').value = attributions;
     updateEvidenceOptions();
     runComparison();
-  } catch (error) { status(error.message, true); }
+  } catch (error) { status(String(error.message || error), true); }
 }
 function numeric(id) {
   const value = $(id).value.trim();
@@ -77,7 +81,7 @@ function numeric(id) {
 function recordAttribution() {
   try {
     const batch = JSON.parse($('evidence-input').value);
-    const annotation = JSON.parse($('attribution-input').value);
+    const annotation = currentAnnotation();
     if (!Array.isArray(annotation.people) || !Array.isArray(annotation.observations) || !Array.isArray(annotation.assessments)) throw Error('Open a valid person-attribution document.');
     const evidence = batch.evidence.find((record) => record.id === $('source-evidence').value);
     if (!evidence?.subject || !evidence.source?.scopeId) throw Error('Selected evidence must identify a source-local person.');
@@ -119,7 +123,7 @@ function recordAttribution() {
       annotation.people.push(existing);
     } else existing.displayName = name;
     let next = 1;
-    while (annotation.observations.some((item) => item.id === 'manual-' + next)) next++;
+    while (allObservationIds().has('manual-' + next)) next++;
     const id = 'manual-' + next;
     const observation = {
       id, personId: existing.id, evidenceId: evidence.id, kind, stance, passage,
@@ -127,6 +131,13 @@ function recordAttribution() {
     };
     if (obs !== null) observation.confidenceObservation = { value: obs, assessedBy: 'analyst' };
     if (certainty !== null) observation.conviction = { value: certainty, basis, assessedBy: 'analyst' };
+    const supersedes = {};
+    if (correctionTarget !== null) {
+      const original = annotation.observations.find((item) => item.id === correctionTarget);
+      if (!original || original.personId !== existing.id) throw Error('A correction must retain the same source-local person.');
+      annotation.observations = annotation.observations.filter((item) => item.id !== correctionTarget);
+      supersedes[id] = correctionTarget;
+    }
     annotation.observations.push(observation);
     // Any previous person-confidence assessment would omit this new evidence; make it unknown.
     annotation.assessments = annotation.assessments.filter((item) => item.personId !== existing.id);
@@ -138,9 +149,109 @@ function recordAttribution() {
         reviewedConflicts: $('review-conflicts').checked
       });
     }
-    $('attribution-input').value = JSON.stringify(annotation, null, 2);
-    runComparison();
-  } catch (error) { status(error.message, true); }
+    commitRevision(annotation, personConfidence === null ? [] : [existing.id], supersedes);
+  } catch (error) { status(String(error.message || error), true); }
+}
+function currentAnnotation(envelope = JSON.parse($('attribution-input').value)) {
+  if (envelope.schemaVersion === 1) return envelope;
+  if (envelope.schemaVersion !== 2 || !envelope.revisions?.length) throw Error('Open valid version-1 annotations or a version-2 history.');
+  return envelope.revisions[envelope.revisions.length - 1].document;
+}
+function allObservationIds() {
+  const envelope = JSON.parse($('attribution-input').value);
+  const documents = envelope.schemaVersion === 2 ? envelope.revisions.map((revision) => revision.document) : [envelope];
+  return new Set(documents.flatMap((document) => document.observations.map((observation) => observation.id)));
+}
+function validateAnnotations(text) {
+  return JSON.parse(compare_attributions_json($('evidence-input').value, text, JSON.stringify({ BELIEF_POLICY_PROFILE: 'semantic_research' })));
+}
+function commitRevision(document, reassessedPersonIds = [], supersedes = {}) {
+  const reason = $('revision-reason').value;
+  if (!reason.trim()) throw Error('Enter a revision reason before changing annotations.');
+  const previous = JSON.parse($('attribution-input').value);
+  const envelope = previous.schemaVersion === 2 ? previous : {
+    schema: 'belief_person_attributions', schemaVersion: 2,
+    revisions: [{ reason: 'Imported version-1 baseline (original reason unknown)', document: previous }]
+  };
+  envelope.revisions.push({ reason, document, reassessedPersonIds, supersedes });
+  const text = JSON.stringify(envelope, null, 2);
+  const report = validateAnnotations(text);
+  $('attribution-input').value = text;
+  cancelCorrection();
+  $('revision-reason').value = '';
+  updateEvidenceOptions(); render(report); status('Comparison ready.');
+}
+function cancelCorrection() {
+  correctionTarget = null;
+  $('correction-status').textContent = '';
+  $('cancel-correction').hidden = true;
+}
+function correctObservation(id) {
+  try {
+    const document = currentAnnotation();
+    const observation = document.observations.find((item) => item.id === id);
+    if (!observation) throw Error('Observation is no longer current.');
+    $('source-evidence').value = observation.evidenceId; updatePersonName();
+    $('kind').value = observation.kind; $('stance').value = observation.stance;
+    $('passage').value = observation.passage;
+    $('offset-start').value = observation.span.start; $('offset-end').value = observation.span.end;
+    $('observation-score').value = observation.confidenceObservation?.value ?? '';
+    $('conviction-score').value = observation.conviction?.value ?? '';
+    $('conviction-basis').value = observation.conviction?.basis ?? '';
+    $('person-score').value = ''; $('review-conflicts').checked = false;
+    correctionTarget = id;
+    $('correction-status').textContent = 'Correcting ' + id + '. Recording creates a new observation; the original stays in history.';
+    $('cancel-correction').hidden = false;
+    $('revision-reason').focus();
+  } catch (error) { status(String(error.message || error), true); }
+}
+function withdrawObservation(id) {
+  try {
+    const document = currentAnnotation();
+    const observation = document.observations.find((item) => item.id === id);
+    if (!observation) throw Error('Observation is no longer current.');
+    document.observations = document.observations.filter((item) => item.id !== id);
+    document.assessments = document.assessments.filter((item) => item.personId !== observation.personId);
+    commitRevision(document);
+  } catch (error) { status(String(error.message || error), true); }
+}
+function updateAssessmentOptions() {
+  const selected = $('assessment-person').value;
+  $('assessment-person').replaceChildren();
+  const document = currentAnnotation();
+  for (const person of document.people) {
+    const option = element('option', person.displayName + ' · ' + person.id); option.value = person.id;
+    $('assessment-person').append(option);
+  }
+  if (document.people.some((person) => person.id === selected)) $('assessment-person').value = selected;
+  updateAssessmentSupport();
+}
+function updateAssessmentSupport() {
+  const selected = new Set([...$('assessment-support').selectedOptions].map((option) => option.value));
+  $('assessment-support').replaceChildren();
+  try {
+    const document = currentAnnotation();
+    for (const observation of document.observations.filter((item) => item.personId === $('assessment-person').value)) {
+      const option = element('option', observation.id + ' · ' + observation.stance + ' · ' + observation.passage);
+      option.value = observation.id; option.selected = selected.has(observation.id); $('assessment-support').append(option);
+    }
+  } catch { /* Incomplete editor input has no assessable observations. */ }
+}
+function reassessPerson() {
+  try {
+    const document = currentAnnotation();
+    const personId = $('assessment-person').value;
+    const assessment = {
+      personId, stance: $('assessment-stance').value,
+      observationIds: [...$('assessment-support').selectedOptions].map((option) => option.value),
+      reviewedConflicts: $('assessment-reviewed').checked
+    };
+    const value = numeric('assessment-score');
+    if (value !== null) assessment.confidencePerson = { value, assessedBy: 'analyst' };
+    document.assessments = document.assessments.filter((item) => item.personId !== personId);
+    document.assessments.push(assessment);
+    commitRevision(document, [personId]);
+  } catch (error) { status(String(error.message || error), true); }
 }
 function score(value) {
   if (!value) return 'Unknown — insufficient evidence';
@@ -166,11 +277,31 @@ function render(report) {
   proposition.append(element('h3', report.proposition.text), element('p', 'Scope: ' + report.proposition.scope));
   proposition.append(element('small', 'One scoped proposition. Comparing people does not decide if it is true.'));
   $('proposition').append(proposition);
-  for (const person of report.people) {
+  for (const person of report.people) $('comparison').append(personCard(person));
+  $('current-revision').textContent = report.revision
+    ? 'Current annotation revision ' + report.revision + ': ' + report.revision_reason
+    : 'Version-1 annotations; earlier changes are not recorded.';
+  const history = report.history || [];
+  if (history.length) {
+    $('history').append(element('h3', 'Attribution history'));
+    for (const snapshot of history) {
+      const detail = element('details');
+      detail.append(element('summary', 'Historical revision ' + snapshot.revision + ' — ' + snapshot.reason));
+      detail.append(element('p', 'Investigator-supplied historical annotation snapshot — not the current assessment. Revalidated against the supplied evidence and current policy.'));
+      for (const [newId, oldId] of Object.entries(snapshot.supersedes || {})) detail.append(element('p', newId + ' supersedes ' + oldId));
+      for (const person of snapshot.people) detail.append(personCard(person, true));
+      $('history').append(detail);
+    }
+  }
+  for (const [newId, oldId] of Object.entries(report.supersedes || {})) $('current-revision').append(element('span', ' · ' + newId + ' supersedes ' + oldId));
+  updateAssessmentOptions();
+}
+function personCard(person, historical = false) {
     const card = element('article'); card.className = 'person-card';
     card.append(element('h3', person.display_name), element('p', 'Attributed position: ' + person.stance));
     card.append(element('small', 'Source-local person ' + person.subject_id + ' · ' + person.source_repository + ' / ' + person.scope_id));
     card.append(metric('Confidence (person)', score(person.confidence_person), 'How sure we are this person holds this position across cited observations. Not the truth of the proposition.'));
+    card.append(element('p', 'Contributing observations: ' + (person.supporting_observation_ids.join(', ') || 'None — no current scored assessment')));
     if (person.has_conflicting_positions) card.append(element('p', 'Conflicting positions in the evidence — inspect each observation.'));
     if (!person.observations.length) card.append(element('p', 'No admitted observations. Attribution unknown.'));
     for (const observation of person.observations) {
@@ -194,17 +325,23 @@ function render(report) {
       detail.append(provenance);
       card.append(detail);
     }
-    $('comparison').append(card);
-  }
+    if (!historical) {
+      for (const observation of person.observations) {
+        const controls = element('div'); controls.className = 'toolbar';
+        const correct = element('button', 'Correct ' + observation.id);
+        correct.addEventListener('click', () => correctObservation(observation.id));
+        const withdraw = element('button', 'Withdraw ' + observation.id);
+        withdraw.addEventListener('click', () => withdrawObservation(observation.id));
+        controls.append(correct, withdraw); card.append(controls);
+      }
+    }
+    return card;
 }
+
 function runComparison() {
   if (!initialized) { status('Rust pipeline is not ready.', true); return; }
   try {
-    const report = JSON.parse(compare_attributions_json(
-      $('evidence-input').value,
-      $('attribution-input').value,
-      JSON.stringify({ BELIEF_POLICY_PROFILE: 'semantic_research' })
-    ));
+    const report = validateAnnotations($('attribution-input').value);
     render(report);
     status('Comparison ready.');
   } catch (error) { clearComparison(); status(String(error.message || error), true); }
@@ -214,33 +351,43 @@ function theme() { document.documentElement.dataset.theme = $('theme').value; lo
 $('theme').addEventListener('change', theme);
 theme();
 $('source-evidence').addEventListener('change', updatePersonName);
-$('evidence-input').addEventListener('input', () => { clearComparison(); updateEvidenceOptions(); });
-$('attribution-input').addEventListener('input', () => { clearComparison(); updatePersonName(); });
+$('evidence-input').addEventListener('input', () => { cancelCorrection(); clearComparison(); updateEvidenceOptions(); });
+$('attribution-input').addEventListener('input', () => { cancelCorrection(); clearComparison(); updatePersonName(); });
 for (const [id, field] of [['evidence-file', 'evidence-input'], ['attribution-file', 'attribution-input']]) {
   $(id).addEventListener('change', async (event) => {
     try {
       const file = event.target.files[0];
       if (file) {
-        $(field).value = await readFile(file);
-        clearComparison(); updateEvidenceOptions();
-        status('Inputs loaded. Review and compare.');
+        const text = await readFile(file);
+        const report = JSON.parse(compare_attributions_json(
+          field === 'evidence-input' ? text : $('evidence-input').value,
+          field === 'attribution-input' ? text : $('attribution-input').value,
+          JSON.stringify({ BELIEF_POLICY_PROFILE: 'semantic_research' })
+        ));
+        $(field).value = text;
+        cancelCorrection(); updateEvidenceOptions(); render(report);
+        status('Comparison ready.');
       }
-    } catch (error) { status(error.message, true); }
+    } catch (error) { status(String(error.message || error), true); }
   });
 }
 $('load-example').addEventListener('click', loadExample);
 $('compare').addEventListener('click', runComparison);
 $('record').addEventListener('click', recordAttribution);
+$('cancel-correction').addEventListener('click', cancelCorrection);
+$('assessment-person').addEventListener('change', updateAssessmentSupport);
+$('reassess').addEventListener('click', reassessPerson);
 $('download-annotations').addEventListener('click', () => {
   try {
+    validateAnnotations($('attribution-input').value);
     const annotations = JSON.parse($('attribution-input').value);
-    if (annotations.schema !== 'belief_person_attributions' || annotations.schemaVersion !== 1) {
+    if (annotations.schema !== 'belief_person_attributions' || ![1, 2].includes(annotations.schemaVersion)) {
       throw Error('Open a valid person-attribution document before downloading.');
     }
     const url = URL.createObjectURL(new Blob([JSON.stringify(annotations, null, 2) + '\n'], { type: 'application/json' }));
     const anchor = element('a'); anchor.href = url; anchor.download = 'person-attributions.json'; anchor.click();
     setTimeout(() => URL.revokeObjectURL(url), 1000);
-  } catch (error) { status(error.message, true); }
+  } catch (error) { status(String(error.message || error), true); }
 });
 $('download-comparison').addEventListener('click', () => {
   if (!comparison) return;
@@ -253,6 +400,7 @@ try {
   initialized = true;
   $('compare').disabled = false;
   $('record').disabled = false;
+  $('reassess').disabled = false;
   $('download-annotations').disabled = false;
   await loadExample();
 } catch (error) { status('Could not start the Rust attribution pipeline: ' + error.message, true); }

@@ -75,10 +75,61 @@ Open `people.html` from the Pages workbench. The prepared `examples/person-attri
 
 The browser form records a new observation from an already imported evidence reference; it requires a source-local subject, scope, passage and offsets. Confidence (observation) and confidence (person) are separately assessed, conviction is self-reported or inferred, and empty values stay unknown. Recording a new observation invalidates the person's previous overall assessment instead of trusting it on changed evidence. Provenance shows source/producer revisions and the admitted evidence purpose. No JavaScript inference is performed.
 
-This is a prepared-source attribution surface, not a live producer integration or provenance verification service. The excerpt text/offsets are annotations supplied by the user, not independently matched to upstream bytes. The scripted fixture scores are demonstrative, not empirical or calibrated. The old `soft_truth` workbench remains a distinct historical/reference view. Investigation storage, corrections over time, comparison-context review and identity linking are not implemented here.
+This is a prepared-source attribution surface, not a live producer integration or provenance verification service. The excerpt text/offsets are annotations supplied by the user, not independently matched to upstream bytes. The scripted fixture scores are demonstrative, not empirical or calibrated. The old `soft_truth` workbench remains a distinct historical/reference view. Complete investigation storage, comparison-context review and identity linking are not implemented here. Annotation correction, withdrawal and reassessment history are supported as described below.
 
 Run `npm --prefix site test` after `scripts/build-pages.sh` for a real-browser comparison, analyst-entry, score-separation and rejection regression. The test captures `target/person-belief-comparison.png` for owner acceptance.
 
 Person annotations bind to the tuple `(sourceRepository, scopeId, subjectId)`. Identical names or subject tokens from different repositories never implicitly unify; the browser creates separate view records for collisions.
 
 After recording, **Download editable annotations** saves the source-linked annotation JSON (including revisions and manually added observations) for later reimport; **Download comparison** saves the validated Rust report. No account or server-side investigation storage is implied.
+
+
+## Attribution revision history
+
+On `people.html`, provide a **Revision reason** before recording, correcting or withdrawing
+an observation, or reassessing a person. **Correct <observation ID>** loads that annotation
+into the form; recording creates a new ID with an explicit supersession link. Withdrawal
+removes the observation from the current comparison while retaining its earlier passage,
+offsets, provenance and assessment in history. These actions invalidate the affected person's
+previous confidence. Other source-local people keep their existing assessments.
+
+Use **Reassess person and compare** to record an explicit new assessment with selected
+supporting observations, confidence and conflict review. Unknown values stay unknown.
+Each current and historical card identifies which observations contribute to its assessment.
+An unchanged numerical score can be recorded as a fresh explicit review; a reason by itself
+cannot refresh a stale carried-forward assessment.
+
+**Attribution history** opens earlier snapshots, labeled investigator-supplied and not current.
+Revision order records changes in annotations or interpretation, not the dates of the person's
+expressions or proof of a change of mind. No expression dates, timestamps, truth scores or
+authenticated audit history are invented. The original reason for imported version-1 annotations
+is labeled unknown rather than attributed to an investigator.
+
+**Download editable annotations** now preserves the ordered revision log. Reimport that file
+with the original evidence references, inspect its history, add another revision, and export
+again. Invalid file imports leave the current editable annotations and comparison intact.
+Manual edits in the advanced editor remain uncommitted input until comparison succeeds.
+This transfers annotation history only: complete portable investigations, source recovery,
+workspace identity links and cross-investigation comparisons remain in #35–#37.
+
+The version-1 annotation schema remains accepted with its existing report. Version 2 uses
+`{"schema":"belief_person_attributions","schemaVersion":2,"revisions":[...]}`.
+Each revision has a nonempty `reason` and a full version-1 `document`. Optional
+`reassessedPersonIds` marks an explicit review retaining unchanged assessment values;
+optional `supersedes` maps each new observation ID to the prior ID it corrects.
+Reports contain current `revision`/`revision_reason`, optional current `supersedes`, and
+historical `history` entries with revision, reason, people and supersession links.
+
+The Rust comparison validates every snapshot under the supplied evidence and **current**
+policy, importing that evidence once per comparison. Earlier snapshots are not independent
+historical authorization receipts. Keep the relevant historical evidence references available;
+an invalid old snapshot cannot be hidden behind a valid latest one. History requires 1–100
+revisions, one unchanged scoped proposition, stable source-person identities and immutable
+observation IDs. Corrections need new IDs. Imported history is investigator-supplied and may
+have been edited outside Belief Lab; validation does not authenticate its origin or verify
+original producer bytes.
+
+Independent preimplementation scenarios and recorded baseline results are in
+`docs/acceptance/attribution-history.md`. Rust acceptance runs in the workspace suite; the
+real-WASM browser suite covers correction, withdrawal, reassessment, invalid imports and two
+round trips of downloaded history, and captures history/correction views under `target/`.
