@@ -110,3 +110,37 @@ required format, Clippy, workspace tests and offline demo plus Pages build and
 approved slice, preserving this baseline evidence. Public postdeployment checking
 and owner acceptance remain separate from local passing tests. Keep #37 open for
 its remaining approved scope.
+
+
+## Implementation evidence
+
+Candidate implementation `382de5d` was verified locally on 2026-10-18. The separate
+acceptance context independently reran its original five Rust tests and found no
+blocking defect in history/supersession/staleness. An additional implementation-authored
+sixth regression checks persistence of stale equal scores, explicit same-score review,
+invalid supersession and changed proposition scope. All six pass. The implementation
+also labels the contributing observation IDs in current and historical cards, as
+requested by independent review.
+
+`cargo fmt --all -- --check`, workspace Clippy with warnings denied,
+`cargo test --workspace`, and `cargo run --quiet` passed. With the repository-required
+wasm-bindgen 0.2.128 installed into ignored `target/wasm-tools`, `scripts/build-pages.sh`
+and `npm --prefix site test` passed. The latter runs the actual WASM browser and native
+local-workbench suites. Browser tests exercise the seven scenarios above, including
+two real-download history transfers, invalid imported history preserving the valid
+input/report, correction/withdrawal provenance, repeated explicit reassessment and
+390 px layout. The browser assertions were authored by the implementer from this
+independently established contract; they are not described as independently authored.
+
+The first browser run exposed an exact-label selector mismatch in the test; it was
+corrected without reducing the behavioral assertion. Subsequent runs exposed two
+production defects: report refresh cleared selected assessment support, and raw WASM
+string errors produced blank UI diagnostics. Both were repaired before the complete
+browser gate passed. These failures are not reclassified as successful runs.
+
+Real captures are `target/attribution-history.png` and
+`target/attribution-correction.png`, alongside the existing comparison capture.
+CI uploads them with the person-comparison screenshot artifact. Local execution does
+not establish public deployment or owner acceptance; record those separately after
+merge. #37 remains open for current stance/context/identity/cross-investigation work;
+this is the already approved annotation-history slice.
