@@ -12,4 +12,4 @@ semantic-decision = { path = "../semantic-decision" }
 
 [dev-dependencies]
 inference-baseline = { path = "../inference-baseline" }
-serde_json = "1"
+serde_json = "=1.0.154"
