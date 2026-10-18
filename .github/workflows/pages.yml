@@ -22,7 +22,15 @@ jobs:
           node-version: '24'
           cache: npm
           cache-dependency-path: site/package-lock.json
-      - run: cargo install wasm-bindgen-cli --version 0.2.128 --locked
+      # Cache the matching generator binary instead of compiling it on every run.
+      - name: Restore wasm-bindgen CLI
+        id: wasm-bindgen-cache
+        uses: actions/cache@v4.3.0
+        with:
+          path: ~/.cargo/bin/wasm-bindgen
+          key: ${{ runner.os }}-${{ runner.arch }}-wasm-bindgen-cli-0.2.128
+      - if: steps.wasm-bindgen-cache.outputs.cache-hit != 'true'
+        run: cargo install wasm-bindgen-cli --version 0.2.128 --locked
       - run: scripts/build-pages.sh
       - run: npm --prefix site ci
       - run: cd site && npx playwright install --with-deps chromium
@@ -36,7 +44,8 @@ jobs:
             target/attribution-history.png
             target/attribution-correction.png
           if-no-files-found: error
-      - uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5
+      - if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+        uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5
         with:
           path: target/pages
   deploy:
