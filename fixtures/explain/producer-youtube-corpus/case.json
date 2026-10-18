@@ -1,0 +1,14 @@
+{
+  "description": "Unmodified deterministic youtube-corpus export passes real parser, policy admission and explanation without producer payloads or manufactured judgments.",
+  "runs": [
+    {
+      "name": "semantic_research",
+      "args": [
+        "../../evidence-interchange/youtube-corpus-export-v1.json",
+        "--profile",
+        "semantic_research"
+      ],
+      "exit": 0
+    }
+  ]
+}
