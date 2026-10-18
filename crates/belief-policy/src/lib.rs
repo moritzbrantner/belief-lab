@@ -1,3 +1,5 @@
+pub mod person_link;
+
 use std::collections::{BTreeMap, BTreeSet};
 use std::fmt;
 
