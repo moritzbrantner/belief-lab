@@ -22,6 +22,12 @@ jobs:
           node-version: '24'
           cache: npm
           cache-dependency-path: site/package-lock.json
+      # Reuse compiled native and WASM dependencies across Workbench runs.
+      - name: Cache Rust build outputs
+        uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
+        with:
+          key: workbench
+
       # Cache the matching generator binary instead of compiling it on every run.
       - name: Restore wasm-bindgen CLI
         id: wasm-bindgen-cache
@@ -33,6 +39,11 @@ jobs:
         run: cargo install wasm-bindgen-cli --version 0.2.128 --locked
       - run: scripts/build-pages.sh
       - run: npm --prefix site ci
+      - name: Cache Playwright Chromium
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.cache/ms-playwright
+          key: ${{ runner.os }}-${{ runner.arch }}-playwright-${{ hashFiles('site/package-lock.json') }}
       - run: cd site && npx playwright install --with-deps chromium
       - run: npm --prefix site test
       - if: github.event_name == 'pull_request'
