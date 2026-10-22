@@ -6,12 +6,31 @@ use super::*;
 pub(super) struct HistoryDocument {
     schema: String,
     schema_version: u32,
-    revisions: Vec<Revision>,
+    revisions: Vec<HistoryRevision>,
+}
+
+impl HistoryDocument {
+    /// A version-2 history built from already projected revisions.
+    pub(super) fn new(revisions: Vec<HistoryRevision>) -> Self {
+        Self {
+            schema: ATTRIBUTION_SCHEMA.to_owned(),
+            schema_version: 2,
+            revisions,
+        }
+    }
+}
+
+/// A person whose unchanged assessment of one proposition was explicitly reviewed again.
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub(super) struct ReassessedPerson {
+    pub(super) proposition_id: String,
+    pub(super) person_id: String,
 }
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
-struct Revision {
+pub(super) struct HistoryRevision {
     reason: String,
     document: AttributionDocument,
     /// Allows explicitly reviewing an unchanged numerical assessment after an observation change.
@@ -19,6 +38,22 @@ struct Revision {
     reassessed_person_ids: Vec<String>,
     #[serde(default)]
     supersedes: BTreeMap<String, String>,
+}
+
+impl HistoryRevision {
+    pub(super) fn new(
+        reason: String,
+        document: AttributionDocument,
+        reassessed_person_ids: Vec<String>,
+        supersedes: BTreeMap<String, String>,
+    ) -> Self {
+        Self {
+            reason,
+            document,
+            reassessed_person_ids,
+            supersedes,
+        }
+    }
 }
 
 #[derive(Debug, Serialize)]
@@ -35,6 +70,7 @@ pub(super) fn compare_history(
     store: &InMemoryBeliefStore,
     exporter: &str,
     batch_revision: &str,
+    first_revision: usize,
 ) -> Result<ComparisonReport, Box<dyn Error>> {
     if document.schema != ATTRIBUTION_SCHEMA || document.schema_version != 2 {
         return Err(invalid("unsupported person-attribution schema/version"));
@@ -149,7 +185,12 @@ pub(super) fn compare_history(
         previous_assessments = assessments;
         // Validate every supplied snapshot, even if a carried-forward assessment will be stale.
         let report = compare_document(document, policy, store, exporter, batch_revision, &stale)?;
-        reports.push((report, index + 1, revision.reason, revision.supersedes));
+        reports.push((
+            report,
+            index + first_revision,
+            revision.reason,
+            revision.supersedes,
+        ));
     }
     let (mut report, revision, reason, supersedes) = reports
         .pop()

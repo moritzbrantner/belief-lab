@@ -101,6 +101,19 @@ The Rust report derives each person's `assessment_status`:
 `last_documented` shows the latest dated attributed stance and lists undated observations, which cannot be ordered. The `current_stance` is `unknown` unless an investigator adds an assessment with `timeScope: "current"`, a required `rationale`, cited observations and an optional `asOf` date (Decisions 1.4.25/1.4.27). It is a tentative estimate: it never replaces the documented stance, there is no automatic suggestion, and elapsed time is not treated as evidence. Recording new evidence for a person invalidates both kinds of assessment.
 
 
+## Several propositions and semantic relationships (#37, Decision 1.4.33)
+
+Adding a second proposition or a relationship on `people.html` upgrades the annotations to **version 3** (owner answer, 2026-10-22). A version-3 file is a revision history whose snapshots hold `propositions`, `people`, `observations` and `assessments` (each bound to a `propositionId`), and `relationships`. Version-1/2 files stay single-proposition files until then. **Active proposition** selects which proposition is recorded, assessed and compared. Each proposition keeps its own history from the revision that introduced it; propositions are immutable and cannot be removed.
+
+A relationship joins two distinct propositions:
+
+- `kind` is `equivalence` (paraphrase or contextual equivalence), `implication` (from → to only, never the reverse) or `partial_overlap`.
+- Each relationship requires a `context` and source-grounded `reasoning`. `confidenceRelation` is optional. `suggestedBy` is `analyst` or `scripted_example`; model suggestions come later with their own receipts.
+- `review.status` is `suggested`, `accepted` or `rejected`, with an optional note. Accepting or rejecting changes only the review. Changing the claim is a correction under a new id with `supersedes`; the original stays in `relationship_history`.
+
+A relationship never merges propositions or creates, moves or supports a person attribution. An assessment of Q may cite only Q's observations, so "A endorses P" and "P implies Q" never become "A endorses Q".
+
+
 ## Attribution revision history
 
 On `people.html`, provide a **Revision reason** before recording, correcting or withdrawing

@@ -28,6 +28,7 @@
       <button id="download-comparison" disabled>Download comparison</button>
       <button id="download-annotations" disabled>Download editable annotations</button>
     </div>
+    <label>Active proposition <select id="proposition-select"></select></label>
     <p class="note">The example contains <strong>scripted assessment scores</strong>, not model predictions. The browser uses Rust evidence import, authorization and attribution validation. The source excerpts below are supplied annotations; this workbench does not independently fetch or verify original source text.</p>
     <details>
       <summary>Inspect or import prepared source evidence and attribution annotations</summary>
@@ -78,8 +79,29 @@
     </div>
     <button id="reassess" disabled>Reassess person and compare</button>
   </section>
+  <section aria-labelledby="links-heading">
+    <h2 id="links-heading">4. Relate differently worded propositions</h2>
+    <p class="note">A relationship is a reviewable suggestion between two scoped propositions. It never merges them, never implies the reverse of an implication, and never attributes the related proposition to anyone.</p>
+    <div class="attribution-form">
+      <label class="wide">New proposition text <input id="new-proposition-text" autocomplete="off"></label>
+      <label class="wide">New proposition scope <input id="new-proposition-scope" autocomplete="off" placeholder="Population, period, definitions, conditions"></label>
+    </div>
+    <div class="toolbar"><button id="add-proposition" disabled>Add proposition</button></div>
+    <div class="attribution-form">
+      <label>From proposition <select id="link-from"></select></label>
+      <label>Relationship <select id="link-kind"><option value="implication">Implies (from → to only)</option><option value="equivalence">Paraphrase / contextual equivalence</option><option value="partial_overlap">Partial overlap / related</option></select></label>
+      <label>To proposition <select id="link-to"></select></label>
+      <label class="wide">Context in which it holds <input id="link-context" autocomplete="off"></label>
+      <label class="wide">Source-grounded reasoning <textarea id="link-reasoning" rows="2"></textarea></label>
+      <label>Confidence (relationship) <input id="link-confidence" type="number" min="0" max="1" step="0.01" placeholder="Unknown"></label>
+      <label class="wide">Review note <input id="link-note" autocomplete="off" placeholder="Optional, used when accepting or rejecting"></label>
+    </div>
+    <div class="toolbar"><button id="suggest-link" disabled>Suggest relationship</button><button id="cancel-link-correction" hidden>Cancel correction</button></div>
+    <p id="link-correction-status" role="status"></p>
+    <div id="relationships"></div>
+  </section>
   <section aria-labelledby="comparison-heading">
-    <h2 id="comparison-heading">4. Compare attributed positions</h2>
+    <h2 id="comparison-heading">5. Compare attributed positions</h2>
     <div id="proposition"></div>
     <div id="comparison" class="person-grid"></div>
     <p id="current-revision"></p>

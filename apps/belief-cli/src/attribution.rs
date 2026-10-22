@@ -4,8 +4,12 @@
 
 mod dates;
 mod history;
+mod investigation;
 mod view;
 pub use history::HistoricalComparison;
+pub use investigation::{
+    InvestigationReport, PropositionComparison, RelationshipReport, RelationshipSnapshot,
+};
 pub use view::{CurrentStance, LastDocumentedStance};
 
 use dates::PartialDate;
@@ -92,6 +96,9 @@ impl AssessedScore {
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 struct ObservationInput {
     id: String,
+    /// Required in version-3 investigations; absent in single-proposition documents.
+    #[serde(default)]
+    proposition_id: Option<String>,
     person_id: String,
     evidence_id: String,
     kind: String,
@@ -125,6 +132,9 @@ struct ConvictionInput {
 #[derive(Debug, Deserialize, Clone, PartialEq)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 struct PersonAssessment {
+    /// Required in version-3 investigations; absent in single-proposition documents.
+    #[serde(default)]
+    proposition_id: Option<String>,
     person_id: String,
     stance: String,
     #[serde(default)]
@@ -246,7 +256,7 @@ fn parsed_stance(value: &str) -> Result<Stance, Box<dyn Error>> {
     Stance::parse(value).ok_or_else(|| invalid(format!("unsupported stance {value}")))
 }
 
-pub fn compare(input: &ComparisonInput<'_>) -> Result<ComparisonReport, Box<dyn Error>> {
+pub fn compare(input: &ComparisonInput<'_>) -> Result<AttributionReport, Box<dyn Error>> {
     if let Some(key) = input
         .policy
         .keys()
@@ -265,29 +275,47 @@ pub fn compare(input: &ComparisonInput<'_>) -> Result<ComparisonReport, Box<dyn 
     let evidence_batch_revision = batch.revision().to_owned();
     store.insert_authorized_evidence_batch(batch.authorize(&policy)?)?;
 
-    #[derive(Deserialize)]
-    #[serde(untagged)]
-    enum Document {
-        Single(AttributionDocument),
-        History(history::HistoryDocument),
-    }
-    match serde_json::from_str(input.attributions_json)? {
-        Document::Single(document) => compare_document(
-            document,
+    let document: serde_json::Value = serde_json::from_str(input.attributions_json)?;
+    match document
+        .get("schemaVersion")
+        .and_then(serde_json::Value::as_u64)
+    {
+        Some(1) => compare_document(
+            serde_json::from_value(document)?,
             &policy,
             &store,
             &evidence_exporter,
             &evidence_batch_revision,
             &BTreeSet::new(),
-        ),
-        Document::History(document) => history::compare_history(
-            document,
+        )
+        .map(AttributionReport::Comparison),
+        Some(2) => history::compare_history(
+            serde_json::from_value(document)?,
             &policy,
             &store,
             &evidence_exporter,
             &evidence_batch_revision,
-        ),
+            1,
+        )
+        .map(AttributionReport::Comparison),
+        Some(3) => investigation::compare_investigation(
+            serde_json::from_value(document)?,
+            &policy,
+            &store,
+            &evidence_exporter,
+            &evidence_batch_revision,
+        )
+        .map(AttributionReport::Investigation),
+        _ => Err(invalid("unsupported person-attribution schema/version")),
     }
+}
+
+/// A single-proposition comparison (versions 1 and 2) or a multi-proposition investigation (3).
+#[derive(Debug, Serialize)]
+#[serde(untagged)]
+pub enum AttributionReport {
+    Comparison(ComparisonReport),
+    Investigation(InvestigationReport),
 }
 
 /// Validates one annotation snapshot. Assessments of `stale` people are validated but not applied,
@@ -309,6 +337,22 @@ fn compare_document(
         ("proposition.scope", document.proposition.scope.as_str()),
     ] {
         required(name, value)?;
+    }
+    if document
+        .observations
+        .iter()
+        .filter_map(|observation| observation.proposition_id.as_deref())
+        .chain(
+            document
+                .assessments
+                .iter()
+                .filter_map(|assessment| assessment.proposition_id.as_deref()),
+        )
+        .any(|id| id != document.proposition.id)
+    {
+        return Err(invalid(
+            "an observation or assessment refers to a different proposition",
+        ));
     }
     if document.people.is_empty() {
         return Err(invalid(

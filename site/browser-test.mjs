@@ -260,6 +260,82 @@ if (estimated.current_stance.status !== 'estimated' || estimated.current_stance.
 }
 await page.locator('#comparison').getByText('Endorses not-P · as of 2026-10 · Only a 2024 interview; no newer statement.', {exact:true}).waitFor();
 await page.screenshot({path:resolve(root, '../stance-states.png'),fullPage:true});
+
+// Decision 1.4.33: a second proposition and reviewable relationships upgrade the file to version 3.
+await page.getByLabel('New proposition text').fill("The intervention's effects last through 2026");
+await page.getByLabel('New proposition scope').fill('Adults who received intervention X in 2026');
+await page.getByLabel('Revision reason').fill('Add the 2026 proposition');
+await page.getByRole('button',{name:'Add proposition'}).click();
+await page.getByRole('status').filter({hasText:'Comparison ready.'}).waitFor();
+let investigationReport = JSON.parse(await page.locator('#comparison-json').textContent());
+if (investigationReport.report !== 'person_belief_investigation' || investigationReport.propositions.length !== 2 ||
+    JSON.parse(await page.locator('#attribution-input').inputValue()).schemaVersion !== 3) {
+  throw Error('Adding a proposition did not create a version-3 investigation');
+}
+await page.getByLabel('From proposition').selectOption('effects-2027');
+await page.locator('#link-kind').selectOption('implication');
+await page.getByLabel('To proposition').selectOption('proposition-2');
+await page.getByLabel('Context in which it holds').fill('Same adults; "through" means continuously');
+await page.getByLabel('Source-grounded reasoning').fill('Lasting through 2027 includes lasting through 2026.');
+await page.getByLabel('Revision reason').fill('Suggest that P implies Q');
+await page.getByRole('button',{name:'Suggest relationship'}).click();
+await page.getByRole('status').filter({hasText:'Comparison ready.'}).waitFor();
+await page.getByLabel('Review note').fill('Scopes match');
+await page.getByLabel('Revision reason').fill('Accept the implication');
+await page.getByRole('button',{name:'Accept link-1', exact:true}).click();
+await page.getByRole('status').filter({hasText:'Comparison ready.'}).waitFor();
+investigationReport = JSON.parse(await page.locator('#comparison-json').textContent());
+const qView = investigationReport.propositions.find((entry) => entry.proposition.id === 'proposition-2');
+if (investigationReport.relationships.length !== 1 || investigationReport.relationships[0].review_status !== 'accepted' ||
+    investigationReport.relationships[0].from_proposition_id !== 'effects-2027' || !investigationReport.relationships[0].directed ||
+    qView.people.some((person) => person.assessment_status !== 'no_stance_evidence' || person.observations.length)) {
+  throw Error('An accepted implication was reversed or created person attributions for Q');
+}
+await page.locator('#relationships').getByText('Suggested relationship: implies (this direction only; the reverse is not implied) · accepted', {exact:true}).waitFor();
+await page.getByRole('button',{name:'Correct link-1', exact:true}).click();
+await page.locator('#link-kind').selectOption('partial_overlap');
+await page.getByLabel('Revision reason').fill('Only a partial overlap after review');
+await page.getByRole('button',{name:'Suggest relationship'}).click();
+await page.getByRole('status').filter({hasText:'Comparison ready.'}).waitFor();
+investigationReport = JSON.parse(await page.locator('#comparison-json').textContent());
+if (investigationReport.relationships[0].supersedes !== 'link-1' || investigationReport.relationships[0].directed ||
+    !investigationReport.relationship_history.some((snapshot) => snapshot.relationships.some((link) => link.id === 'link-1'))) {
+  throw Error('Relationship correction lost the original record');
+}
+await page.locator('#proposition-select').selectOption('proposition-2');
+await page.getByLabel('Evidence record').selectOption('e-report');
+await page.getByLabel('Attribution type').selectOption('reported_position');
+await page.getByLabel('Observed stance').selectOption('endorses');
+await page.getByLabel('Source passage', {exact:true}).fill('Researcher B agreed the effect holds through 2026.');
+await page.getByLabel('Source span start offset').fill('0');
+await page.getByLabel('Source span end offset').fill('50');
+await page.getByLabel('Expressed on').fill('2024');
+await page.getByLabel('Revision reason').fill('Record a Q-specific observation');
+await page.getByRole('button',{name:'Record attribution and compare'}).click();
+await page.getByRole('status').filter({hasText:'Comparison ready.'}).waitFor();
+investigationReport = JSON.parse(await page.locator('#comparison-json').textContent());
+const qResearcher = investigationReport.propositions.find((entry) => entry.proposition.id === 'proposition-2').people.find((person) => person.id === 'researcher-b');
+const pResearcher = investigationReport.propositions.find((entry) => entry.proposition.id === 'effects-2027').people.find((person) => person.id === 'researcher-b');
+if (qResearcher.observations.length !== 1 || qResearcher.assessment_status !== 'unassessed' ||
+    pResearcher.stance !== 'endorses_negation' || pResearcher.observations.some((item) => item.passage.includes('2026'))) {
+  throw Error('Observations leaked between propositions');
+}
+await page.screenshot({path:resolve(root, '../semantic-links.png'),fullPage:true});
+const [investigationDownload] = await Promise.all([
+  page.waitForEvent('download'), page.getByRole('button',{name:'Download editable annotations'}).click()
+]);
+const investigationBytes = await readFile(await investigationDownload.path());
+const investigationPage = await browser.newPage({viewport:{width:1240,height:900}});
+investigationPage.on('pageerror', (error) => errors.push(String(error)));
+try {
+  await investigationPage.goto('http://127.0.0.1:' + server.address().port + '/people.html');
+  await investigationPage.getByRole('status').filter({hasText:'Comparison ready.'}).waitFor();
+  await investigationPage.locator('#attribution-file').setInputFiles({name:'investigation.json',mimeType:'application/json',buffer:investigationBytes});
+  await investigationPage.waitForFunction(() => document.getElementById('current-revision').textContent.includes('Record a Q-specific observation'));
+  const replayedInvestigation = JSON.parse(await investigationPage.locator('#comparison-json').textContent());
+  if (JSON.stringify(replayedInvestigation) !== JSON.stringify(investigationReport)) throw Error('Version-3 download/reimport did not replay exactly');
+} finally { await investigationPage.close(); }
+await page.locator('#proposition-select').selectOption('effects-2027');
 await page.getByText('Inspect or import prepared source evidence and attribution annotations', {exact:true}).click();
 const edited = JSON.parse(await page.locator('#attribution-input').inputValue());
 edited.revisions[0].document.assessments[0].confidencePerson.semantics = 'soft_truth';
@@ -276,5 +352,5 @@ if (await page.evaluate(() => document.documentElement.scrollWidth > innerWidth)
 }
 
 if(errors.length) throw Error(errors.join('\n'));
-console.log('Browser passed: evidence and person attribution, source spans, scores, contradictions, stance states, input rejection, mobile layout.');
+console.log('Browser passed: evidence and person attribution, source spans, scores, contradictions, stance states, semantic links, input rejection, mobile layout.');
 } finally { await browser.close(); await new Promise(resolve => server.close(resolve)); }
