@@ -50,7 +50,7 @@ await page.goto('http://127.0.0.1:' + server.address().port + '/people.html');
 await page.getByRole('status').filter({hasText:'Comparison ready.'}).waitFor();
 let personReport = JSON.parse(await page.locator('#comparison-json').textContent());
 const initialPersonReport = structuredClone(personReport);
-if (personReport.people.length !== 2 || personReport.people[0].stance !== 'endorses' || personReport.people[1].stance !== 'disputes') {
+if (personReport.people.length !== 2 || personReport.people[0].stance !== 'endorses' || personReport.people[1].stance !== 'endorses_negation') {
   throw Error('People do not have independently attributed opposing positions');
 }
 if (personReport.people[0].confidence_person.value !== 0.91 ||
@@ -72,7 +72,7 @@ await page.screenshot({path:resolve(root, '../person-belief-comparison.png'),ful
 
 await page.getByLabel('Evidence record').selectOption('e-quote');
 await page.getByLabel('Attribution type').selectOption('quotation_or_criticism');
-await page.getByLabel('Observed stance').selectOption('undetermined');
+await page.getByLabel('Observed stance').selectOption('no_stance');
 await page.getByLabel('Source passage').fill('A researcher was quoted, but the author did not endorse that statement.');
 await page.getByLabel('Source span end offset').fill('73');
 const unchangedAnnotations = await page.locator('#attribution-input').inputValue();
@@ -191,7 +191,7 @@ try {
   }
   await replayPage.getByLabel('Evidence record').selectOption('e-quote');
   await replayPage.getByLabel('Attribution type').selectOption('quotation_or_criticism');
-  await replayPage.getByLabel('Observed stance').selectOption('undetermined');
+  await replayPage.getByLabel('Observed stance').selectOption('no_stance');
   await replayPage.getByLabel('Source passage', {exact:true}).fill('A continued annotation after transfer.');
   await replayPage.getByLabel('Source span end offset').fill('37');
   await replayPage.getByLabel('Revision reason').fill('Continue the transferred annotation history');
@@ -209,6 +209,57 @@ try {
   await replayPage.getByText('Historical revision 1 — Imported version-1 baseline (original reason unknown)', {exact:true}).click();
   if (await replayPage.evaluate(() => document.documentElement.scrollWidth > innerWidth)) throw Error('History overflows mobile viewport');
 } finally { await replayPage.close(); }
+// Decisions 1.4.25–1.4.31: dated last-documented stance beside an unknown current stance,
+// explicit suspension as its own stance, and a reviewable current-stance estimate.
+let stanceView = JSON.parse(await page.locator('#comparison-json').textContent());
+const researcherView = stanceView.people.find((person) => person.id === 'researcher-b');
+if (researcherView.last_documented?.stance !== 'endorses_negation' || researcherView.last_documented.expressed_at.join() !== '2024' ||
+    researcherView.last_documented.undated_observation_ids.join() !== 'b-inferred' || researcherView.current_stance.status !== 'unknown') {
+  throw Error('Old documented stance was promoted or its date lost');
+}
+await page.locator('#comparison').getByText('Endorses not-P · expressed 2024 · b-reported', {exact:true}).waitFor();
+await page.locator('#comparison').getByText('Unknown — no reviewed estimate').first().waitFor();
+await page.getByLabel('Evidence record').selectOption('e-blog');
+await page.getByLabel('Attribution type').selectOption('inferred_belief');
+await page.getByLabel('Observed stance').selectOption('suspends_judgment');
+await page.getByLabel('Source passage', {exact:true}).fill("I honestly don't know yet whether it lasts.");
+await page.getByLabel('Source span start offset').fill('0');
+await page.getByLabel('Source span end offset').fill('43');
+await page.getByLabel('Expressed on').fill('2026-09');
+await page.getByLabel('Revision reason').fill('Record a later statement withholding judgment');
+await page.getByRole('button',{name:'Record attribution and compare'}).click();
+await page.getByRole('status').filter({hasText:'not inferred'}).waitFor();
+await page.getByLabel('Attribution type').selectOption('explicit_endorsement');
+await page.getByRole('button',{name:'Record attribution and compare'}).click();
+await page.getByRole('status').filter({hasText:'Comparison ready.'}).waitFor();
+stanceView = JSON.parse(await page.locator('#comparison-json').textContent());
+const bloggerView = stanceView.people.find((person) => person.id === 'blogger-a');
+if (bloggerView.assessment_status !== 'unassessed' || bloggerView.last_documented?.stance !== 'suspends_judgment' ||
+    bloggerView.has_conflicting_positions || bloggerView.stance !== null) {
+  throw Error('Explicit suspension was conflated with conflict, endorsement or an assessed stance');
+}
+await page.locator('#comparison').getByText(/^Explicitly suspends judgment · expressed 2026-09/).waitFor();
+await page.getByLabel('Person to reassess').selectOption('researcher-b');
+await page.locator('#assessment-scope').selectOption('current');
+await page.getByLabel('Assessed stance').selectOption('endorses_negation');
+await page.getByLabel('Reviewed confidence (person)', {exact:true}).fill('');
+await page.getByLabel('Supporting observations').selectOption(['b-reported']);
+await page.getByLabel('Estimate as of').fill('2026-10');
+await page.getByLabel('Revision reason').fill('Estimate the present stance from old evidence');
+await page.getByRole('button',{name:'Reassess person and compare'}).click();
+await page.getByRole('status').filter({hasText:'rationale'}).waitFor();
+await page.getByLabel('Rationale for a current-stance estimate').fill('Only a 2024 interview; no newer statement.');
+await page.getByRole('button',{name:'Reassess person and compare'}).click();
+await page.getByRole('status').filter({hasText:'Comparison ready.'}).waitFor();
+stanceView = JSON.parse(await page.locator('#comparison-json').textContent());
+const estimated = stanceView.people.find((person) => person.id === 'researcher-b');
+if (estimated.current_stance.status !== 'estimated' || estimated.current_stance.as_of !== '2026-10' ||
+    estimated.stance !== 'endorses_negation' || estimated.confidence_person.value !== 0.73 ||
+    estimated.last_documented.expressed_at.join() !== '2024') {
+  throw Error('Current-stance estimate replaced the documented history or assessment');
+}
+await page.locator('#comparison').getByText('Endorses not-P · as of 2026-10 · Only a 2024 interview; no newer statement.', {exact:true}).waitFor();
+await page.screenshot({path:resolve(root, '../stance-states.png'),fullPage:true});
 await page.getByText('Inspect or import prepared source evidence and attribution annotations', {exact:true}).click();
 const edited = JSON.parse(await page.locator('#attribution-input').inputValue());
 edited.revisions[0].document.assessments[0].confidencePerson.semantics = 'soft_truth';
@@ -225,5 +276,5 @@ if (await page.evaluate(() => document.documentElement.scrollWidth > innerWidth)
 }
 
 if(errors.length) throw Error(errors.join('\n'));
-console.log('Browser passed: evidence and person attribution, source spans, scores, contradictions, input rejection, mobile layout.');
+console.log('Browser passed: evidence and person attribution, source spans, scores, contradictions, stance states, input rejection, mobile layout.');
 } finally { await browser.close(); await new Promise(resolve => server.close(resolve)); }

@@ -87,7 +87,11 @@ fn correction_and_withdrawal_preserve_ordered_prior_snapshots_and_exact_passages
     assert_eq!(snapshots[1]["revision"], 2);
     assert_eq!(snapshots[1]["reason"], "Correct passage transcription");
     assert_eq!(snapshots[1]["people"], corrected_report["people"]);
-    assert_eq!(person(&report, "blogger-a")["stance"], "undetermined");
+    assert!(person(&report, "blogger-a")["stance"].is_null());
+    assert_eq!(
+        person(&report, "blogger-a")["assessment_status"],
+        "no_stance_evidence"
+    );
     assert!(person(&report, "blogger-a")["confidence_person"].is_null());
     assert!(!person(&report, "blogger-a")["observations"]
         .as_array()
@@ -127,9 +131,8 @@ fn adding_or_changing_observation_cannot_silently_carry_forward_an_assessment() 
             ("Initial", first),
             ("New evidence interpretation", next),
         ])) {
-            assert_eq!(
-                person(&report, "blogger-a")["stance"],
-                "undetermined",
+            assert!(
+                person(&report, "blogger-a")["stance"].is_null(),
                 "{mutation}"
             );
             assert!(

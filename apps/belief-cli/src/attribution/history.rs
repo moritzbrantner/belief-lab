@@ -148,14 +148,7 @@ pub(super) fn compare_history(
         previous_observations = observations;
         previous_assessments = assessments;
         // Validate every supplied snapshot, even if a carried-forward assessment will be stale.
-        let mut report = compare_document(document, policy, store, exporter, batch_revision)?;
-        for person in &mut report.people {
-            if stale.contains(&person.id) {
-                person.stance = Stance::Undetermined.as_str().to_owned();
-                person.confidence_person = None;
-                person.supporting_observation_ids.clear();
-            }
-        }
+        let report = compare_document(document, policy, store, exporter, batch_revision, &stale)?;
         reports.push((report, index + 1, revision.reason, revision.supersedes));
     }
     let (mut report, revision, reason, supersedes) = reports

@@ -5,6 +5,18 @@ const examplePath = 'examples/person-attributions/';
 let comparison = null;
 let initialized = false;
 let correctionTarget = null;
+const stanceLabels = {
+  endorses: 'Endorses P', endorses_negation: 'Endorses not-P',
+  suspends_judgment: 'Explicitly suspends judgment', no_stance: 'No stance in this passage'
+};
+const statusLabels = {
+  assessed: 'Reviewed documented stance',
+  unassessed: 'Stance evidence recorded, not yet assessed',
+  conflicted: 'Conflicted — opposing stances that may overlap in time; unresolved',
+  differs_over_time: 'Opposing stances at different times — not by itself proof of a change of mind',
+  no_stance_evidence: 'No evidence of a stance — unknown, not indecision'
+};
+function stanceLabel(value) { return stanceLabels[value] || value; }
 function element(tag, value) {
   const item = document.createElement(tag);
   if (value !== undefined) item.textContent = String(value);
@@ -100,8 +112,11 @@ function recordAttribution() {
     const certainty = numeric('conviction-score');
     const basis = $('conviction-basis').value;
     if ((certainty === null) !== (basis === '')) throw Error('Select a conviction basis and value together, or leave both unknown.');
-    if (kind === 'quotation_or_criticism' && (stance !== 'undetermined' || obs !== null || certainty !== null)) {
-      throw Error('A quotation/criticism is not an endorsement. Set stance to undetermined and leave scores unknown.');
+    if (kind === 'quotation_or_criticism' && (stance !== 'no_stance' || obs !== null || certainty !== null)) {
+      throw Error('A quotation/criticism is not an endorsement. Set the stance to “No stance” and leave scores unknown.');
+    }
+    if (stance === 'suspends_judgment' && (kind === 'inferred_belief' || certainty !== null)) {
+      throw Error('Explicit suspension must be expressed or reported, not inferred, and has no conviction about P.');
     }
     if (obs === null && (certainty !== null || personConfidence !== null)) {
       throw Error('A person-confidence or conviction score needs a scored observation.');
@@ -129,6 +144,10 @@ function recordAttribution() {
       id, personId: existing.id, evidenceId: evidence.id, kind, stance, passage,
       span: { start, end }
     };
+    for (const [field, input] of [['expressedAt', 'expressed-at'], ['publishedAt', 'published-at'], ['discoveredAt', 'discovered-at']]) {
+      const value = $(input).value.trim();
+      if (value) observation[field] = value;
+    }
     if (obs !== null) observation.confidenceObservation = { value: obs, assessedBy: 'analyst' };
     if (certainty !== null) observation.conviction = { value: certainty, basis, assessedBy: 'analyst' };
     const supersedes = {};
@@ -198,6 +217,9 @@ function correctObservation(id) {
     $('observation-score').value = observation.confidenceObservation?.value ?? '';
     $('conviction-score').value = observation.conviction?.value ?? '';
     $('conviction-basis').value = observation.conviction?.basis ?? '';
+    $('expressed-at').value = observation.expressedAt ?? '';
+    $('published-at').value = observation.publishedAt ?? '';
+    $('discovered-at').value = observation.discoveredAt ?? '';
     $('person-score').value = ''; $('review-conflicts').checked = false;
     correctionTarget = id;
     $('correction-status').textContent = 'Correcting ' + id + '. Recording creates a new observation; the original stays in history.';
@@ -232,7 +254,7 @@ function updateAssessmentSupport() {
   try {
     const document = currentAnnotation();
     for (const observation of document.observations.filter((item) => item.personId === $('assessment-person').value)) {
-      const option = element('option', observation.id + ' · ' + observation.stance + ' · ' + observation.passage);
+      const option = element('option', observation.id + ' · ' + stanceLabel(observation.stance) + ' · ' + observation.passage);
       option.value = observation.id; option.selected = selected.has(observation.id); $('assessment-support').append(option);
     }
   } catch { /* Incomplete editor input has no assessable observations. */ }
@@ -241,6 +263,7 @@ function reassessPerson() {
   try {
     const document = currentAnnotation();
     const personId = $('assessment-person').value;
+    const scope = $('assessment-scope').value;
     const assessment = {
       personId, stance: $('assessment-stance').value,
       observationIds: [...$('assessment-support').selectedOptions].map((option) => option.value),
@@ -248,8 +271,16 @@ function reassessPerson() {
     };
     const value = numeric('assessment-score');
     if (value !== null) assessment.confidencePerson = { value, assessedBy: 'analyst' };
-    document.assessments = document.assessments.filter((item) => item.personId !== personId);
-    document.assessments.push(assessment);
+    if (scope === 'current') {
+      assessment.timeScope = 'current';
+      assessment.rationale = $('assessment-rationale').value;
+      const asOf = $('assessment-as-of').value.trim();
+      if (asOf) assessment.asOf = asOf;
+    }
+    const sameScope = (item) => item.personId === personId && (item.timeScope === 'current') === (scope === 'current');
+    document.assessments = document.assessments.filter((item) => !sameScope(item));
+    // "No reviewed stance" removes the assessment; an unknown current stance is simply absent.
+    if (assessment.stance !== 'no_stance') document.assessments.push(assessment);
     commitRevision(document, [personId]);
   } catch (error) { status(String(error.message || error), true); }
 }
@@ -298,15 +329,29 @@ function render(report) {
 }
 function personCard(person, historical = false) {
     const card = element('article'); card.className = 'person-card';
-    card.append(element('h3', person.display_name), element('p', 'Attributed position: ' + person.stance));
+    card.append(element('h3', person.display_name));
+    const status = element('p', statusLabels[person.assessment_status] || person.assessment_status);
+    status.className = 'stance-status'; status.dataset.status = person.assessment_status;
+    card.append(status);
+    card.append(element('p', 'Documented stance: ' + (person.stance ? stanceLabel(person.stance) : 'Not assessed')));
     card.append(element('small', 'Source-local person ' + person.subject_id + ' · ' + person.source_repository + ' / ' + person.scope_id));
     card.append(metric('Confidence (person)', score(person.confidence_person), 'How sure we are this person holds this position across cited observations. Not the truth of the proposition.'));
     card.append(element('p', 'Contributing observations: ' + (person.supporting_observation_ids.join(', ') || 'None — no current scored assessment')));
-    if (person.has_conflicting_positions) card.append(element('p', 'Conflicting positions in the evidence — inspect each observation.'));
+    if (person.has_conflicting_positions) card.append(element('p', 'Conflicting observations (both kept, no side chosen): ' + person.conflicting_observation_ids.join(', ')));
+    const last = person.last_documented;
+    card.append(metric('Last documented stance',
+      last ? stanceLabel(last.stance) + ' · expressed ' + last.expressed_at.join(', ') + ' · ' + last.observation_ids.join(', ') : 'Unknown — no single dated stance',
+      'Historical: what the person was observed to express, dated by when they said it.' + (last?.undated_observation_ids.length ? ' Undated observations not ordered: ' + last.undated_observation_ids.join(', ') + '.' : '')));
+    const current = person.current_stance;
+    card.append(metric('Current stance (tentative)',
+      current.status === 'estimated'
+        ? stanceLabel(current.stance) + (current.as_of ? ' · as of ' + current.as_of : '') + ' · ' + current.rationale
+        : 'Unknown — no reviewed estimate',
+      'A reviewable estimate, not a new observation. Elapsed time alone is not evidence.'));
     if (!person.observations.length) card.append(element('p', 'No admitted observations. Attribution unknown.'));
     for (const observation of person.observations) {
       const detail = element('details'); detail.open = true;
-      detail.append(element('summary', observation.kind.replaceAll('_', ' ') + ' · ' + observation.stance));
+      detail.append(element('summary', observation.kind.replaceAll('_', ' ') + ' · ' + stanceLabel(observation.stance)));
       const quote = element('blockquote', observation.passage); detail.append(quote);
       detail.append(metric('Confidence (observation)', score(observation.confidence_observation), 'How strongly this passage implies this person holds the position.'));
       const conviction = observation.conviction
@@ -315,6 +360,7 @@ function personCard(person, historical = false) {
       detail.append(metric('Conviction', conviction, 'The person’s own certainty about the proposition; self-reported and inferred estimates are distinct.'));
       const evidence = observation.evidence;
       const provenance = element('dl'); provenance.className = 'provenance-list';
+      appendDetail(provenance, 'Expressed / published / discovered', [observation.expressed_at, observation.published_at, observation.discovered_at].map((value) => value ?? 'unknown').join(' / '));
       appendDetail(provenance, 'Evidence ID / family', evidence.id + ' / ' + evidence.family_id);
       appendDetail(provenance, 'Source', evidence.source_repository + ' · ' + evidence.source_scope_id + ' · ' + evidence.source_record_id);
       appendDetail(provenance, 'Source revision / offsets', evidence.source_revision + ' · ' + observation.span.start + '–' + observation.span.end);
