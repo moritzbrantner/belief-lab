@@ -410,7 +410,9 @@ const imported = JSON.parse(await devicePage.locator('#comparison-json').textCon
 if (JSON.stringify(imported) !== JSON.stringify(resumed)) throw Error('Imported project did not replay to the saved analysis');
 const followUp = JSON.parse(await readFile(resolve(root, 'examples/person-attributions/evidence.json'), 'utf8'));
 followUp.revision = 'sha256:follow-up-interview-v1';
-followUp.evidence = [{ ...followUp.evidence[2], id: 'e-follow-up', source: { ...followUp.evidence[2].source, recordId: 'paragraph-9' } }];
+followUp.schemaVersion = 2;
+followUp.evidence = [{ ...followUp.evidence[2], id: 'e-follow-up', source: { ...followUp.evidence[2].source, recordId: 'paragraph-9' },
+  mediaSpan: { start: { pts: 1500, timebase: { num: 1, den: 1000 } }, end: { pts: 4200, timebase: { num: 1, den: 1000 } } }, sceneIds: ['scene:3'] }];
 await devicePage.getByLabel('Add a producer evidence batch').setInputFiles({name:'follow-up.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify(followUp))});
 await devicePage.waitForFunction(() => document.getElementById('current-investigation').textContent.includes('2 evidence batch(es)'));
 await devicePage.locator('#proposition-select').selectOption('effects-2027');
@@ -426,6 +428,7 @@ await devicePage.getByRole('button',{name:'Record attribution and compare'}).cli
 await devicePage.getByRole('status').filter({hasText:'Comparison ready.'}).waitFor();
 const continuedProject = JSON.parse(await devicePage.locator('#comparison-json').textContent());
 const followResearcher = continuedProject.propositions.find((entry) => entry.proposition.id === 'effects-2027').people.find((person) => person.id === 'researcher-b');
+await devicePage.locator('#comparison').getByText('1.5 s – 4.2 s · scenes scene:3', {exact:true}).waitFor();
 if (!followResearcher.observations.some((item) => item.evidence.id === 'e-follow-up') || followResearcher.last_documented?.expressed_at.join() !== '2026-09') {
   throw Error('Offline continuation lost the new evidence or its date');
 }

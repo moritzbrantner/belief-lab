@@ -1,6 +1,6 @@
 {
   "schema": "belief_evidence_interchange",
-  "schemaVersion": 2,
+  "schemaVersion": 99,
   "exporter": {
     "name": "youtube-corpus",
     "revision": "git:youtube-corpus-fixture"

@@ -1,6 +1,7 @@
 use std::collections::{BTreeMap, BTreeSet};
 use std::fmt;
 
+use belief_core::media::{MediaLocator, MediaSpan, MediaTimestamp};
 use belief_core::{
     EntityId, EvidenceClass, EvidenceFamilyId, EvidenceId, EvidencePurpose, EvidenceRef,
     ProducerRef, Provenance, Score, ScoreSemantics, SourceRef,
@@ -10,6 +11,8 @@ use serde::Deserialize;
 
 pub const EVIDENCE_INTERCHANGE_SCHEMA: &str = "belief_evidence_interchange";
 pub const EVIDENCE_INTERCHANGE_VERSION_V1: u32 = 1;
+/// Version 2 adds an optional media `mediaSpan` and covering `sceneIds` per reference.
+pub const EVIDENCE_INTERCHANGE_VERSION_V2: u32 = 2;
 
 #[derive(Debug, Clone, Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
@@ -43,6 +46,37 @@ struct EvidenceRecordV1 {
     score: Option<ScoreV1>,
     #[serde(default)]
     parent_evidence_ids: Vec<String>,
+    #[serde(default)]
+    media_span: Option<MediaSpanV2>,
+    #[serde(default)]
+    scene_ids: Option<Vec<String>>,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+struct MediaSpanV2 {
+    start: TimestampV2,
+    end: TimestampV2,
+}
+
+#[derive(Debug, Clone, Copy, Deserialize)]
+#[serde(deny_unknown_fields)]
+struct TimestampV2 {
+    pts: i64,
+    timebase: TimebaseV2,
+}
+
+#[derive(Debug, Clone, Copy, Deserialize)]
+#[serde(deny_unknown_fields)]
+struct TimebaseV2 {
+    num: u32,
+    den: u32,
+}
+
+impl TimestampV2 {
+    fn to_core(self) -> Result<MediaTimestamp, belief_core::ModelError> {
+        MediaTimestamp::new(self.pts, self.timebase.num, self.timebase.den)
+    }
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -282,7 +316,10 @@ impl AuthorizedEvidenceBatch {
 
 fn validate_batch(batch: EvidenceBatchV1) -> Result<ValidatedEvidenceBatch, InterchangeError> {
     if batch.schema != EVIDENCE_INTERCHANGE_SCHEMA
-        || batch.schema_version != EVIDENCE_INTERCHANGE_VERSION_V1
+        || !matches!(
+            batch.schema_version,
+            EVIDENCE_INTERCHANGE_VERSION_V1 | EVIDENCE_INTERCHANGE_VERSION_V2
+        )
     {
         return Err(InterchangeError::UnsupportedSchema {
             schema: batch.schema,
@@ -322,6 +359,7 @@ fn validate_batch(batch: EvidenceBatchV1) -> Result<ValidatedEvidenceBatch, Inte
         parents.insert(id.clone(), record_parents);
     }
 
+    let version = batch.schema_version;
     let ordered_ids = topological_order(&parents)?;
     let mut evidence = Vec::with_capacity(ordered_ids.len());
 
@@ -378,14 +416,33 @@ fn validate_batch(batch: EvidenceBatchV1) -> Result<ValidatedEvidenceBatch, Inte
             .expect("parent map must contain every validated evidence record")
             .clone();
 
-        evidence.push(EvidenceRef::new(
+        let media = match (record.media_span, record.scene_ids) {
+            (None, None) => None,
+            _ if version < EVIDENCE_INTERCHANGE_VERSION_V2 => {
+                return Err(InterchangeError::MediaNeedsVersion2(id));
+            }
+            (None, Some(_)) => return Err(InterchangeError::ScenesWithoutSpan(id)),
+            (Some(span), scenes) => Some(
+                MediaSpan::new(
+                    span.start.to_core().map_err(InterchangeError::Model)?,
+                    span.end.to_core().map_err(InterchangeError::Model)?,
+                )
+                .and_then(|span| MediaLocator::new(span, scenes.unwrap_or_default()))
+                .map_err(InterchangeError::Model)?,
+            ),
+        };
+        let reference = EvidenceRef::new(
             id,
             subject,
             class,
             family,
             score,
             Provenance::new(source, producer, parent_evidence),
-        ));
+        );
+        evidence.push(match media {
+            Some(media) => reference.with_media(media),
+            None => reference,
+        });
     }
 
     Ok(ValidatedEvidenceBatch {
@@ -460,6 +517,8 @@ pub enum InterchangeError {
         semantics: ScoreSemantics,
     },
     Model(belief_core::ModelError),
+    MediaNeedsVersion2(EvidenceId),
+    ScenesWithoutSpan(EvidenceId),
 }
 
 impl fmt::Display for InterchangeError {
@@ -492,6 +551,13 @@ impl fmt::Display for InterchangeError {
                 semantics.as_str()
             ),
             Self::Model(error) => write!(f, "invalid evidence model: {error}"),
+            Self::MediaNeedsVersion2(id) => write!(
+                f,
+                "evidence {id} uses mediaSpan/sceneIds, which need schemaVersion 2"
+            ),
+            Self::ScenesWithoutSpan(id) => {
+                write!(f, "evidence {id} names sceneIds without a mediaSpan")
+            }
         }
     }
 }
@@ -654,11 +720,11 @@ mod tests {
     #[test]
     fn rejects_unknown_schema_versions() {
         let json = base_json(transcript_record())
-            .replace(r#""schemaVersion": 1"#, r#""schemaVersion": 2"#);
+            .replace(r#""schemaVersion": 1"#, r#""schemaVersion": 3"#);
 
         assert!(matches!(
             ValidatedEvidenceBatch::parse_json(&json),
-            Err(InterchangeError::UnsupportedSchema { version: 2, .. })
+            Err(InterchangeError::UnsupportedSchema { version: 3, .. })
         ));
     }
 
@@ -799,5 +865,65 @@ mod tests {
                 EvidenceClass::FaceTrackReference
             ))
         );
+    }
+
+    fn with_media(version: u32, media: &str) -> String {
+        let record = transcript_record().replacen("\"score\"", &format!("{media}\n  \"score\""), 1);
+        base_json(&record).replace(
+            "\"schemaVersion\": 1",
+            &format!("\"schemaVersion\": {version}"),
+        )
+    }
+
+    const SPAN: &str = r#""mediaSpan": {"start": {"pts": 1500, "timebase": {"num": 1, "den": 1000}},
+                     "end": {"pts": 4200, "timebase": {"num": 1, "den": 1000}}},
+      "sceneIds": ["scene:3", "scene:4"],"#;
+
+    #[test]
+    fn version_two_keeps_the_media_span_and_covering_scenes() {
+        let batch = ValidatedEvidenceBatch::parse_json(&with_media(2, SPAN)).unwrap();
+        let media = batch.evidence()[0].media.as_ref().unwrap();
+        assert_eq!(media.span().start().pts(), 1500);
+        assert_eq!(media.span().end().timebase(), (1, 1000));
+        assert_eq!(media.scene_ids(), ["scene:3", "scene:4"]);
+        // A version-1 export without media still imports, now also under version 2.
+        assert!(
+            ValidatedEvidenceBatch::parse_json(&base_json(transcript_record()))
+                .unwrap()
+                .evidence()[0]
+                .media
+                .is_none()
+        );
+        assert!(ValidatedEvidenceBatch::parse_json(&with_media(2, "")).is_ok());
+    }
+
+    #[test]
+    fn media_fields_are_validated_and_versioned() {
+        let cases = [
+            (with_media(1, SPAN), "schemaVersion 2"),
+            (
+                with_media(2, r#""sceneIds": ["scene:1"],"#),
+                "without a mediaSpan",
+            ),
+            (
+                with_media(2, &SPAN.replace("\"pts\": 4200", "\"pts\": 1500")),
+                "before its end",
+            ),
+            (
+                with_media(2, &SPAN.replacen("\"den\": 1000", "\"den\": 0", 1)),
+                "timebase",
+            ),
+            (
+                with_media(2, &SPAN.replace("\"scene:4\"", "\"scene:3\"")),
+                "unique",
+            ),
+            (with_media(3, SPAN), "unsupported evidence interchange"),
+        ];
+        for (json, expected) in cases {
+            let error = ValidatedEvidenceBatch::parse_json(&json)
+                .unwrap_err()
+                .to_string();
+            assert!(error.contains(expected), "{expected}: {error}");
+        }
     }
 }

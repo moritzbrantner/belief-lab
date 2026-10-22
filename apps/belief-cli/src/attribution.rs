@@ -233,6 +233,37 @@ pub struct ReferencedEvidence {
     pub producer_config_hash: Option<String>,
     pub policy_profile: String,
     pub authorized_purpose: &'static str,
+    /// The producer-stated media range this reference covers, in rational media time.
+    pub media_span: Option<MediaSpanReport>,
+    pub scene_ids: Vec<String>,
+}
+
+#[derive(Debug, Serialize, Clone, Copy)]
+pub struct MediaSpanReport {
+    pub start: MediaTimeReport,
+    pub end: MediaTimeReport,
+}
+
+#[derive(Debug, Serialize, Clone, Copy)]
+pub struct MediaTimeReport {
+    pub pts: i64,
+    pub timebase: TimebaseReport,
+}
+
+#[derive(Debug, Serialize, Clone, Copy)]
+pub struct TimebaseReport {
+    pub num: u32,
+    pub den: u32,
+}
+
+impl From<belief_core::media::MediaTimestamp> for MediaTimeReport {
+    fn from(time: belief_core::media::MediaTimestamp) -> Self {
+        let (num, den) = time.timebase();
+        Self {
+            pts: time.pts(),
+            timebase: TimebaseReport { num, den },
+        }
+    }
 }
 
 struct ObservationMarker {
@@ -559,6 +590,14 @@ fn compare_document(
                         .map(str::to_owned),
                     policy_profile: policy.profile().as_str().to_owned(),
                     authorized_purpose: EvidencePurpose::DirectSupport.as_str(),
+                    media_span: evidence.media.as_ref().map(|media| MediaSpanReport {
+                        start: media.span().start().into(),
+                        end: media.span().end().into(),
+                    }),
+                    scene_ids: evidence
+                        .media
+                        .as_ref()
+                        .map_or_else(Vec::new, |media| media.scene_ids().to_vec()),
                 },
             });
     }
