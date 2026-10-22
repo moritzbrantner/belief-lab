@@ -20,10 +20,24 @@
     <h1>Who believes what?</h1>
     <p>Compare source-backed positions that people express or are reported to hold. This does not determine whether the proposition is objectively true.</p>
   </div></div>
+  <section aria-labelledby="investigations-heading">
+    <h2 id="investigations-heading">Investigations</h2>
+    <p id="storage-status" class="note"></p>
+    <p id="current-investigation"></p>
+    <div class="toolbar">
+      <label>Saved investigation <select id="investigation-select"></select></label>
+      <label>New investigation name <input id="investigation-name" autocomplete="off"></label>
+      <button id="new-investigation" disabled>Start new investigation</button>
+      <button id="export-project" disabled>Export project</button>
+      <label>Import project <input id="project-file" type="file" accept=".json,application/json"></label>
+      <button id="delete-investigation" disabled>Delete investigation</button>
+    </div>
+    <p class="note">Each investigation keeps its own evidence, annotations and history. An exported project file contains the evidence references and the full annotation history, not original source files.</p>
+  </section>
   <section aria-labelledby="inputs-heading">
     <h2 id="inputs-heading">1. Open an investigation</h2>
     <div class="toolbar">
-      <button id="load-example">Load two-person example</button>
+      <button id="load-example">Start two-person example investigation</button>
       <button id="compare" class="primary" disabled>Compare positions</button>
       <button id="download-comparison" disabled>Download comparison</button>
       <button id="download-annotations" disabled>Download editable annotations</button>
@@ -33,7 +47,7 @@
     <details>
       <summary>Inspect or import prepared source evidence and attribution annotations</summary>
       <div class="editors">
-        <label>Producer evidence interchange JSON <input id="evidence-file" type="file" accept=".json,application/json"><textarea id="evidence-input" aria-label="Producer evidence interchange JSON" spellcheck="false"></textarea></label>
+        <label>Imported producer evidence batches <input id="evidence-file" type="file" accept=".json,application/json" aria-label="Add a producer evidence batch"><textarea id="evidence-input" aria-label="Imported producer evidence batches" spellcheck="false"></textarea></label>
         <label>Person-attribution annotations JSON <input id="attribution-file" type="file" accept=".json,application/json"><textarea id="attribution-input" aria-label="Person-attribution annotations JSON" spellcheck="false"></textarea></label>
       </div>
     </details>

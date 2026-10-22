@@ -351,6 +351,106 @@ if (await page.evaluate(() => document.documentElement.scrollWidth > innerWidth)
   throw Error('Person-belief comparison overflows mobile viewport');
 }
 
+// #35 slice 1: separate persistent investigations, project export, offline import, continued work.
+const peopleUrl = 'http://127.0.0.1:' + server.address().port + '/people.html';
+const workspace = await browser.newContext({viewport:{width:1240,height:900}});
+const ready = (target) => target.getByRole('status').filter({hasText:/Comparison ready\.|Add a producer evidence batch/}).waitFor();
+let projectPage = await workspace.newPage();
+projectPage.on('pageerror', (error) => errors.push(String(error)));
+await projectPage.goto(peopleUrl);
+await ready(projectPage);
+await projectPage.getByLabel('New investigation name').fill('Research B');
+await projectPage.getByRole('button',{name:'Start new investigation'}).click();
+await projectPage.waitForFunction(() => document.getElementById('investigation-select').value.startsWith('research-b-'));
+await projectPage.getByRole('status').filter({hasText:'Add a producer evidence batch'}).waitFor();
+const researchB = await projectPage.locator('#investigation-select').inputValue();
+if (!researchB.startsWith('research-b-') || await projectPage.locator('#attribution-input').inputValue() !== '') throw Error('A new investigation was not empty and separate');
+const exampleOption = await projectPage.locator('#investigation-select option', {hasText: 'Two-person example'}).getAttribute('value');
+await projectPage.locator('#investigation-select').selectOption(exampleOption);
+await projectPage.getByRole('status').filter({hasText:'Comparison ready.'}).waitFor();
+const researchA = await projectPage.locator('#investigation-select').inputValue();
+await projectPage.getByLabel('Revision reason').fill('Add a proposition only in A');
+await projectPage.getByLabel('New proposition text').fill('A-only proposition');
+await projectPage.getByLabel('New proposition scope').fill('Investigation A');
+await projectPage.getByRole('button',{name:'Add proposition'}).click();
+await projectPage.getByRole('status').filter({hasText:'Comparison ready.'}).waitFor();
+await projectPage.waitForFunction(() => document.getElementById('investigation-select').options.length === 2);
+await projectPage.close();
+// Reopen the session: the last updated investigation (A) resumes; B stays empty and separate.
+projectPage = await workspace.newPage();
+projectPage.on('pageerror', (error) => errors.push(String(error)));
+await projectPage.goto(peopleUrl);
+await ready(projectPage);
+let resumed = JSON.parse(await projectPage.locator('#comparison-json').textContent());
+if (await projectPage.locator('#investigation-select').inputValue() !== researchA || resumed.propositions?.length !== 2) throw Error('Saved investigation A did not resume with its history');
+await projectPage.locator('#investigation-select').selectOption(researchB);
+await projectPage.getByRole('status').filter({hasText:'Add a producer evidence batch'}).waitFor();
+if (await projectPage.locator('#attribution-input').inputValue() !== '' || await projectPage.locator('#evidence-input').inputValue() !== '[]') throw Error('Investigation B received A\'s data');
+await projectPage.locator('#investigation-select').selectOption(researchA);
+await projectPage.getByRole('status').filter({hasText:'Comparison ready.'}).waitFor();
+const [projectDownload] = await Promise.all([
+  projectPage.waitForEvent('download'), projectPage.getByRole('button',{name:'Export project'}).click()
+]);
+if (!projectDownload.suggestedFilename().endsWith('.belief-project.json')) throw Error('Unexpected project file name');
+const projectBytes = await readFile(await projectDownload.path());
+const exportedProject = JSON.parse(projectBytes);
+if (exportedProject.investigation.id !== researchA || exportedProject.annotations.schemaVersion !== 3 || exportedProject.evidenceBatches.length !== 1) throw Error('Project export omitted investigation state');
+await workspace.close();
+
+// A fresh device: load the app, go offline, import the project, add evidence and continue.
+const device = await browser.newContext({viewport:{width:1240,height:900}});
+const devicePage = await device.newPage();
+devicePage.on('pageerror', (error) => errors.push(String(error)));
+await devicePage.goto(peopleUrl);
+await ready(devicePage);
+await device.setOffline(true);
+await devicePage.locator('#project-file').setInputFiles({name:'a.belief-project.json',mimeType:'application/json',buffer:projectBytes});
+await devicePage.waitForFunction((id) => document.getElementById('investigation-select').value === id, researchA);
+const imported = JSON.parse(await devicePage.locator('#comparison-json').textContent());
+if (JSON.stringify(imported) !== JSON.stringify(resumed)) throw Error('Imported project did not replay to the saved analysis');
+const followUp = JSON.parse(await readFile(resolve(root, 'examples/person-attributions/evidence.json'), 'utf8'));
+followUp.revision = 'sha256:follow-up-interview-v1';
+followUp.evidence = [{ ...followUp.evidence[2], id: 'e-follow-up', source: { ...followUp.evidence[2].source, recordId: 'paragraph-9' } }];
+await devicePage.getByLabel('Add a producer evidence batch').setInputFiles({name:'follow-up.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify(followUp))});
+await devicePage.waitForFunction(() => document.getElementById('current-investigation').textContent.includes('2 evidence batch(es)'));
+await devicePage.locator('#proposition-select').selectOption('effects-2027');
+await devicePage.getByLabel('Evidence record').selectOption('e-follow-up');
+await devicePage.getByLabel('Attribution type').selectOption('explicit_endorsement');
+await devicePage.getByLabel('Observed stance').selectOption('endorses_negation');
+await devicePage.getByLabel('Source passage', {exact:true}).fill('I still doubt the 2027 claim.');
+await devicePage.getByLabel('Source span start offset').fill('0');
+await devicePage.getByLabel('Source span end offset').fill('29');
+await devicePage.getByLabel('Expressed on').fill('2026-09');
+await devicePage.getByLabel('Revision reason').fill('Continue offline with follow-up evidence');
+await devicePage.getByRole('button',{name:'Record attribution and compare'}).click();
+await devicePage.getByRole('status').filter({hasText:'Comparison ready.'}).waitFor();
+const continuedProject = JSON.parse(await devicePage.locator('#comparison-json').textContent());
+const followResearcher = continuedProject.propositions.find((entry) => entry.proposition.id === 'effects-2027').people.find((person) => person.id === 'researcher-b');
+if (!followResearcher.observations.some((item) => item.evidence.id === 'e-follow-up') || followResearcher.last_documented?.expressed_at.join() !== '2026-09') {
+  throw Error('Offline continuation lost the new evidence or its date');
+}
+const [secondDownload] = await Promise.all([
+  devicePage.waitForEvent('download'), devicePage.getByRole('button',{name:'Export project'}).click()
+]);
+const secondBytes = await readFile(await secondDownload.path());
+await device.close();
+const third = await browser.newContext();
+const thirdPage = await third.newPage();
+thirdPage.on('pageerror', (error) => errors.push(String(error)));
+await thirdPage.goto(peopleUrl);
+await ready(thirdPage);
+await thirdPage.locator('#project-file').setInputFiles({name:'a2.belief-project.json',mimeType:'application/json',buffer:secondBytes});
+await thirdPage.waitForFunction(() => document.getElementById('current-investigation').textContent.includes('2 evidence batch(es)'));
+if (JSON.stringify(JSON.parse(await thirdPage.locator('#comparison-json').textContent())) !== JSON.stringify(continuedProject)) throw Error('Repeated transfer lost history');
+const tampered = JSON.parse(secondBytes);
+tampered.annotations.revisions[0].document.observations[0].passage = 'Rewritten history';
+const before = await thirdPage.locator('#comparison-json').textContent();
+await thirdPage.locator('#project-file').setInputFiles({name:'tampered.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify(tampered))});
+await thirdPage.locator('#people-status[data-error=true]').waitFor();
+if (await thirdPage.locator('#comparison-json').textContent() !== before) throw Error('A tampered project replaced the valid state');
+await thirdPage.screenshot({path:resolve(root, '../investigations.png'),fullPage:true});
+await third.close();
+
 if(errors.length) throw Error(errors.join('\n'));
-console.log('Browser passed: evidence and person attribution, source spans, scores, contradictions, stance states, semantic links, input rejection, mobile layout.');
+console.log('Browser passed: evidence and person attribution, source spans, scores, contradictions, stance states, semantic links, investigations, input rejection, mobile layout.');
 } finally { await browser.close(); await new Promise(resolve => server.close(resolve)); }

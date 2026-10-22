@@ -75,7 +75,7 @@ Open `people.html` from the Pages workbench. The prepared `examples/person-attri
 
 The browser form records a new observation from an already imported evidence reference; it requires a source-local subject, scope, passage and offsets. Confidence (observation) and confidence (person) are separately assessed, conviction is self-reported or inferred, and empty values stay unknown. Recording a new observation invalidates the person's previous overall assessment instead of trusting it on changed evidence. Provenance shows source/producer revisions and the admitted evidence purpose. No JavaScript inference is performed.
 
-This is a prepared-source attribution surface, not a live producer integration or provenance verification service. The excerpt text/offsets are annotations supplied by the user, not independently matched to upstream bytes. The scripted fixture scores are demonstrative, not empirical or calibrated. The old `soft_truth` workbench remains a distinct historical/reference view. Complete investigation storage, comparison-context review and identity linking are not implemented here. Annotation correction, withdrawal and reassessment history are supported as described below.
+This is a prepared-source attribution surface, not a live producer integration or provenance verification service. The excerpt text/offsets are annotations supplied by the user, not independently matched to upstream bytes. The scripted fixture scores are demonstrative, not empirical or calibrated. The old `soft_truth` workbench remains a distinct historical/reference view. Comparison-context review, identity linking, full source bundles and missing-source recovery are not implemented yet; saved investigations and project files are described below. Annotation correction, withdrawal and reassessment history are supported as described below.
 
 Run `npm --prefix site test` after `scripts/build-pages.sh` for a real-browser comparison, analyst-entry, score-separation and rejection regression. The test captures `target/person-belief-comparison.png` for owner acceptance.
 
@@ -112,6 +112,18 @@ A relationship joins two distinct propositions:
 - `review.status` is `suggested`, `accepted` or `rejected`, with an optional note. Accepting or rejecting changes only the review. Changing the claim is a correction under a new id with `supersedes`; the original stays in `relationship_history`.
 
 A relationship never merges propositions or creates, moves or supports a person attribution. An assessment of Q may cite only Q's observations, so "A endorses P" and "P implies Q" never become "A endorses Q".
+
+
+## Saved investigations and project files (#35, slice 1)
+
+`people.html` keeps several separate investigations (Decisions 1.1.4 and 1.1.6). Each has a name, one or more imported producer **evidence batches**, and its annotation history. Adding evidence imports another batch; a batch reusing an evidence id with different content is refused, and identical records count as already present. The legacy `soft_truth` explain workbench is not part of an investigation (owner answers on #35, 2026-10-22).
+
+- **Pages** saves investigations in the browser (IndexedDB). They never leave the device unless exported.
+- **Native:** `cargo run -- workbench [--site target/pages] [--data-dir DIR]` prints a second URL, `/people.html#token=…`, on stderr. It serves the same pages and WASM bundle from the built site (`scripts/build-pages.sh`). Investigations are saved as `<id>.json` files in the platform data directory (`~/.local/share/belief-lab/investigations/` on Linux) or `--data-dir`. Storage requests need the session token; writes also need the exact origin. A file is written only after the shared Rust rules accept the whole project.
+- **Export project** downloads `<id>.belief-project.json` (`belief_investigation_project`, version 1). It holds the investigation's evidence references and its full annotation history, but not original source files: full bundles and source recovery come in the next slice.
+- **Import project** replays the file through the same import, policy and attribution rules, so a malformed or tampered file (for example a rewritten earlier revision) is refused and the current state is kept. The import works offline once the page is loaded. If an investigation with the same id is already saved, the user chooses to replace it or to keep both.
+
+The Rust boundary is `belief_cli::project::open_project` (WASM: `open_project_json`). Opening a saved, imported or exported project gives exactly the analysis that its evidence and annotations produce today.
 
 
 ## Attribution revision history

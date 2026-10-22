@@ -1,12 +1,15 @@
 import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
 import { once } from 'node:events';
-import { readFile } from 'node:fs/promises';
+import { mkdtemp, readFile, readdir, rm } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
 import { resolve } from 'node:path';
 import { chromium } from 'playwright';
 
 const root = resolve(import.meta.dirname, '..');
-const child = spawn(resolve(root, 'target/debug', process.platform === 'win32' ? 'belief.exe' : 'belief'), ['workbench'], { cwd: root, stdio: ['ignore', 'pipe', 'pipe'] });
+// Saved investigations go to a temporary directory, never the user's data directory.
+const dataDir = await mkdtemp(resolve(tmpdir(), 'belief-lab-native-'));
+const child = spawn(resolve(root, 'target/debug', process.platform === 'win32' ? 'belief.exe' : 'belief'), ['workbench', '--data-dir', dataDir], { cwd: root, stdio: ['ignore', 'pipe', 'pipe'] });
 // Never print the session capability URL in test output.
 let diagnostics = '';
 child.stderr.on('data', (data) => { diagnostics += data.toString(); });
@@ -72,10 +75,33 @@ try {
   await withoutToken.goto(url.split('#')[0]);
   await withoutToken.getByRole('status').filter({ hasText: 'Open the full session URL' }).waitFor();
   assert.equal(await withoutToken.getByRole('button', { name: 'Run analysis', exact: true }).isDisabled(), true);
+  // The same investigation pages, saved as validated files by the native workbench (#35).
+  const peopleUrl = url.replace('/#token=', '/people.html#token=');
+  const investigations = await browser.newPage();
+  investigations.on('pageerror', (error) => errors.push(error.message));
+  await investigations.goto(peopleUrl);
+  await investigations.getByRole('status').filter({ hasText: 'Comparison ready.' }).waitFor();
+  await investigations.getByText('Saved on this computer by the local workbench.', { exact: true }).waitFor();
+  const saved = await readdir(dataDir);
+  assert.equal(saved.length, 1);
+  const stored = JSON.parse(await readFile(resolve(dataDir, saved[0]), 'utf8'));
+  assert.equal(stored.investigation.name, 'Two-person example');
+  await investigations.getByLabel('New investigation name').fill('Native research');
+  await investigations.getByRole('button', { name: 'Start new investigation' }).click();
+  await investigations.waitForFunction(() => document.getElementById('investigation-select').value.startsWith('native-research-'));
+  await investigations.reload();
+  await investigations.getByRole('status').filter({ hasText: /Comparison ready\.|Add a producer evidence batch/ }).waitFor();
+  assert.equal((await readdir(dataDir)).length, 2);
+  assert.equal(await investigations.locator('#investigation-select option').count(), 2);
+  const tokenless = await browser.newPage();
+  await tokenless.goto(peopleUrl.split('#')[0]);
+  await tokenless.getByText('Saved in this browser (IndexedDB). Export a project file to move it to another device.', { exact: true }).waitFor();
+  assert.equal((await readdir(dataDir)).length, 2, 'a page without the session token reached local storage');
   assert.deepEqual(errors, []);
-  console.log(`Local workbench passed: fixture, policy refusal, upload, download, localization, mobile, session gating${process.argv.includes('--real') ? ', real Qwen3 inference' : ''}.`);
+  console.log(`Local workbench passed: fixture, policy refusal, upload, download, localization, mobile, session gating, saved investigations${process.argv.includes('--real') ? ', real Qwen3 inference' : ''}.`);
 } finally {
   if (browser) await browser.close();
   child.kill('SIGTERM');
   await stopped;
+  await rm(dataDir, { recursive: true, force: true });
 }
