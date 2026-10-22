@@ -1,0 +1,97 @@
+{
+  "schema": "belief_golden_expectations",
+  "schemaVersion": 1,
+  "status": "approved",
+  "approval": {"by": "owner", "date": "2026-10-22", "issue": "belief-lab#63"},
+  "note": "Agent-drafted from the YouTube auto-captions on 2026-10-22, speaker turns checked against real diarization, and approved by the owner on 2026-10-22 (belief-lab#63). Times are approximate (±3 s) and are re-anchored to the committed audio after transcription. Propositions are our own paraphrases; quotes are short identifying excerpts.",
+  "source": {
+    "url": "https://www.youtube.com/watch?v=MVLKURgfft0",
+    "title": "Russell-Copleston Debate on God's Existence (1948)",
+    "durationSeconds": 1040
+  },
+  "people": [
+    {"id": "narrator", "displayName": "Narrator (BBC announcer)", "role": "introduces and summarizes"},
+    {"id": "copleston", "displayName": "Frederick Copleston", "role": "debater"},
+    {"id": "russell", "displayName": "Bertrand Russell", "role": "debater"}
+  ],
+  "speakerTurns": [
+    {"speaker": "narrator", "startSeconds": 0, "endSeconds": 141.9, "evidence": "introduces both debaters and the argument from contingency"},
+    {"speaker": "copleston", "startSeconds": 141.9, "endSeconds": 228.6, "evidence": "\"for clarity's sake I divide the argument into distinct stages\""},
+    {"speaker": "russell", "startSeconds": 228.6, "endSeconds": 282.2, "evidence": "\"the word necessary ... can only be applied significantly to propositions\""},
+    {"speaker": "copleston", "startSeconds": 282.2, "endSeconds": 314.1, "evidence": "\"I certainly should not subscribe to ... Leibniz's idea of truths of reason\""},
+    {"speaker": "russell", "startSeconds": 314.1, "endSeconds": 342.1, "evidence": "\"to my mind a necessary proposition has got to be analytic\""},
+    {"speaker": "copleston", "startSeconds": 342.1, "endSeconds": 392.0, "evidence": "\"take the proposition if there is a contingent being then there is a necessary being\""},
+    {"speaker": "russell", "startSeconds": 392.0, "endSeconds": 411.0, "evidence": "\"I don't admit the idea of a necessary being\""},
+    {"speaker": "copleston", "startSeconds": 411.0, "endSeconds": 447.8, "evidence": "\"a contingent being is a being which has not in itself the complete reason for its existence\""},
+    {"speaker": "russell", "startSeconds": 447.8, "endSeconds": 485.5, "evidence": "\"brings us back ... to the ontological argument\""},
+    {"speaker": "copleston", "startSeconds": 485.5, "endSeconds": 525.0, "evidence": "\"are you going to say that the proposition the cause of the world exists is without meaning\""},
+    {"speaker": "russell", "startSeconds": 525.0, "endSeconds": 566, "evidence": "\"God exists will not be a statement that has meaning\""},
+    {"speaker": "copleston", "startSeconds": 566, "endSeconds": 580.3, "evidence": "\"then surely you can't say it doesn't exist unless you have a conception of what existence is ... as to the phrase existent round square I should say that it has no meaning at all\""},
+    {"speaker": "russell", "startSeconds": 580.3, "endSeconds": 586.0, "evidence": "\"I quite agree, then I should say the same thing in another context in reference to a necessary being\""},
+    {"speaker": "copleston", "startSeconds": 586.0, "endSeconds": 598.0, "evidence": "\"we seem to have arrived at an impasse\""},
+    {"speaker": "russell", "startSeconds": 598.0, "endSeconds": 611.3, "evidence": "\"we can press the point a little\""},
+    {"speaker": "copleston", "startSeconds": 611.3, "endSeconds": 628.2, "evidence": "\"I think we have to argue from the world of experience to God\""},
+    {"speaker": "russell", "startSeconds": 628.2, "endSeconds": 638, "evidence": "\"for a being with sufficient knowledge it would be true\""},
+    {"speaker": "copleston", "startSeconds": 638, "endSeconds": 644, "evidence": "\"if anybody saw God he would see that God must exist\""},
+    {"speaker": "russell", "startSeconds": 644, "endSeconds": 653.1, "evidence": "\"we only know there is such a being\""},
+    {"speaker": "copleston", "startSeconds": 653.1, "endSeconds": 678.0, "evidence": "\"we don't know the essence a priori\""},
+    {"speaker": "russell", "startSeconds": 678.0, "endSeconds": 689.8, "evidence": "\"what do you mean by sufficient reason\""},
+    {"speaker": "copleston", "startSeconds": 689.8, "endSeconds": 708.0, "evidence": "\"a cause is a kind of sufficient reason\""},
+    {"speaker": "russell", "startSeconds": 708.0, "endSeconds": 719.0, "evidence": "\"suppose I am about to make a flame with a match\""},
+    {"speaker": "copleston", "startSeconds": 719.0, "endSeconds": 730, "evidence": "\"an adequate explanation must ultimately be a total explanation\""},
+    {"speaker": "russell", "startSeconds": 730, "endSeconds": 735, "evidence": "\"you're looking for something which can't be got\""},
+    {"speaker": "copleston", "startSeconds": 735, "endSeconds": 760.0, "evidence": "\"to say that one should not look for it seems to me rather dogmatic\""},
+    {"speaker": "russell", "startSeconds": 760.0, "endSeconds": 772.8, "evidence": "\"I shouldn't say unintelligible, I think it is without explanation\""},
+    {"speaker": "copleston", "startSeconds": 772.8, "endSeconds": 823.5, "evidence": "\"if you add up chocolates you get chocolates after all and not a sheep\""},
+    {"speaker": "russell", "startSeconds": 823.5, "endSeconds": 828.7, "evidence": "\"it's quite all right if you mean by explaining it simply finding a cause for it\""},
+    {"speaker": "copleston", "startSeconds": 828.7, "endSeconds": 836.8, "evidence": "\"why shouldn't one raise the question of the cause of the existence of all particular objects\""},
+    {"speaker": "russell", "startSeconds": 836.8, "endSeconds": 867.1, "evidence": "\"every man who exists has a mother ... the human race hasn't a mother\""},
+    {"speaker": "copleston", "startSeconds": 867.1, "endSeconds": 895.0, "evidence": "\"I can't really see a parity\""},
+    {"speaker": "russell", "startSeconds": 895.0, "endSeconds": 908.0, "evidence": "\"for that assumption I see no ground whatever\""},
+    {"speaker": "copleston", "startSeconds": 908.0, "endSeconds": 983.0, "evidence": "\"the series of events is either caused or it's not caused\""},
+    {"speaker": "russell", "startSeconds": 983.0, "endSeconds": 1019.0, "evidence": "\"the notion of the world having an explanation is a mistake\""},
+    {"speaker": "copleston", "startSeconds": 1019.0, "endSeconds": 1024, "evidence": "\"your general point then, Lord Russell, is that it's illegitimate even to ask the question\""},
+    {"speaker": "russell", "startSeconds": 1024, "endSeconds": 1026, "evidence": "\"yes, that's my position\""},
+    {"speaker": "copleston", "startSeconds": 1026, "endSeconds": 1032.4, "evidence": "\"it's of course very difficult to discuss it, isn't it\""},
+    {"speaker": "russell", "startSeconds": 1032.4, "endSeconds": 1037, "evidence": "\"shall we pass on to some other issue\""},
+    {"speaker": "copleston", "startSeconds": 1037, "endSeconds": 1040, "evidence": "\"let's\""}
+  ],
+  "propositions": [
+    {"id": "god-exists", "text": "God exists.", "scope": "The God of classical theism"},
+    {"id": "god-provable", "text": "The existence of God can be proved by argument from the world of experience.", "scope": "Philosophical demonstration, a posteriori"},
+    {"id": "contingency-argument-sound", "text": "The argument from contingency is a sound argument for God's existence.", "scope": "Copleston's formulation in this debate"},
+    {"id": "necessary-only-propositions", "text": "'Necessary' can be applied meaningfully only to analytic propositions, not to beings.", "scope": "Philosophical usage of 'necessary'"},
+    {"id": "existence-not-predicate", "text": "Existence is not a predicate.", "scope": "Logical analysis of existence statements"},
+    {"id": "world-has-explanation", "text": "The world as a whole has a cause or explanation beyond itself.", "scope": "The totality of contingent things"},
+    {"id": "world-cause-question-legitimate", "text": "It is legitimate to ask what the cause of the world is.", "scope": "Philosophical inquiry"},
+    {"id": "world-gratuitous", "text": "The world is gratuitous.", "scope": "Sartre's claim as cited in the debate"}
+  ],
+  "expectedAttributions": [
+    {"person": "narrator", "proposition": "god-exists", "stance": "no_stance", "kind": "reported_position", "aboutPerson": "russell", "attributedStance": "suspends_judgment", "approxSeconds": 33, "quote": "Russell's position in the debate is that of an agnostic"},
+    {"person": "copleston", "proposition": "god-exists", "stance": "endorses", "kind": "reported_position", "via": "narrator", "approxSeconds": 36, "quote": "that of a believer"},
+    {"person": "copleston", "proposition": "god-provable", "stance": "endorses", "kind": "reported_position", "via": "narrator", "approxSeconds": 38, "quote": "holds that the existence of God can be proved"},
+    {"person": "copleston", "proposition": "god-provable", "stance": "endorses", "kind": "explicit_endorsement", "approxSeconds": 623, "quote": "I think we have to argue from the world of experience to God"},
+    {"person": "copleston", "proposition": "contingency-argument-sound", "stance": "endorses", "kind": "explicit_endorsement", "approxSeconds": 308, "quote": "the fundamental metaphysical argument for God's existence"},
+    {"person": "russell", "proposition": "necessary-only-propositions", "stance": "endorses", "kind": "explicit_endorsement", "approxSeconds": 245, "quote": "can only be applied significantly to propositions"},
+    {"person": "copleston", "proposition": "necessary-only-propositions", "stance": "endorses_negation", "kind": "explicit_endorsement", "approxSeconds": 593, "quote": "has for me a definite meaning"},
+    {"person": "russell", "proposition": "existence-not-predicate", "stance": "endorses", "kind": "explicit_endorsement", "approxSeconds": 480, "quote": "existence quite definitely is not a predicate"},
+    {"person": "copleston", "proposition": "existence-not-predicate", "stance": "no_stance_evidence"},
+    {"person": "copleston", "proposition": "world-has-explanation", "stance": "endorses", "kind": "explicit_endorsement", "approxSeconds": 775, "quote": "intrinsically unintelligible apart from the existence of God"},
+    {"person": "russell", "proposition": "world-has-explanation", "stance": "endorses_negation", "kind": "explicit_endorsement", "approxSeconds": 1010, "quote": "the notion of the world having an explanation is a mistake"},
+    {"person": "russell", "proposition": "world-cause-question-legitimate", "stance": "endorses_negation", "kind": "explicit_endorsement", "approxSeconds": 1024, "quote": "illegitimate even to ask the question ... yes, that's my position", "expressedAs": "agreement", "note": "Russell assents to Copleston's paraphrase of his view; counts as Russell's explicit endorsement (owner 2026-10-22)."},
+    {"person": "copleston", "proposition": "world-cause-question-legitimate", "stance": "endorses", "kind": "inferred_belief", "approxSeconds": 831, "quote": "why shouldn't one raise the question of the cause of the existence of all particular objects"},
+    {"person": "copleston", "proposition": "world-gratuitous", "stance": "no_stance", "kind": "quotation_or_criticism", "approxSeconds": 974, "quote": "when Sartre says the world is gratuitous"}
+  ],
+  "expectedNoAttribution": [
+    {"person": "russell", "proposition": "god-exists", "reason": "In this excerpt Russell never states his own stance on God's existence; only the narrator reports him as agnostic. An explicit suspension attributed to Russell must come from that report, not from his own words."}
+  ],
+  "expectedRelationships": [
+    {"kind": "implication", "from": "god-provable", "to": "god-exists", "note": "A sound proof would establish the conclusion; the reverse does not hold."},
+    {"kind": "partial_overlap", "from": "contingency-argument-sound", "to": "world-has-explanation"}
+  ],
+  "speakerTurnEvidence": {
+    "captions": "YouTube auto-captions (no speaker marks); turn order checked against the published debate transcript",
+    "diarization": {"model": "pyannote/speaker-diarization-community-1", "runtime": "pyannote.audio 4.0.4, CPU, 4 threads", "audioSha256": "7a27e0069c7ea0631f4113bab876f35db89f81fbe3668143a8710a9b46834236", "audioNote": "16 kHz mono WAV decoded from the YouTube bestaudio stream", "speakerMap": {"SPEAKER_00": "narrator", "SPEAKER_01": "copleston", "SPEAKER_02": "russell"}, "agreementWithDraftTurns": 0.982, "boundariesSnappedToDiarization": 29, "nativeRuntime": {"crate": "audio-analysis-speakers (pyannote-diarization feature), audio-analysis 1f7e528", "onnxRuntime": "1.24.4", "artifactSetSha256": "0a12189874dace9b590af9b09ef4637552006130716db57c35d72f984b36c577", "seconds": 239, "frameAgreementWithPython": 0.991, "agreementWithDraftTurns": 0.981, "sameLabelsInOpenReviewWindows": true}},
+    "ownerResolved": {"date": "2026-10-22", "method": "owner listened to the audio clips", "windows": [{"startSeconds": 574, "endSeconds": 580, "owner": "copleston", "draft": "russell", "diarization": "copleston", "excerpt": "as to the phrase existent round square I should say that it has no meaning at all"}, {"startSeconds": 580, "endSeconds": 586, "owner": "russell", "draft": "copleston", "diarization": "russell", "excerpt": "I quite agree, then I should say the same thing ... in reference to a necessary being"}, {"startSeconds": 638, "endSeconds": 644, "owner": "copleston", "draft": "copleston", "diarization": "russell", "excerpt": "if anybody saw God he would see that God must exist"}, {"startSeconds": 730, "endSeconds": 735, "owner": "russell", "draft": "russell", "diarization": "copleston", "excerpt": "then I can only say you're looking for something which can't be got"}, {"startSeconds": 1024, "endSeconds": 1026, "owner": "russell", "draft": "russell", "diarization": "copleston", "excerpt": "yes, that's my position"}]}
+  }
+}
