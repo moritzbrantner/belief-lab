@@ -1,8 +1,9 @@
 {
   "schema": "belief_golden_expectations",
   "schemaVersion": 1,
-  "status": "draft_unapproved",
-  "note": "Agent-drafted from the YouTube auto-captions on 2026-10-22. Not golden until the owner approves it (belief-lab#63). Times are approximate (±3 s) and are re-anchored to the committed audio after transcription. Propositions are our own paraphrases; quotes are short identifying excerpts.",
+  "status": "approved",
+  "approval": {"by": "owner", "date": "2026-10-22", "issue": "belief-lab#63"},
+  "note": "Agent-drafted from the YouTube auto-captions on 2026-10-22, speaker turns checked against real diarization, and approved by the owner on 2026-10-22 (belief-lab#63). Times are approximate (±3 s) and are re-anchored to the committed audio after transcription. Propositions are our own paraphrases; quotes are short identifying excerpts.",
   "source": {
     "url": "https://www.youtube.com/watch?v=MVLKURgfft0",
     "title": "Russell-Copleston Debate on God's Existence (1948)",
