@@ -21,6 +21,8 @@ Rust workspace with a thin static WebAssembly workbench; `cargo run` executes a 
 | `inference-core` | Authorization boundary for inference execution |
 | `inference-baseline` | Deterministic, correlation-aware soft-truth reference inference |
 | `belief-store` | Explanation, import receipts, transitive invalidation |
+| `golden-scoring` | Scores real-model output against owner-approved `fixtures/golden/` expectations |
+| `golden-media` (outside the workspace) | Opt-in real-model golden runs over committed source media |
 
 ## Commands
 
@@ -38,6 +40,9 @@ cargo run -q -- explain <evidence.json> [--judgments <script.json>] [--profile <
 
 # Golden outputs for fixtures/explain/<case>/ run in `cargo test --workspace`; after an intended change:
 BELIEF_UPDATE_FIXTURES=1 cargo test -p belief-cli --test explain_fixtures   # then review the diff
+
+# Opt-in real-model golden run (outside the workspace; see README "Original-source golden test"):
+GOLDEN_PYANNOTE_BUNDLE=<snapshot> cargo test --release --manifest-path crates/golden-media/Cargo.toml -- --ignored --nocapture
 ```
 
 `explain` exits 0 when it produced an explanation (policy refusals included), 2 when an input was malformed or unsupported (fail-closed), and 1 on usage or I/O errors. It reads no policy from the environment; pass `--profile` and `--policy` explicitly. Add a case directory under `fixtures/explain/` for new behavior (see `docs/GETTING_STARTED.md`).

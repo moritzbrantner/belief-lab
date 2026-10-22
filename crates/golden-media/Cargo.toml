@@ -1,0 +1,29 @@
+[package]
+name = "golden-media"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+# Opt-in real-model acceptance for fixtures/golden/ (belief-lab#63). Excluded from the
+# workspace so `cargo test --workspace` stays offline and light. Run it with:
+#   cargo test --release --manifest-path crates/golden-media/Cargo.toml -- --ignored --nocapture
+
+[dependencies]
+
+[dev-dependencies]
+golden-scoring = { path = "../golden-scoring" }
+serde_json = "=1.0.154"
+sha2 = "=0.10.9"
+audio-analysis-transcription = { package = "moenarch-audio-analysis-transcription", git = "https://github.com/moritzbrantner/audio-analysis", rev = "1f7e528617f21ec61de22fcc7cfaed1c675ac020", features = ["candle", "model-bundles", "pyannote-diarization", "audio-io"] }
+audio-analysis-speakers = { package = "moenarch-audio-analysis-speakers", git = "https://github.com/moritzbrantner/audio-analysis", rev = "1f7e528617f21ec61de22fcc7cfaed1c675ac020", features = ["pyannote-diarization"] }
+
+# The producer's own source graph at that revision: its Cargo.toml Candle backport and the
+# moenarch-foundation revision from its .coding-tooling.source-deps.json.
+[patch.crates-io]
+candle-core = { git = "https://github.com/moritzbrantner/candle", rev = "b57f9eb7ccc6bf5cebf0c3822ed69573b06877a9", version = "0.10.2" }
+moenarch-audio-contracts = { git = "https://github.com/moritzbrantner/moenarch-foundation", rev = "9a162dfd44d3cae7f88ad993de79defc0ac94cd6" }
+moenarch-math-signal-core = { git = "https://github.com/moritzbrantner/moenarch-foundation", rev = "9a162dfd44d3cae7f88ad993de79defc0ac94cd6" }
+moenarch-media-core = { git = "https://github.com/moritzbrantner/moenarch-foundation", rev = "9a162dfd44d3cae7f88ad993de79defc0ac94cd6" }
+moenarch-model-runtime = { git = "https://github.com/moritzbrantner/moenarch-foundation", rev = "9a162dfd44d3cae7f88ad993de79defc0ac94cd6" }
+moenarch-runtime-core = { git = "https://github.com/moritzbrantner/moenarch-foundation", rev = "9a162dfd44d3cae7f88ad993de79defc0ac94cd6" }
+moenarch-tensor-data = { git = "https://github.com/moritzbrantner/moenarch-foundation", rev = "9a162dfd44d3cae7f88ad993de79defc0ac94cd6" }

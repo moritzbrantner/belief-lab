@@ -9,7 +9,10 @@ members = [
     "crates/evidence-interchange",
     "crates/semantic-decision",
     "crates/semif-provider",
+    "crates/golden-scoring",
 ]
+# Opt-in real-model golden runs build heavy producer stacks; keep them out of the workspace.
+exclude = ["crates/golden-media"]
 default-members = ["apps/belief-cli"]
 resolver = "2"
 

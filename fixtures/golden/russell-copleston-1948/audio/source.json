@@ -1,0 +1,35 @@
+{
+  "schema": "belief_golden_audio_source",
+  "schemaVersion": 1,
+  "file": "MVLKURgfft0.f251-5.webm",
+  "sha256": "5c4ad01057efd50da11342f279c72ea59b85fd0d9864ee67fde8455c43a3630a",
+  "bytes": 14668976,
+  "source": {
+    "url": "https://www.youtube.com/watch?v=MVLKURgfft0",
+    "youtubeId": "MVLKURgfft0",
+    "title": "Russell-Copleston Debate on God's Existence (1948)",
+    "channel": "Philosophy Overdose",
+    "channelId": "UC7q-GcHyjCHkTpXCUTLzy7Q",
+    "uploadDate": "2021-06-09",
+    "rights": "Uploader's description: \"It is now in the public domain. Note, the audio has been improved.\""
+  },
+  "stream": {
+    "ytDlpFormatId": "251-5",
+    "formatNote": "English (US) original (default), medium",
+    "language": "en-US",
+    "codec": "opus",
+    "container": "webm",
+    "sampleRate": 48000,
+    "channels": 2,
+    "durationSeconds": 1039.861
+  },
+  "acquisition": {
+    "tool": "yt-dlp 2026.08.19",
+    "command": "yt-dlp --js-runtimes node -f 251-5 -o '%(id)s.f%(format_id)s.%(ext)s' https://www.youtube.com/watch?v=MVLKURgfft0",
+    "date": "2026-10-22",
+    "note": "The original-language stream, byte for byte as downloaded. Other audio tracks on this video are auto-dubbed translations."
+  },
+  "decoded16kMonoWavSha256": "7a27e0069c7ea0631f4113bab876f35db89f81fbe3668143a8710a9b46834236",
+  "decodedNote": "`ffmpeg -i MVLKURgfft0.f251-5.webm -ac 1 -ar 16000 out.wav` reproduces speakerTurnEvidence.diarization.audioSha256 in ../expected-beliefs.json, so these are the bytes the golden speaker turns were checked against.",
+  "corpusIngestLink": "youtube-corpus's ingest downloads the merged video and stores no media digest, so this digest cannot yet be compared with a corpus ingest record (moritzbrantner/youtube-corpus#120)."
+}
