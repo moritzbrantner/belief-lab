@@ -1,4 +1,4 @@
-# Evidence interchange v1
+# Evidence interchange v1 and v2
 
 `belief_evidence_interchange@1` is the import boundary between corpus/analysis systems and `belief-lab`.
 
@@ -70,6 +70,22 @@ The exporter revision is separate from every source and producer revision. This 
 1. the code that exported the batch;
 2. the revision of the source record being referenced;
 3. the revision/model/configuration that produced that source record.
+
+## Media spans and covering scenes (version 2, #60)
+
+`schemaVersion: 2` is version 1 plus two optional per-reference fields. Version-1 exports keep importing unchanged, and a version-1 document that uses either field is refused.
+
+```json
+"mediaSpan": {
+  "start": {"pts": 1500, "timebase": {"num": 1, "den": 1000}},
+  "end":   {"pts": 4200, "timebase": {"num": 1, "den": 1000}}
+},
+"sceneIds": ["scene:3", "scene:4"]
+```
+
+- `mediaSpan` is a half-open range of the referenced media in the canonical rational media-time wire form (`moenarch-foundation` media-core): `pts` ticks of `num/den` seconds. Timebases must be positive, the start non-negative and strictly before the end, compared exactly across timebases. No derived seconds are stored; the workbench computes seconds for display only.
+- `sceneIds` names producer scene records that cover the span (for youtube-corpus, scene evidence from visual-analysis/`scenedetect-core`). They must be unique and non-empty, and they require a `mediaSpan`.
+- Belief Lab stores and shows these fields in observation provenance and project files. It never derives a span or detects scenes. youtube-corpus#115 adds them to the corpus export; #61 later uses them to bundle producer-cut scene clips, audio excerpts and keyframes.
 
 ## Parentage and ordering
 

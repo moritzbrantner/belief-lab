@@ -10,7 +10,7 @@
   },
   "rejection": {
     "stage": "interchange",
-    "reason": "unsupported evidence interchange belief_evidence_interchange@2"
+    "reason": "unsupported evidence interchange belief_evidence_interchange@99"
   },
   "batch": null,
   "inferences": []

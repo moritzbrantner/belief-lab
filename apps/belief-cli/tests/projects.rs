@@ -140,3 +140,45 @@ fn tampered_or_invalid_projects_are_refused() {
     denied.insert("BELIEF_POLICY_PROFILE".into(), "default".into());
     assert!(open_project(&valid.to_string(), &denied).is_err());
 }
+
+#[test]
+fn a_version_two_media_span_reaches_observation_provenance() {
+    let mut batch = second_batch();
+    batch["schemaVersion"] = json!(2);
+    batch["evidence"][0]["mediaSpan"] = json!({
+        "start": {"pts": 1500, "timebase": {"num": 1, "den": 1000}},
+        "end": {"pts": 4200, "timebase": {"num": 1, "den": 1000}}
+    });
+    batch["evidence"][0]["sceneIds"] = json!(["scene:3"]);
+    let mut annotations: Value = serde_json::from_str(ATTRIBUTIONS).unwrap();
+    annotations["observations"]
+        .as_array_mut()
+        .unwrap()
+        .push(json!({
+            "id": "b-follow-up", "personId": "researcher-b", "evidenceId": "e-follow-up",
+            "kind": "explicit_endorsement", "stance": "endorses_negation",
+            "passage": "I still doubt the 2027 claim.", "span": {"start": 0, "end": 29}
+        }));
+    let report = open(&project("a", vec![evidence(), batch], annotations)).unwrap();
+    let observation = report["comparison"]["people"][1]["observations"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|item| item["id"] == "b-follow-up")
+        .unwrap()
+        .clone();
+    assert_eq!(observation["evidence"]["media_span"]["start"]["pts"], 1500);
+    assert_eq!(
+        observation["evidence"]["media_span"]["end"]["timebase"]["den"],
+        1000
+    );
+    assert_eq!(observation["evidence"]["scene_ids"], json!(["scene:3"]));
+    let plain = report["comparison"]["people"][1]["observations"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|item| item["id"] == "b-reported")
+        .unwrap();
+    assert!(plain["evidence"]["media_span"].is_null());
+    assert_eq!(plain["evidence"]["scene_ids"], json!([]));
+}

@@ -664,6 +664,12 @@ function personCard(person, historical = false) {
       appendDetail(provenance, 'Producer model', evidence.producer_model);
       appendDetail(provenance, 'Producer configuration', evidence.producer_config_hash);
       appendDetail(provenance, 'Authorization', evidence.policy_profile + ' · ' + evidence.authorized_purpose);
+      if (evidence.media_span) {
+        // Seconds are only for display; the report keeps exact rational media time.
+        const seconds = (time) => (time.pts * time.timebase.num / time.timebase.den).toLocaleString(undefined, { maximumFractionDigits: 3 });
+        appendDetail(provenance, 'Media span', seconds(evidence.media_span.start) + ' s – ' + seconds(evidence.media_span.end) + ' s' +
+          (evidence.scene_ids.length ? ' · scenes ' + evidence.scene_ids.join(', ') : ' · no scene records'));
+      }
       detail.append(provenance);
       card.append(detail);
     }

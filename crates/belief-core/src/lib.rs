@@ -1,4 +1,5 @@
 pub mod attribution;
+pub mod media;
 
 use std::collections::BTreeSet;
 use std::fmt;
@@ -310,6 +311,8 @@ pub struct EvidenceRef {
     pub family: EvidenceFamilyId,
     pub score: Option<Score>,
     pub provenance: Provenance,
+    /// Where within a media source this reference points, when the producer states it.
+    pub media: Option<media::MediaLocator>,
 }
 
 impl EvidenceRef {
@@ -328,7 +331,13 @@ impl EvidenceRef {
             family,
             score,
             provenance,
+            media: None,
         }
+    }
+
+    pub fn with_media(mut self, media: media::MediaLocator) -> Self {
+        self.media = Some(media);
+        self
     }
 
     pub fn has_complete_provenance(&self) -> bool {
@@ -681,6 +690,7 @@ pub enum ModelError {
         expected: &'static str,
         actual: ScoreSemantics,
     },
+    InvalidMedia(String),
 }
 
 impl fmt::Display for ModelError {
@@ -704,6 +714,7 @@ impl fmt::Display for ModelError {
                 f,
                 "{context} requires {expected} score semantics, got {actual:?}"
             ),
+            Self::InvalidMedia(message) => write!(f, "{message}"),
         }
     }
 }
