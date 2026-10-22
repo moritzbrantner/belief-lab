@@ -76,7 +76,9 @@ fn run_command(args: &[String]) -> Result<(), Box<dyn Error>> {
             print_core_demo(run_core_demo()?);
             Ok(())
         }
-        [command] if command == "workbench" => workbench::run(execute_local),
+        [command, options @ ..] if command == "workbench" => {
+            workbench::run(execute_local, workbench::Options::parse(options)?)
+        }
         [command] if command == "setup" => setup(SemifModelTier::Phone),
         [command, tier] if command == "setup" => setup(parse_tier(tier)?),
         [command] if command == "doctor" => doctor(SemifModelTier::Phone),
@@ -489,7 +491,8 @@ Usage:
   cargo run -- explain <evidence.json> [--judgments <file>] [--profile <name>]
                        [--policy KEY=VALUE]... [--json]
                                     Explain an evidence batch offline (exit 2 = input rejected)
-  cargo run -- workbench            Open a local browser workbench for real models
+  cargo run -- workbench            Open a local browser workbench for real models and
+                                    saved investigations [--site target/pages] [--data-dir DIR]
   cargo run -- decide <request.json|-> Execute one authorized semantic decision as JSON
   cargo run -- setup [tier]         Install/update pinned SemIf and download a model
   cargo run -- semantic-demo [tier] Run a real local SemIf-backed decision

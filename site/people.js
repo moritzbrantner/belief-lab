@@ -1,4 +1,4 @@
-import init, { compare_attributions_json } from './pkg/belief_cli.js';
+import init, { open_project_json } from './pkg/belief_cli.js';
 
 const $ = (id) => document.getElementById(id);
 const examplePath = 'examples/person-attributions/';
@@ -7,6 +7,11 @@ let initialized = false;
 let correctionTarget = null;
 let linkCorrectionTarget = null;
 let activeProposition = null;
+// The active investigation; its evidence batches and annotations live in the two editors.
+let investigation = null;
+const POLICY = JSON.stringify({ BELIEF_POLICY_PROFILE: 'semantic_research' });
+// The native workbench passes its session token in the fragment; Pages has none.
+const token = new URLSearchParams(location.hash.slice(1)).get('token');
 const stanceLabels = {
   endorses: 'Endorses P', endorses_negation: 'Endorses not-P',
   suspends_judgment: 'Explicitly suspends judgment', no_stance: 'No stance in this passage'
@@ -47,12 +52,18 @@ async function getExample(filename) {
   if (!response.ok) throw Error('Could not load example: ' + response.status);
   return readFile(await response.blob());
 }
+function batches() {
+  const value = $('evidence-input').value.trim();
+  return value ? JSON.parse(value) : [];
+}
+function allEvidence() {
+  return batches().flatMap((entry) => entry.batch?.evidence || []);
+}
 function updateEvidenceOptions() {
   const selected = $('source-evidence').value;
   $('source-evidence').replaceChildren();
   try {
-    const batch = JSON.parse($('evidence-input').value);
-    for (const evidence of batch.evidence || []) {
+    for (const evidence of allEvidence()) {
       const option = element('option', evidence.id + ' · ' + (evidence.subject || 'no person') + ' · ' + evidence.source.recordId);
       option.value = evidence.id;
       $('source-evidence').append(option);
@@ -65,9 +76,8 @@ function updateEvidenceOptions() {
 }
 function updatePersonName() {
   try {
-    const batch = JSON.parse($('evidence-input').value);
     const document = currentAnnotation();
-    const selected = batch.evidence.find((entry) => entry.id === $('source-evidence').value);
+    const selected = allEvidence().find((entry) => entry.id === $('source-evidence').value);
     const person = document.people.find((entry) =>
       entry.subjectId === selected.subject &&
       entry.scopeId === selected.source.scopeId &&
@@ -75,15 +85,109 @@ function updatePersonName() {
     $('person-name').value = person?.displayName || '';
   } catch { $('person-name').value = ''; }
 }
+function projectText(annotationsText = $('attribution-input').value, evidenceBatches = batches()) {
+  if (!investigation) throw Error('Open or start an investigation first.');
+  return JSON.stringify({
+    schema: 'belief_investigation_project', schemaVersion: 1, investigation,
+    evidenceBatches, annotations: annotationsText.trim() ? JSON.parse(annotationsText) : null
+  }, null, 2);
+}
+function openProject(text) { return JSON.parse(open_project_json(text, POLICY)); }
+
+// Saved investigations: IndexedDB on Pages, the session-guarded local API in the native workbench.
+function browserStorage() {
+  const open = () => new Promise((resolve, reject) => {
+    const request = indexedDB.open('belief-lab', 1);
+    request.onupgradeneeded = () => request.result.createObjectStore('investigations', { keyPath: 'id' });
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error);
+  });
+  const run = async (mode, action) => {
+    const db = await open();
+    try {
+      return await new Promise((resolve, reject) => {
+        const transaction = db.transaction('investigations', mode);
+        const request = action(transaction.objectStore('investigations'));
+        transaction.oncomplete = () => resolve(request.result);
+        transaction.onerror = () => reject(transaction.error);
+      });
+    } finally { db.close(); }
+  };
+  return {
+    label: 'Saved in this browser (IndexedDB). Export a project file to move it to another device.',
+    list: async () => (await run('readonly', (store) => store.getAll())).map(({ id, name, createdAt, updatedAt }) => ({ id, name, createdAt, updatedAt })),
+    get: async (id) => (await run('readonly', (store) => store.get(id)))?.text ?? null,
+    put: (project, text) => run('readwrite', (store) => store.put({ ...project.investigation, updatedAt: new Date().toISOString(), text })),
+    remove: (id) => run('readwrite', (store) => store.delete(id))
+  };
+}
+function nativeStorage() {
+  const call = async (path, options = {}) => {
+    const response = await fetch('api/investigations' + path, {
+      ...options, headers: { 'Content-Type': 'application/json', 'X-Belief-Token': token }
+    });
+    if (!response.ok) throw Error((await response.json().catch(() => null))?.message || 'Local storage request failed: ' + response.status);
+    return response;
+  };
+  return {
+    label: 'Saved on this computer by the local workbench.',
+    list: async () => (await call('')).json(),
+    get: async (id) => (await call('/' + id)).text(),
+    put: (project, text) => call('/' + project.investigation.id, { method: 'PUT', body: text }),
+    remove: (id) => call('/' + id, { method: 'DELETE' })
+  };
+}
+const storage = token ? nativeStorage() : browserStorage();
+async function save() {
+  const text = projectText();
+  await storage.put(JSON.parse(text), text);
+  await refreshInvestigations();
+}
+async function refreshInvestigations() {
+  const saved = await storage.list();
+  $('investigation-select').replaceChildren();
+  for (const item of saved.sort((a, b) => a.name.localeCompare(b.name))) {
+    const option = element('option', item.name + ' · ' + item.id); option.value = item.id;
+    $('investigation-select').append(option);
+  }
+  if (investigation) $('investigation-select').value = investigation.id;
+  return saved;
+}
+function newId(name) {
+  const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 40) || 'investigation';
+  const random = [...crypto.getRandomValues(new Uint8Array(3))].map((byte) => byte.toString(16).padStart(2, '0')).join('');
+  return slug + '-' + random;
+}
+function showProject(text) {
+  const report = openProject(text);
+  const project = JSON.parse(text);
+  investigation = project.investigation;
+  $('evidence-input').value = JSON.stringify(project.evidenceBatches, null, 2);
+  $('attribution-input').value = project.annotations ? JSON.stringify(project.annotations, null, 2) : '';
+  cancelCorrection(); cancelLinkCorrection(); clearComparison(); updateEvidenceOptions();
+  $('investigation-select').value = investigation.id;
+  $('current-investigation').textContent = 'Investigation: ' + investigation.name + ' · ' + report.batches.length + ' evidence batch(es)';
+  if (report.comparison) render(report.comparison);
+  else status('Add a producer evidence batch and a proposition to begin.');
+  return report;
+}
+async function openInvestigation(id) {
+  const text = await storage.get(id);
+  if (!text) throw Error('Saved investigation ' + id + ' was not found.');
+  showProject(text);
+  if (comparison) status('Comparison ready.');
+}
+async function startInvestigation(name, evidenceBatches = [], annotations = null) {
+  investigation = { id: newId(name), name, createdAt: new Date().toISOString() };
+  const text = projectText(annotations ?? '', evidenceBatches);
+  showProject(text);
+  await save();
+}
 async function loadExample() {
-  cancelCorrection();
-  clearComparison();
   try {
     const [batch, attributions] = await Promise.all([getExample('evidence.json'), getExample('attributions.json')]);
-    $('evidence-input').value = batch;
-    $('attribution-input').value = attributions;
-    updateEvidenceOptions();
-    runComparison();
+    await startInvestigation('Two-person example', [{ importedAt: new Date().toISOString(), batch: JSON.parse(batch) }], attributions);
+    status('Comparison ready.');
   } catch (error) { status(String(error.message || error), true); }
 }
 function numeric(id) {
@@ -95,10 +199,10 @@ function numeric(id) {
 }
 function recordAttribution() {
   try {
-    const batch = JSON.parse($('evidence-input').value);
     const annotation = currentAnnotation();
+    if (annotation.propositions && !activeProposition) throw Error('Add a proposition before recording an observation.');
     if (!Array.isArray(annotation.people) || !Array.isArray(annotation.observations) || !Array.isArray(annotation.assessments)) throw Error('Open a valid person-attribution document.');
-    const evidence = batch.evidence.find((record) => record.id === $('source-evidence').value);
+    const evidence = allEvidence().find((record) => record.id === $('source-evidence').value);
     if (!evidence?.subject || !evidence.source?.scopeId) throw Error('Selected evidence must identify a source-local person.');
     const name = $('person-name').value.trim();
     const passage = $('passage').value;
@@ -177,7 +281,11 @@ function recordAttribution() {
     commitRevision(annotation, personConfidence === null ? [] : [existing.id], supersedes);
   } catch (error) { status(String(error.message || error), true); }
 }
-function currentAnnotation(envelope = JSON.parse($('attribution-input').value)) {
+function emptySnapshot() {
+  return { propositions: [], people: [], observations: [], assessments: [], relationships: [] };
+}
+function currentAnnotation(envelope = $('attribution-input').value.trim() ? JSON.parse($('attribution-input').value) : null) {
+  if (envelope === null) return emptySnapshot();
   if (envelope.schemaVersion === 1) return envelope;
   if (![2, 3].includes(envelope.schemaVersion) || !envelope.revisions?.length) throw Error('Open valid version-1 annotations or a version-2/3 history.');
   return envelope.revisions[envelope.revisions.length - 1].document;
@@ -197,6 +305,7 @@ function toSnapshot(document) {
 }
 // Adding a proposition or relationship upgrades a single-proposition history to version 3.
 function toInvestigation(previous) {
+  if (previous === null) return { schema: 'belief_person_attributions', schemaVersion: 3, revisions: [] };
   const revisions = previous.schemaVersion === 2 ? previous.revisions
     : [{ reason: 'Imported version-1 baseline (original reason unknown)', document: previous }];
   return {
@@ -209,30 +318,34 @@ function toInvestigation(previous) {
   };
 }
 function editableSnapshot() {
-  const envelope = JSON.parse($('attribution-input').value);
+  const envelope = $('attribution-input').value.trim() ? JSON.parse($('attribution-input').value) : null;
   const document = currentAnnotation(envelope);
   return structuredClone(document.propositions ? document : toSnapshot(document));
 }
 function allObservationIds() {
+  if (!$('attribution-input').value.trim()) return new Set();
   const envelope = JSON.parse($('attribution-input').value);
   const documents = envelope.revisions ? envelope.revisions.map((revision) => revision.document) : [envelope];
   return new Set(documents.flatMap((document) => document.observations.map((observation) => observation.id)));
 }
 function allRelationshipIds() {
+  if (!$('attribution-input').value.trim()) return new Set();
   const envelope = JSON.parse($('attribution-input').value);
   return new Set((envelope.schemaVersion === 3 ? envelope.revisions : [])
     .flatMap((revision) => (revision.document.relationships || []).map((link) => link.id)));
 }
 function validateAnnotations(text) {
-  return JSON.parse(compare_attributions_json($('evidence-input').value, text, JSON.stringify({ BELIEF_POLICY_PROFILE: 'semantic_research' })));
+  const report = openProject(projectText(text)).comparison;
+  if (!report) throw Error('Open person-attribution annotations first.');
+  return report;
 }
 function commitRevision(document, reassessedPersonIds = [], supersedes = {}) {
   const reason = $('revision-reason').value;
   if (!reason.trim()) throw Error('Enter a revision reason before changing annotations.');
-  const previous = JSON.parse($('attribution-input').value);
+  const previous = $('attribution-input').value.trim() ? JSON.parse($('attribution-input').value) : null;
   let envelope;
   if (document.propositions) {
-    envelope = previous.schemaVersion === 3 ? previous : toInvestigation(previous);
+    envelope = previous?.schemaVersion === 3 ? previous : toInvestigation(previous);
     envelope.revisions.push({
       reason, document, supersedes,
       reassessed: reassessedPersonIds.map((personId) => ({ propositionId: activeProposition, personId }))
@@ -250,6 +363,7 @@ function commitRevision(document, reassessedPersonIds = [], supersedes = {}) {
   cancelCorrection();
   $('revision-reason').value = '';
   updateEvidenceOptions(); render(report); status('Comparison ready.');
+  save().catch((error) => status('Saved state may be stale: ' + (error.message || error), true));
 }
 function cancelCorrection() {
   correctionTarget = null;
@@ -572,6 +686,7 @@ function runComparison() {
     const report = validateAnnotations($('attribution-input').value);
     render(report);
     status('Comparison ready.');
+    save().catch((error) => status('Saved state may be stale: ' + (error.message || error), true));
   } catch (error) { clearComparison(); status(String(error.message || error), true); }
 }
 $('theme').value = localStorage.getItem('belief-theme') || 'system';
@@ -581,24 +696,78 @@ theme();
 $('source-evidence').addEventListener('change', updatePersonName);
 $('evidence-input').addEventListener('input', () => { cancelCorrection(); clearComparison(); updateEvidenceOptions(); });
 $('attribution-input').addEventListener('input', () => { cancelCorrection(); clearComparison(); updatePersonName(); });
-for (const [id, field] of [['evidence-file', 'evidence-input'], ['attribution-file', 'attribution-input']]) {
-  $(id).addEventListener('change', async (event) => {
-    try {
-      const file = event.target.files[0];
-      if (file) {
-        const text = await readFile(file);
-        const report = JSON.parse(compare_attributions_json(
-          field === 'evidence-input' ? text : $('evidence-input').value,
-          field === 'attribution-input' ? text : $('attribution-input').value,
-          JSON.stringify({ BELIEF_POLICY_PROFILE: 'semantic_research' })
-        ));
-        $(field).value = text;
-        cancelCorrection(); updateEvidenceOptions(); render(report);
-        status('Comparison ready.');
-      }
-    } catch (error) { status(String(error.message || error), true); }
-  });
-}
+$('evidence-file').addEventListener('change', async (event) => {
+  try {
+    const file = event.target.files[0];
+    if (!file) return;
+    const next = [...batches(), { importedAt: new Date().toISOString(), batch: JSON.parse(await readFile(file)) }];
+    const text = projectText($('attribution-input').value, next);
+    showProject(text);
+    await save();
+    status(comparison ? 'Comparison ready.' : 'Evidence batch added.');
+  } catch (error) { status(String(error.message || error), true); }
+  event.target.value = '';
+});
+$('attribution-file').addEventListener('change', async (event) => {
+  try {
+    const file = event.target.files[0];
+    if (!file) return;
+    const text = await readFile(file);
+    const report = validateAnnotations(text);
+    $('attribution-input').value = text;
+    cancelCorrection(); updateEvidenceOptions(); render(report);
+    status('Comparison ready.');
+    await save();
+  } catch (error) { status(String(error.message || error), true); }
+  event.target.value = '';
+});
+$('investigation-select').addEventListener('change', () => {
+  openInvestigation($('investigation-select').value).catch((error) => status(String(error.message || error), true));
+});
+$('new-investigation').addEventListener('click', async () => {
+  try {
+    const name = $('investigation-name').value.trim();
+    if (!name) throw Error('Name the new investigation.');
+    await startInvestigation(name);
+    $('investigation-name').value = '';
+  } catch (error) { status(String(error.message || error), true); }
+});
+$('export-project').addEventListener('click', () => {
+  try {
+    const text = projectText();
+    openProject(text);
+    const url = URL.createObjectURL(new Blob([text + '\n'], { type: 'application/json' }));
+    const anchor = element('a'); anchor.href = url; anchor.download = investigation.id + '.belief-project.json'; anchor.click();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  } catch (error) { status(String(error.message || error), true); }
+});
+$('project-file').addEventListener('change', async (event) => {
+  try {
+    const file = event.target.files[0];
+    if (!file) return;
+    if (file.size > 4 * 1048576) throw Error('A project must be at most 4 MiB.');
+    const project = JSON.parse(await file.text());
+    openProject(JSON.stringify(project));
+    const existing = (await storage.list()).some((item) => item.id === project.investigation.id);
+    // Keep both unless the user explicitly chooses to replace the saved copy.
+    if (existing && !confirm('Replace the saved investigation “' + project.investigation.name + '” with the imported file? Cancel imports it as a separate copy.')) {
+      project.investigation = { ...project.investigation, id: newId(project.investigation.name), name: project.investigation.name + ' (imported copy)' };
+    }
+    showProject(JSON.stringify(project, null, 2));
+    await save();
+    if (comparison) status('Comparison ready.');
+  } catch (error) { status(String(error.message || error), true); }
+  event.target.value = '';
+});
+$('delete-investigation').addEventListener('click', async () => {
+  try {
+    if (!investigation || !confirm('Delete the saved investigation “' + investigation.name + '”? Export it first to keep a copy.')) return;
+    await storage.remove(investigation.id);
+    investigation = null;
+    const saved = await refreshInvestigations();
+    if (saved.length) await openInvestigation(saved[0].id); else await loadExample();
+  } catch (error) { status(String(error.message || error), true); }
+});
 $('load-example').addEventListener('click', loadExample);
 $('compare').addEventListener('click', runComparison);
 $('record').addEventListener('click', recordAttribution);
@@ -640,5 +809,11 @@ try {
   $('add-proposition').disabled = false;
   $('suggest-link').disabled = false;
   $('download-annotations').disabled = false;
-  await loadExample();
+  for (const id of ['new-investigation', 'export-project', 'delete-investigation']) $(id).disabled = false;
+  $('storage-status').textContent = storage.label;
+  const saved = await refreshInvestigations();
+  if (saved.length) {
+    saved.sort((a, b) => (b.updatedAt || '').localeCompare(a.updatedAt || ''));
+    await openInvestigation(saved[0].id);
+  } else await loadExample();
 } catch (error) { status('Could not start the Rust attribution pipeline: ' + error.message, true); }

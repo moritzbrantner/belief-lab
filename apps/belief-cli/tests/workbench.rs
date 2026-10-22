@@ -11,8 +11,12 @@ struct Workbench {
 }
 impl Workbench {
     fn start() -> Self {
+        Self::start_with(&[])
+    }
+    fn start_with(options: &[&str]) -> Self {
         let mut child = Command::new(env!("CARGO_BIN_EXE_belief"))
             .arg("workbench")
+            .args(options)
             .stdout(Stdio::piped())
             .stderr(Stdio::null())
             .spawn()
@@ -236,4 +240,172 @@ fn concurrent_submissions_are_refused_until_the_current_upload_finishes() {
             .0,
         200
     );
+}
+
+fn project(id: &str) -> Value {
+    serde_json::json!({
+        "schema": "belief_investigation_project", "schemaVersion": 1,
+        "investigation": {"id": id, "name": "Research A", "createdAt": "2026-10-22T08:00:00Z"},
+        "evidenceBatches": [{
+            "importedAt": "2026-10-22T08:01:00Z",
+            "batch": serde_json::from_str::<Value>(include_str!("../../../examples/person-attributions/evidence.json")).unwrap()
+        }],
+        "annotations": serde_json::from_str::<Value>(include_str!("../../../examples/person-attributions/attributions.json")).unwrap()
+    })
+}
+
+#[test]
+fn saved_investigations_are_validated_session_guarded_files() {
+    let data =
+        std::env::temp_dir().join(format!("belief-lab-investigations-{}", std::process::id()));
+    let _ = std::fs::remove_dir_all(&data);
+    let server = Workbench::start_with(&[
+        "--data-dir",
+        data.to_str().unwrap(),
+        "--site",
+        "missing-site",
+    ]);
+    let headers = server.headers();
+    let (status, body) = server.request(
+        "GET",
+        "/api/investigations",
+        &server.authority,
+        &headers,
+        "",
+    );
+    assert_eq!((status, body.as_str()), (200, "[]"));
+
+    let valid = project("research-a").to_string();
+    for bad_headers in [String::new(), headers.replace(&server.token, "wrong")] {
+        let status = server
+            .request(
+                "PUT",
+                "/api/investigations/research-a",
+                &server.authority,
+                &bad_headers,
+                &valid,
+            )
+            .0;
+        assert_eq!(status, 403);
+    }
+    let foreign = headers.replace(
+        &format!("Origin: http://{}", server.authority),
+        "Origin: https://attacker.example",
+    );
+    assert_eq!(
+        server
+            .request(
+                "GET",
+                "/api/investigations",
+                &server.authority,
+                &foreign,
+                ""
+            )
+            .0,
+        403
+    );
+    assert_eq!(
+        server
+            .request(
+                "PUT",
+                "/api/investigations/other-id",
+                &server.authority,
+                &headers,
+                &valid
+            )
+            .0,
+        400
+    );
+    assert_eq!(
+        server
+            .request(
+                "GET",
+                "/api/investigations/..%2Fsecret",
+                &server.authority,
+                &headers,
+                ""
+            )
+            .0,
+        400
+    );
+    let mut tampered = project("research-a");
+    tampered["annotations"]["observations"][1]["stance"] = serde_json::json!("endorses");
+    assert_eq!(
+        server
+            .request(
+                "PUT",
+                "/api/investigations/research-a",
+                &server.authority,
+                &headers,
+                &tampered.to_string()
+            )
+            .0,
+        422
+    );
+    assert!(
+        !data.join("research-a.json").exists(),
+        "a refused project reached the disk"
+    );
+
+    assert_eq!(
+        server
+            .request(
+                "PUT",
+                "/api/investigations/research-a",
+                &server.authority,
+                &headers,
+                &valid
+            )
+            .0,
+        204
+    );
+    let (status, body) = server.request(
+        "GET",
+        "/api/investigations/research-a",
+        &server.authority,
+        &headers,
+        "",
+    );
+    assert_eq!(status, 200);
+    assert_eq!(body, valid);
+    let (_, listed) = server.request(
+        "GET",
+        "/api/investigations",
+        &server.authority,
+        &headers,
+        "",
+    );
+    let listed: Value = serde_json::from_str(&listed).unwrap();
+    assert_eq!(listed[0]["name"], "Research A");
+    assert_eq!(
+        server
+            .request(
+                "DELETE",
+                "/api/investigations/research-a",
+                &server.authority,
+                &headers,
+                ""
+            )
+            .0,
+        204
+    );
+    assert!(!data.join("research-a.json").exists());
+
+    // Without a site build the investigation pages explain how to build them.
+    let (status, body) = server.request("GET", "/people.html", &server.authority, "", "");
+    assert_eq!(status, 404);
+    assert!(body.contains("build-pages.sh"));
+    assert_eq!(
+        server
+            .request(
+                "GET",
+                "/pkg/..%2F..%2FCargo.toml",
+                &server.authority,
+                "",
+                ""
+            )
+            .0,
+        404
+    );
+    let _ = std::fs::remove_dir_all(&data);
 }

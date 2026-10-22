@@ -257,53 +257,74 @@ fn parsed_stance(value: &str) -> Result<Stance, Box<dyn Error>> {
 }
 
 pub fn compare(input: &ComparisonInput<'_>) -> Result<AttributionReport, Box<dyn Error>> {
-    if let Some(key) = input
-        .policy
-        .keys()
-        .find(|key| !belief_policy::POLICY_KEYS.contains(&key.as_str()))
-    {
-        return Err(invalid(format!("unknown policy key {key}")));
-    }
-    let policy = PolicyConfig::from_pairs(input.policy.clone())?;
-    policy
-        .inference_decision(InferenceClass::Descriptive)
-        .map_err(|reason| invalid(format!("descriptive attribution denied: {reason}")))?;
-
+    let policy = attribution_policy(&input.policy)?;
     let batch = ValidatedEvidenceBatch::parse_json(input.evidence_json)?;
     let mut store = InMemoryBeliefStore::default();
     let evidence_exporter = batch.exporter_name().to_owned();
     let evidence_batch_revision = batch.revision().to_owned();
     store.insert_authorized_evidence_batch(batch.authorize(&policy)?)?;
+    compare_annotations(
+        serde_json::from_str(input.attributions_json)?,
+        &policy,
+        &store,
+        &evidence_exporter,
+        &evidence_batch_revision,
+    )
+}
 
-    let document: serde_json::Value = serde_json::from_str(input.attributions_json)?;
+/// The policy for descriptive person attribution, refusing unknown keys.
+pub(crate) fn attribution_policy(
+    pairs: &BTreeMap<String, String>,
+) -> Result<PolicyConfig, Box<dyn Error>> {
+    if let Some(key) = pairs
+        .keys()
+        .find(|key| !belief_policy::POLICY_KEYS.contains(&key.as_str()))
+    {
+        return Err(invalid(format!("unknown policy key {key}")));
+    }
+    let policy = PolicyConfig::from_pairs(pairs.clone())?;
+    policy
+        .inference_decision(InferenceClass::Descriptive)
+        .map_err(|reason| invalid(format!("descriptive attribution denied: {reason}")))?;
+    Ok(policy)
+}
+
+/// Compares annotations of any supported version against already authorized evidence.
+pub(crate) fn compare_annotations(
+    document: serde_json::Value,
+    policy: &PolicyConfig,
+    store: &InMemoryBeliefStore,
+    evidence_exporter: &str,
+    evidence_batch_revision: &str,
+) -> Result<AttributionReport, Box<dyn Error>> {
     match document
         .get("schemaVersion")
         .and_then(serde_json::Value::as_u64)
     {
         Some(1) => compare_document(
             serde_json::from_value(document)?,
-            &policy,
-            &store,
-            &evidence_exporter,
-            &evidence_batch_revision,
+            policy,
+            store,
+            evidence_exporter,
+            evidence_batch_revision,
             &BTreeSet::new(),
         )
         .map(AttributionReport::Comparison),
         Some(2) => history::compare_history(
             serde_json::from_value(document)?,
-            &policy,
-            &store,
-            &evidence_exporter,
-            &evidence_batch_revision,
+            policy,
+            store,
+            evidence_exporter,
+            evidence_batch_revision,
             1,
         )
         .map(AttributionReport::Comparison),
         Some(3) => investigation::compare_investigation(
             serde_json::from_value(document)?,
-            &policy,
-            &store,
-            &evidence_exporter,
-            &evidence_batch_revision,
+            policy,
+            store,
+            evidence_exporter,
+            evidence_batch_revision,
         )
         .map(AttributionReport::Investigation),
         _ => Err(invalid("unsupported person-attribution schema/version")),
@@ -352,11 +373,6 @@ fn compare_document(
     {
         return Err(invalid(
             "an observation or assessment refers to a different proposition",
-        ));
-    }
-    if document.people.is_empty() {
-        return Err(invalid(
-            "comparison requires at least one source-scoped person",
         ));
     }
     let mut people = BTreeMap::<String, PersonInput>::new();

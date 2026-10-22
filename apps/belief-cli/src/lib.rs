@@ -4,6 +4,7 @@ pub mod decision;
 pub mod explain;
 pub mod judgments;
 pub mod pipeline;
+pub mod project;
 pub mod render;
 
 #[cfg(target_arch = "wasm32")]
@@ -29,6 +30,20 @@ mod browser {
                 attributions_json: attributions,
                 policy: serde_json::from_str(policy)?,
             })?;
+            Ok(serde_json::to_string_pretty(&report)?)
+        };
+        run().map_err(|error| JsValue::from_str(&error.to_string()))
+    }
+
+    #[wasm_bindgen]
+    pub fn open_project_json(project: &str, policy: &str) -> Result<String, JsValue> {
+        let run = || -> Result<String, Box<dyn std::error::Error>> {
+            if project.len() > 4 * crate::decision::MAX_INPUT_BYTES
+                || policy.len() > crate::decision::MAX_INPUT_BYTES
+            {
+                return Err("a project must be at most 4 MiB".into());
+            }
+            let report = crate::project::open_project(project, &serde_json::from_str(policy)?)?;
             Ok(serde_json::to_string_pretty(&report)?)
         };
         run().map_err(|error| JsValue::from_str(&error.to_string()))
