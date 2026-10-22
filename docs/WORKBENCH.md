@@ -84,6 +84,23 @@ Person annotations bind to the tuple `(sourceRepository, scopeId, subjectId)`. I
 After recording, **Download editable annotations** saves the source-linked annotation JSON (including revisions and manually added observations) for later reimport; **Download comparison** saves the validated Rust report. No account or server-side investigation storage is implied.
 
 
+## Stance states, conflict and dated history (#37)
+
+Each observation records one of four stance meanings (Atlas Decision 1.4.29): **endorses P**, **endorses not-P**, **explicitly suspends judgment** (`suspends_judgment`, only for an explicit or reported expression and never with a conviction), or **no stance in this passage** (`no_stance`, required for quotations and criticism). Version-1/2 files remain readable: `disputes` reads as endorses not-P and `undetermined` as no stance (owner answer, 2026-10-22).
+
+Observations may carry `expressedAt`, `publishedAt` and `discoveredAt` as `YYYY`, `YYYY-MM` or `YYYY-MM-DD`. Each date keeps the precision the source supports; missing dates stay unknown, and publication cannot precede expression. A coarse date covers an interval, so two dates are ordered only when their intervals do not overlap.
+
+The Rust report derives each person's `assessment_status`:
+
+- `no_stance_evidence`: no attributed observation. This is unknown, not indecision.
+- `unassessed`: stance evidence exists without a reviewed assessment.
+- `conflicted`: endorses P and endorses not-P from observations whose dates are unknown or may overlap. Both sides are kept and no side is chosen (Decision 1.4.31). A numerical assessment requires `reviewedConflicts`.
+- `differs_over_time`: the opposing stances have distinct known dates. This is history, not by itself proof of a change of mind.
+- `assessed`: a reviewed documented assessment exists. Any conflict stays visible.
+
+`last_documented` shows the latest dated attributed stance and lists undated observations, which cannot be ordered. The `current_stance` is `unknown` unless an investigator adds an assessment with `timeScope: "current"`, a required `rationale`, cited observations and an optional `asOf` date (Decisions 1.4.25/1.4.27). It is a tentative estimate: it never replaces the documented stance, there is no automatic suggestion, and elapsed time is not treated as evidence. Recording new evidence for a person invalidates both kinds of assessment.
+
+
 ## Attribution revision history
 
 On `people.html`, provide a **Revision reason** before recording, correcting or withdrawing

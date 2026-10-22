@@ -30,7 +30,7 @@ fn an_unscored_person_assessment_cannot_assert_a_definite_belief() {
         // Invalid declarations may be refused or retained as unresolved candidates.
         // The source-level observations must never stand in for person confidence.
         if let Ok(report) = compare_annotations(input) {
-            assert_eq!(report["people"][0]["stance"], "undetermined");
+            assert!(report["people"][0]["stance"].is_null());
             assert!(report["people"][0]["confidence_person"].is_null());
         }
     }

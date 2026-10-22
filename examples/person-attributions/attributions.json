@@ -42,26 +42,32 @@
         "value": 0.3,
         "basis": "self_reported",
         "assessedBy": "scripted_example"
-      }
+      },
+      "expressedAt": "2026-03",
+      "publishedAt": "2026-03-14",
+      "discoveredAt": "2026-10-01"
     },
     {
       "id": "a-quotation",
       "personId": "blogger-a",
       "evidenceId": "e-quote",
       "kind": "quotation_or_criticism",
-      "stance": "undetermined",
+      "stance": "no_stance",
       "passage": "Some authors say this effect is guaranteed.",
       "span": {
         "start": 0,
         "end": 43
-      }
+      },
+      "expressedAt": "2026-03",
+      "publishedAt": "2026-03-14",
+      "discoveredAt": "2026-10-01"
     },
     {
       "id": "b-reported",
       "personId": "researcher-b",
       "evidenceId": "e-report",
       "kind": "reported_position",
-      "stance": "disputes",
+      "stance": "endorses_negation",
       "passage": "The interviewer reports that Researcher B disputes the claim about 2027.",
       "span": {
         "start": 0,
@@ -70,14 +76,17 @@
       "confidenceObservation": {
         "value": 0.76,
         "assessedBy": "scripted_example"
-      }
+      },
+      "expressedAt": "2024",
+      "publishedAt": "2026-02-02",
+      "discoveredAt": "2026-10-01"
     },
     {
       "id": "b-inferred",
       "personId": "researcher-b",
       "evidenceId": "e-inferred",
       "kind": "inferred_belief",
-      "stance": "disputes",
+      "stance": "endorses_negation",
       "passage": "A separate passage describes Researcher B calling the long-term claim implausible.",
       "span": {
         "start": 0,
@@ -91,7 +100,9 @@
         "value": 0.12,
         "basis": "inferred",
         "assessedBy": "scripted_example"
-      }
+      },
+      "publishedAt": "2026-02-02",
+      "discoveredAt": "2026-10-01"
     }
   ],
   "assessments": [
@@ -108,7 +119,7 @@
     },
     {
       "personId": "researcher-b",
-      "stance": "disputes",
+      "stance": "endorses_negation",
       "confidencePerson": {
         "value": 0.73,
         "assessedBy": "scripted_example"

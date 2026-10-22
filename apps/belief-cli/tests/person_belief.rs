@@ -26,7 +26,7 @@ fn two_people_can_disagree_without_an_objective_truth_score() {
     let report = run(EVIDENCE, ATTRIBUTIONS, "semantic_research").unwrap();
     assert_eq!(report["report"], "person_belief_comparison");
     assert_eq!(report["people"][0]["stance"], "endorses");
-    assert_eq!(report["people"][1]["stance"], "disputes");
+    assert_eq!(report["people"][1]["stance"], "endorses_negation");
     assert_eq!(report["people"][0]["confidence_person"]["value"], 0.91);
     assert_eq!(report["people"][1]["confidence_person"]["value"], 0.73);
     assert_eq!(
@@ -77,7 +77,7 @@ fn quotations_do_not_become_endorsements() {
     let report = run(EVIDENCE, ATTRIBUTIONS, "semantic_research").unwrap();
     assert_eq!(
         report["people"][0]["observations"][0]["stance"],
-        "undetermined"
+        "no_stance"
     );
     assert!(report["people"][0]["observations"][0]["confidence_observation"].is_null());
     assert!(report["people"][0]["observations"][0]["conviction"].is_null());

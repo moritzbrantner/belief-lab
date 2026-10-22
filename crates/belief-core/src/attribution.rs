@@ -31,19 +31,28 @@ impl AttributionKind {
     }
 }
 
+/// What one source-grounded observation says about a person's stance toward P (Decision 1.4.29).
+/// "No evidence of a stance" is not an observation; it is what remains when none of these exist.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Stance {
+    /// An affirmative belief in P.
     Endorses,
-    Disputes,
-    Undetermined,
+    /// An affirmative belief in not-P; criticism or quotation is not this.
+    EndorsesNegation,
+    /// An expressed decision to withhold a settled position about P.
+    SuspendsJudgment,
+    /// The passage bears no stance of this person toward P (for example a quotation).
+    NoStance,
 }
 
 impl Stance {
+    /// Parses current names plus the version-1/2 aliases `disputes` and `undetermined`.
     pub fn parse(value: &str) -> Option<Self> {
         match value {
             "endorses" => Some(Self::Endorses),
-            "disputes" => Some(Self::Disputes),
-            "undetermined" => Some(Self::Undetermined),
+            "endorses_negation" | "disputes" => Some(Self::EndorsesNegation),
+            "suspends_judgment" => Some(Self::SuspendsJudgment),
+            "no_stance" | "undetermined" => Some(Self::NoStance),
             _ => None,
         }
     }
@@ -51,9 +60,23 @@ impl Stance {
     pub fn as_str(self) -> &'static str {
         match self {
             Self::Endorses => "endorses",
-            Self::Disputes => "disputes",
-            Self::Undetermined => "undetermined",
+            Self::EndorsesNegation => "endorses_negation",
+            Self::SuspendsJudgment => "suspends_judgment",
+            Self::NoStance => "no_stance",
         }
+    }
+
+    /// True for the three stances a person can be attributed.
+    pub fn is_attributed(self) -> bool {
+        self != Self::NoStance
+    }
+
+    /// Endorsing P and endorsing not-P oppose each other; suspension opposes neither.
+    pub fn opposes(self, other: Self) -> bool {
+        matches!(
+            (self, other),
+            (Self::Endorses, Self::EndorsesNegation) | (Self::EndorsesNegation, Self::Endorses)
+        )
     }
 }
 
@@ -141,6 +164,23 @@ mod tests {
         assert!(ObservationConfidence::new(-0.1).is_err());
         assert!(PersonConfidence::new(1.01).is_err());
         assert!(Conviction::new(f64::NAN).is_err());
+    }
+
+    #[test]
+    fn stances_keep_four_distinctions_and_read_legacy_names() {
+        for stance in [
+            Stance::Endorses,
+            Stance::EndorsesNegation,
+            Stance::SuspendsJudgment,
+            Stance::NoStance,
+        ] {
+            assert_eq!(Stance::parse(stance.as_str()), Some(stance));
+        }
+        assert_eq!(Stance::parse("disputes"), Some(Stance::EndorsesNegation));
+        assert_eq!(Stance::parse("undetermined"), Some(Stance::NoStance));
+        assert!(Stance::Endorses.opposes(Stance::EndorsesNegation));
+        assert!(!Stance::SuspendsJudgment.opposes(Stance::Endorses));
+        assert!(!Stance::NoStance.is_attributed());
     }
 
     #[test]

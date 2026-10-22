@@ -46,8 +46,11 @@
       <label>Evidence record <select id="source-evidence"></select></label>
       <label>Person display name <input id="person-name" autocomplete="off" placeholder="As identified in this source"></label>
       <label>Attribution type <select id="kind"><option value="explicit_endorsement">Explicit endorsement</option><option value="reported_position">Reported position</option><option value="inferred_belief">Inferred belief</option><option value="quotation_or_criticism">Quotation / criticism (not endorsement)</option></select></label>
-      <label>Observed stance <select id="stance"><option value="endorses">Endorses</option><option value="disputes">Disputes</option><option value="undetermined">Undetermined</option></select></label>
+      <label>Observed stance <select id="stance"><option value="endorses">Endorses P</option><option value="endorses_negation">Endorses not-P</option><option value="suspends_judgment">Explicitly suspends judgment</option><option value="no_stance">No stance in this passage</option></select></label>
       <label class="wide">Source passage <textarea id="passage" rows="3" spellcheck="false" placeholder="Copy the exact relevant words"></textarea></label>
+      <label>Expressed on <input id="expressed-at" autocomplete="off" placeholder="YYYY, YYYY-MM or YYYY-MM-DD — unknown if empty"></label>
+      <label>Published on <input id="published-at" autocomplete="off" placeholder="Unknown"></label>
+      <label>Discovered on <input id="discovered-at" autocomplete="off" placeholder="Unknown"></label>
       <label>Source span start offset <input id="offset-start" type="number" min="0" step="1" value="0"></label>
       <label>Source span end offset <input id="offset-end" type="number" min="1" step="1"></label>
       <label>Confidence (observation) <input id="observation-score" type="number" min="0" max="1" step="0.01" placeholder="Unknown"></label>
@@ -57,6 +60,7 @@
       <label class="wide"><input id="review-conflicts" type="checkbox"> I reviewed conflicting positions before assigning confidence (person)</label>
     </div>
     <div class="toolbar"><button id="record" disabled>Record attribution and compare</button><button id="cancel-correction" hidden>Cancel correction</button></div>
+    <p class="note">Explicit suspension needs the person's own (or reported) words withholding a position; hesitation or silence is not suspension. Dates come from the source: when the person said it is distinct from when it was published or found.</p>
     <p class="note">Recording new evidence invalidates any previous person-confidence assessment for that source-local person until explicitly reassessed.</p>
     <p id="people-status" role="status" aria-live="polite">Loading the Rust attribution pipeline…</p>
   </section>
@@ -64,9 +68,12 @@
     <h2 id="assessment-heading">3. Reassess a person</h2>
     <div class="attribution-form">
       <label>Person to reassess <select id="assessment-person"></select></label>
-      <label>Assessed stance <select id="assessment-stance"><option value="endorses">Endorses</option><option value="disputes">Disputes</option><option value="undetermined">Undetermined</option></select></label>
+      <label>Assessment <select id="assessment-scope"><option value="documented">Documented stance</option><option value="current">Current-stance estimate (tentative)</option></select></label>
+      <label>Assessed stance <select id="assessment-stance"><option value="endorses">Endorses P</option><option value="endorses_negation">Endorses not-P</option><option value="suspends_judgment">Explicitly suspends judgment</option><option value="no_stance">No reviewed stance (remove)</option></select></label>
       <label>Reviewed confidence (person) <input id="assessment-score" type="number" min="0" max="1" step="0.01" placeholder="Unknown"></label>
       <label>Supporting observations <select id="assessment-support" multiple size="4"></select></label>
+      <label class="wide">Rationale for a current-stance estimate <textarea id="assessment-rationale" rows="2" placeholder="Why the dated evidence supports this estimate, and its limits"></textarea></label>
+      <label>Estimate as of <input id="assessment-as-of" autocomplete="off" placeholder="YYYY, YYYY-MM or YYYY-MM-DD"></label>
       <label><input id="assessment-reviewed" type="checkbox"> I reviewed conflicting positions for this assessment</label>
     </div>
     <button id="reassess" disabled>Reassess person and compare</button>
