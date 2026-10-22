@@ -39,6 +39,17 @@ cargo run -q -- explain fixtures/explain/semantic-research/evidence.json \
 
 Golden outputs for every case in `fixtures/explain/` are checked by `cargo test --workspace`. See [Getting started](docs/GETTING_STARTED.md#explain-an-evidence-batch).
 
+### Original-source golden test (Russell–Copleston, #63)
+
+`fixtures/golden/russell-copleston-1948/` holds the owner-approved expectations and the committed original audio stream. `audio/source.json` records where the audio came from and its digest. `cargo test --workspace` checks those bytes and the scoring code offline. The real-model run is opt-in. It runs real producer code from audio-analysis: Whisper medium (native Candle) and pyannote community-1 (native ONNX). It then scores golden-excerpt recall in the transcript and speaker-turn agreement (overall and per speaker), and writes a per-stage report to `target/golden/russell-copleston-1948/report.json`:
+
+```bash
+GOLDEN_PYANNOTE_BUNDLE=/path/to/approved/community-1-onnx-snapshot \
+  cargo test --release --manifest-path crates/golden-media/Cargo.toml -- --ignored --nocapture
+```
+
+`crates/golden-media` sits outside the workspace, so ordinary builds never compile the model stacks. Whisper medium downloads on first use. `GOLDEN_THREADS` caps CPU threads (default 4). Proposition candidates and person attributions (stage 4) are not run yet.
+
 For real local semantic scoring:
 
 ```bash
