@@ -5,6 +5,8 @@ const examplePath = 'examples/person-attributions/';
 let comparison = null;
 let initialized = false;
 let correctionTarget = null;
+let linkCorrectionTarget = null;
+let activeProposition = null;
 const stanceLabels = {
   endorses: 'Endorses P', endorses_negation: 'Endorses not-P',
   suspends_judgment: 'Explicitly suspends judgment', no_stance: 'No stance in this passage'
@@ -28,6 +30,7 @@ function status(value, failed = false) {
 }
 function clearComparison() {
   comparison = null;
+  $('relationships').replaceChildren();
   $('comparison').replaceChildren();
   $('history').replaceChildren();
   $('current-revision').textContent = '';
@@ -144,6 +147,7 @@ function recordAttribution() {
       id, personId: existing.id, evidenceId: evidence.id, kind, stance, passage,
       span: { start, end }
     };
+    if (annotation.propositions) observation.propositionId = activeProposition;
     for (const [field, input] of [['expressedAt', 'expressed-at'], ['publishedAt', 'published-at'], ['discoveredAt', 'discovered-at']]) {
       const value = $(input).value.trim();
       if (value) observation[field] = value;
@@ -159,27 +163,65 @@ function recordAttribution() {
     }
     annotation.observations.push(observation);
     // Any previous person-confidence assessment would omit this new evidence; make it unknown.
-    annotation.assessments = annotation.assessments.filter((item) => item.personId !== existing.id);
+    annotation.assessments = annotation.assessments.filter((item) => item.personId !== existing.id || !inActiveProposition(annotation, item));
     if (personConfidence !== null) {
-      annotation.assessments.push({
+      const assessment = {
         personId: existing.id, stance,
         confidencePerson: { value: personConfidence, assessedBy: 'analyst' },
         observationIds: [id],
         reviewedConflicts: $('review-conflicts').checked
-      });
+      };
+      if (annotation.propositions) assessment.propositionId = activeProposition;
+      annotation.assessments.push(assessment);
     }
     commitRevision(annotation, personConfidence === null ? [] : [existing.id], supersedes);
   } catch (error) { status(String(error.message || error), true); }
 }
 function currentAnnotation(envelope = JSON.parse($('attribution-input').value)) {
   if (envelope.schemaVersion === 1) return envelope;
-  if (envelope.schemaVersion !== 2 || !envelope.revisions?.length) throw Error('Open valid version-1 annotations or a version-2 history.');
+  if (![2, 3].includes(envelope.schemaVersion) || !envelope.revisions?.length) throw Error('Open valid version-1 annotations or a version-2/3 history.');
   return envelope.revisions[envelope.revisions.length - 1].document;
+}
+// Items of a version-3 investigation belong to one proposition; single-proposition files have one.
+function inActiveProposition(document, item) {
+  return !document.propositions || item.propositionId === activeProposition;
+}
+function toSnapshot(document) {
+  const id = document.proposition.id;
+  return {
+    propositions: [document.proposition], people: document.people,
+    observations: document.observations.map((item) => ({ ...item, propositionId: id })),
+    assessments: document.assessments.map((item) => ({ ...item, propositionId: id })),
+    relationships: []
+  };
+}
+// Adding a proposition or relationship upgrades a single-proposition history to version 3.
+function toInvestigation(previous) {
+  const revisions = previous.schemaVersion === 2 ? previous.revisions
+    : [{ reason: 'Imported version-1 baseline (original reason unknown)', document: previous }];
+  return {
+    schema: 'belief_person_attributions', schemaVersion: 3,
+    revisions: revisions.map((revision) => ({
+      reason: revision.reason, document: toSnapshot(revision.document),
+      reassessed: (revision.reassessedPersonIds || []).map((personId) => ({ propositionId: revision.document.proposition.id, personId })),
+      supersedes: revision.supersedes || {}
+    }))
+  };
+}
+function editableSnapshot() {
+  const envelope = JSON.parse($('attribution-input').value);
+  const document = currentAnnotation(envelope);
+  return structuredClone(document.propositions ? document : toSnapshot(document));
 }
 function allObservationIds() {
   const envelope = JSON.parse($('attribution-input').value);
-  const documents = envelope.schemaVersion === 2 ? envelope.revisions.map((revision) => revision.document) : [envelope];
+  const documents = envelope.revisions ? envelope.revisions.map((revision) => revision.document) : [envelope];
   return new Set(documents.flatMap((document) => document.observations.map((observation) => observation.id)));
+}
+function allRelationshipIds() {
+  const envelope = JSON.parse($('attribution-input').value);
+  return new Set((envelope.schemaVersion === 3 ? envelope.revisions : [])
+    .flatMap((revision) => (revision.document.relationships || []).map((link) => link.id)));
 }
 function validateAnnotations(text) {
   return JSON.parse(compare_attributions_json($('evidence-input').value, text, JSON.stringify({ BELIEF_POLICY_PROFILE: 'semantic_research' })));
@@ -188,11 +230,20 @@ function commitRevision(document, reassessedPersonIds = [], supersedes = {}) {
   const reason = $('revision-reason').value;
   if (!reason.trim()) throw Error('Enter a revision reason before changing annotations.');
   const previous = JSON.parse($('attribution-input').value);
-  const envelope = previous.schemaVersion === 2 ? previous : {
-    schema: 'belief_person_attributions', schemaVersion: 2,
-    revisions: [{ reason: 'Imported version-1 baseline (original reason unknown)', document: previous }]
-  };
-  envelope.revisions.push({ reason, document, reassessedPersonIds, supersedes });
+  let envelope;
+  if (document.propositions) {
+    envelope = previous.schemaVersion === 3 ? previous : toInvestigation(previous);
+    envelope.revisions.push({
+      reason, document, supersedes,
+      reassessed: reassessedPersonIds.map((personId) => ({ propositionId: activeProposition, personId }))
+    });
+  } else {
+    envelope = previous.schemaVersion === 2 ? previous : {
+      schema: 'belief_person_attributions', schemaVersion: 2,
+      revisions: [{ reason: 'Imported version-1 baseline (original reason unknown)', document: previous }]
+    };
+    envelope.revisions.push({ reason, document, reassessedPersonIds, supersedes });
+  }
   const text = JSON.stringify(envelope, null, 2);
   const report = validateAnnotations(text);
   $('attribution-input').value = text;
@@ -233,7 +284,8 @@ function withdrawObservation(id) {
     const observation = document.observations.find((item) => item.id === id);
     if (!observation) throw Error('Observation is no longer current.');
     document.observations = document.observations.filter((item) => item.id !== id);
-    document.assessments = document.assessments.filter((item) => item.personId !== observation.personId);
+    document.assessments = document.assessments.filter((item) =>
+      item.personId !== observation.personId || item.propositionId !== observation.propositionId);
     commitRevision(document);
   } catch (error) { status(String(error.message || error), true); }
 }
@@ -253,7 +305,7 @@ function updateAssessmentSupport() {
   $('assessment-support').replaceChildren();
   try {
     const document = currentAnnotation();
-    for (const observation of document.observations.filter((item) => item.personId === $('assessment-person').value)) {
+    for (const observation of document.observations.filter((item) => item.personId === $('assessment-person').value && inActiveProposition(document, item))) {
       const option = element('option', observation.id + ' · ' + stanceLabel(observation.stance) + ' · ' + observation.passage);
       option.value = observation.id; option.selected = selected.has(observation.id); $('assessment-support').append(option);
     }
@@ -271,13 +323,15 @@ function reassessPerson() {
     };
     const value = numeric('assessment-score');
     if (value !== null) assessment.confidencePerson = { value, assessedBy: 'analyst' };
+    if (document.propositions) assessment.propositionId = activeProposition;
     if (scope === 'current') {
       assessment.timeScope = 'current';
       assessment.rationale = $('assessment-rationale').value;
       const asOf = $('assessment-as-of').value.trim();
       if (asOf) assessment.asOf = asOf;
     }
-    const sameScope = (item) => item.personId === personId && (item.timeScope === 'current') === (scope === 'current');
+    const sameScope = (item) => item.personId === personId && inActiveProposition(document, item) &&
+      (item.timeScope === 'current') === (scope === 'current');
     document.assessments = document.assessments.filter((item) => !sameScope(item));
     // "No reviewed stance" removes the assessment; an unknown current stance is simply absent.
     if (assessment.stance !== 'no_stance') document.assessments.push(assessment);
@@ -299,23 +353,48 @@ function metric(label, value, description) {
 function appendDetail(list, name, value) {
   list.append(element('dt', name), element('dd', value ?? 'Unknown'));
 }
+// Versions 1 and 2 describe one proposition; version 3 holds several plus relationships.
+function investigationView(report) {
+  if (report.report === 'person_belief_investigation') return report;
+  return {
+    revision: report.revision, revision_reason: report.revision_reason, relationships: [], relationship_history: [],
+    propositions: [{ proposition: report.proposition, people: report.people, history: report.history || [], supersedes: report.supersedes || {}, since_revision: 1 }]
+  };
+}
+function propositionText(view, id) {
+  return view.propositions.find((entry) => entry.proposition.id === id)?.proposition.text ?? id;
+}
 function render(report) {
   clearComparison();
   comparison = report;
+  const view = investigationView(report);
+  const ids = view.propositions.map((entry) => entry.proposition.id);
+  if (!ids.includes(activeProposition)) activeProposition = ids[0];
+  for (const select of [$('proposition-select'), $('link-from'), $('link-to')]) {
+    const selected = select.value;
+    select.replaceChildren();
+    for (const entry of view.propositions) {
+      const option = element('option', entry.proposition.text + ' · ' + entry.proposition.id);
+      option.value = entry.proposition.id; select.append(option);
+    }
+    if (ids.includes(selected)) select.value = selected;
+  }
+  $('proposition-select').value = activeProposition;
+  if ($('link-to').value === $('link-from').value && ids.length > 1) $('link-to').value = ids.find((id) => id !== $('link-from').value);
+  const entry = view.propositions.find((item) => item.proposition.id === activeProposition);
   $('download-comparison').disabled = false;
   $('comparison-json').textContent = JSON.stringify(report, null, 2);
   const proposition = element('article');
-  proposition.append(element('h3', report.proposition.text), element('p', 'Scope: ' + report.proposition.scope));
+  proposition.append(element('h3', entry.proposition.text), element('p', 'Scope: ' + entry.proposition.scope));
   proposition.append(element('small', 'One scoped proposition. Comparing people does not decide if it is true.'));
   $('proposition').append(proposition);
-  for (const person of report.people) $('comparison').append(personCard(person));
-  $('current-revision').textContent = report.revision
-    ? 'Current annotation revision ' + report.revision + ': ' + report.revision_reason
+  for (const person of entry.people) $('comparison').append(personCard(person));
+  $('current-revision').textContent = view.revision
+    ? 'Current annotation revision ' + view.revision + ': ' + view.revision_reason
     : 'Version-1 annotations; earlier changes are not recorded.';
-  const history = report.history || [];
-  if (history.length) {
+  if (entry.history.length) {
     $('history').append(element('h3', 'Attribution history'));
-    for (const snapshot of history) {
+    for (const snapshot of entry.history) {
       const detail = element('details');
       detail.append(element('summary', 'Historical revision ' + snapshot.revision + ' — ' + snapshot.reason));
       detail.append(element('p', 'Investigator-supplied historical annotation snapshot — not the current assessment. Revalidated against the supplied evidence and current policy.'));
@@ -324,8 +403,111 @@ function render(report) {
       $('history').append(detail);
     }
   }
-  for (const [newId, oldId] of Object.entries(report.supersedes || {})) $('current-revision').append(element('span', ' · ' + newId + ' supersedes ' + oldId));
+  for (const [newId, oldId] of Object.entries(entry.supersedes || {})) $('current-revision').append(element('span', ' · ' + newId + ' supersedes ' + oldId));
+  renderRelationships(view);
   updateAssessmentOptions();
+}
+function relationshipCard(view, link, current) {
+  const card = element('article'); card.className = 'person-card';
+  const kinds = { implication: 'implies', equivalence: 'may be equivalent to', partial_overlap: 'partially overlaps' };
+  card.append(element('h3', propositionText(view, link.from_proposition_id) + (link.directed ? ' → ' : ' ↔ ') + propositionText(view, link.to_proposition_id)));
+  card.append(element('p', 'Suggested relationship: ' + kinds[link.kind] + (link.directed ? ' (this direction only; the reverse is not implied)' : '') + ' · ' + link.review_status));
+  const details = element('dl'); details.className = 'provenance-list';
+  appendDetail(details, 'Context', link.context);
+  appendDetail(details, 'Reasoning', link.reasoning);
+  appendDetail(details, 'Confidence (relationship)', score(link.confidence_relation));
+  appendDetail(details, 'Suggested by', link.suggested_by.replaceAll('_', ' '));
+  appendDetail(details, 'Review note', link.review_note);
+  if (link.supersedes) appendDetail(details, 'Corrects', link.supersedes);
+  card.append(details);
+  card.append(element('small', 'Does not attribute either proposition to any person.'));
+  if (current) {
+    const controls = element('div'); controls.className = 'toolbar';
+    for (const [label, action] of [['Accept', () => reviewRelationship(link.id, 'accepted')], ['Reject', () => reviewRelationship(link.id, 'rejected')], ['Correct', () => correctRelationship(link.id)]]) {
+      const button = element('button', label + ' ' + link.id); button.addEventListener('click', action); controls.append(button);
+    }
+    card.append(controls);
+  }
+  return card;
+}
+function renderRelationships(view) {
+  for (const link of view.relationships) $('relationships').append(relationshipCard(view, link, true));
+  if (!view.relationships.length) $('relationships').append(element('p', 'No relationships between propositions.'));
+  const earlier = view.relationship_history.filter((snapshot) => snapshot.relationships.length);
+  if (earlier.length) {
+    const detail = element('details');
+    detail.append(element('summary', 'Relationship history'));
+    for (const snapshot of earlier) {
+      detail.append(element('h4', 'Revision ' + snapshot.revision + ' — ' + snapshot.reason));
+      for (const link of snapshot.relationships) detail.append(relationshipCard(view, link, false));
+    }
+    $('relationships').append(detail);
+  }
+}
+function addProposition() {
+  try {
+    const text = $('new-proposition-text').value.trim();
+    const scope = $('new-proposition-scope').value.trim();
+    if (!text || !scope) throw Error('A new proposition needs its exact wording and scope.');
+    const snapshot = editableSnapshot();
+    let next = snapshot.propositions.length + 1;
+    while (snapshot.propositions.some((item) => item.id === 'proposition-' + next)) next++;
+    snapshot.propositions.push({ id: 'proposition-' + next, text, scope });
+    commitRevision(snapshot);
+    $('new-proposition-text').value = ''; $('new-proposition-scope').value = '';
+  } catch (error) { status(String(error.message || error), true); }
+}
+function suggestRelationship() {
+  try {
+    const snapshot = editableSnapshot();
+    let next = 1;
+    const used = allRelationshipIds();
+    while (used.has('link-' + next)) next++;
+    const link = {
+      id: 'link-' + next, kind: $('link-kind').value,
+      fromPropositionId: $('link-from').value, toPropositionId: $('link-to').value,
+      context: $('link-context').value, reasoning: $('link-reasoning').value,
+      suggestedBy: 'analyst', review: { status: 'suggested' }
+    };
+    const confidence = numeric('link-confidence');
+    if (confidence !== null) link.confidenceRelation = { value: confidence, assessedBy: 'analyst' };
+    if (linkCorrectionTarget !== null) {
+      link.supersedes = linkCorrectionTarget;
+      snapshot.relationships = snapshot.relationships.filter((item) => item.id !== linkCorrectionTarget);
+    }
+    snapshot.relationships.push(link);
+    commitRevision(snapshot);
+    cancelLinkCorrection();
+    for (const id of ['link-context', 'link-reasoning', 'link-confidence', 'link-note']) $(id).value = '';
+  } catch (error) { status(String(error.message || error), true); }
+}
+function reviewRelationship(id, statusValue) {
+  try {
+    const snapshot = editableSnapshot();
+    const link = snapshot.relationships.find((item) => item.id === id);
+    if (!link) throw Error('Relationship is no longer current.');
+    link.review = { status: statusValue };
+    const note = $('link-note').value.trim();
+    if (note) link.review.note = note;
+    commitRevision(snapshot);
+    $('link-note').value = '';
+  } catch (error) { status(String(error.message || error), true); }
+}
+function correctRelationship(id) {
+  const link = editableSnapshot().relationships.find((item) => item.id === id);
+  if (!link) return;
+  $('link-from').value = link.fromPropositionId; $('link-to').value = link.toPropositionId;
+  $('link-kind').value = link.kind; $('link-context').value = link.context; $('link-reasoning').value = link.reasoning;
+  $('link-confidence').value = link.confidenceRelation?.value ?? '';
+  linkCorrectionTarget = id;
+  $('link-correction-status').textContent = 'Correcting ' + id + '. Suggesting creates a new relationship; the original stays in history.';
+  $('cancel-link-correction').hidden = false;
+  $('revision-reason').focus();
+}
+function cancelLinkCorrection() {
+  linkCorrectionTarget = null;
+  $('link-correction-status').textContent = '';
+  $('cancel-link-correction').hidden = true;
 }
 function personCard(person, historical = false) {
     const card = element('article'); card.className = 'person-card';
@@ -423,11 +605,19 @@ $('record').addEventListener('click', recordAttribution);
 $('cancel-correction').addEventListener('click', cancelCorrection);
 $('assessment-person').addEventListener('change', updateAssessmentSupport);
 $('reassess').addEventListener('click', reassessPerson);
+$('add-proposition').addEventListener('click', addProposition);
+$('suggest-link').addEventListener('click', suggestRelationship);
+$('cancel-link-correction').addEventListener('click', cancelLinkCorrection);
+$('proposition-select').addEventListener('change', () => {
+  activeProposition = $('proposition-select').value;
+  cancelCorrection();
+  if (comparison) render(comparison);
+});
 $('download-annotations').addEventListener('click', () => {
   try {
     validateAnnotations($('attribution-input').value);
     const annotations = JSON.parse($('attribution-input').value);
-    if (annotations.schema !== 'belief_person_attributions' || ![1, 2].includes(annotations.schemaVersion)) {
+    if (annotations.schema !== 'belief_person_attributions' || ![1, 2, 3].includes(annotations.schemaVersion)) {
       throw Error('Open a valid person-attribution document before downloading.');
     }
     const url = URL.createObjectURL(new Blob([JSON.stringify(annotations, null, 2) + '\n'], { type: 'application/json' }));
@@ -447,6 +637,8 @@ try {
   $('compare').disabled = false;
   $('record').disabled = false;
   $('reassess').disabled = false;
+  $('add-proposition').disabled = false;
+  $('suggest-link').disabled = false;
   $('download-annotations').disabled = false;
   await loadExample();
 } catch (error) { status('Could not start the Rust attribution pipeline: ' + error.message, true); }
