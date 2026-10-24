@@ -14,8 +14,8 @@ publish = false
 golden-scoring = { path = "../golden-scoring" }
 serde_json = "=1.0.154"
 sha2 = "=0.11.1"
-audio-analysis-transcription = { package = "moenarch-audio-analysis-transcription", git = "https://github.com/moritzbrantner/audio-analysis", rev = "1f7e528617f21ec61de22fcc7cfaed1c675ac020", features = ["candle", "model-bundles", "pyannote-diarization", "audio-io"] }
-audio-analysis-speakers = { package = "moenarch-audio-analysis-speakers", git = "https://github.com/moritzbrantner/audio-analysis", rev = "1f7e528617f21ec61de22fcc7cfaed1c675ac020", features = ["pyannote-diarization"] }
+audio-analysis-transcription = { package = "moenarch-audio-analysis-transcription", git = "https://github.com/moritzbrantner/audio-analysis", rev = "1971127e352078479b3bacece8d1f8dba19dd575", features = ["candle", "model-bundles", "pyannote-diarization", "audio-io"] }
+audio-analysis-speakers = { package = "moenarch-audio-analysis-speakers", git = "https://github.com/moritzbrantner/audio-analysis", rev = "1971127e352078479b3bacece8d1f8dba19dd575", features = ["pyannote-diarization"] }
 
 # The producer's own source graph at that revision: its Cargo.toml Candle backport and the
 # moenarch-foundation revision from its .coding-tooling.source-deps.json.
