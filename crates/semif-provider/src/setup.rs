@@ -147,7 +147,15 @@ pub fn semif_install_is_ready(directory: &Path, backend: SemifInstallBackend) ->
     let interpreter = venv_python(directory);
     checkout_matches_pin(directory)
         && venv_is_usable(&interpreter)
-        && backend_is_usable(&interpreter, backend)
+        && backend_and_artifacts_are_ready(directory, &interpreter, backend)
+}
+
+fn backend_and_artifacts_are_ready(
+    directory: &Path,
+    interpreter: &Path,
+    backend: SemifInstallBackend,
+) -> bool {
+    backend_is_usable(interpreter, backend)
         && semif_score_path(directory).is_file()
         && setup_receipt_matches(directory, backend)
 }
@@ -225,9 +233,13 @@ pub fn bootstrap_semif(
     )?;
     ensure_clean_checkout(directory)?;
 
-    let installation_ready = semif_install_is_ready(directory, backend);
+    // Each pip probe starts Python, so probe the virtual environment only once per bootstrap.
     let interpreter = venv_python(directory);
-    let venv_created = if venv_is_usable(&interpreter) {
+    let venv_usable = venv_is_usable(&interpreter);
+    let installation_ready = venv_usable
+        && checkout_matches_pin(directory)
+        && backend_and_artifacts_are_ready(directory, &interpreter, backend);
+    let venv_created = if venv_usable {
         false
     } else {
         let python = env::var("BELIEF_SEMIF_PYTHON").unwrap_or_else(|_| "python3".into());
