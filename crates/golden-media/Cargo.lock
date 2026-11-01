@@ -1194,7 +1194,7 @@ dependencies = [
 [[package]]
 name = "moenarch-audio-analysis-core"
 version = "0.1.0"
-source = "git+https://github.com/moritzbrantner/audio-analysis?rev=ddba9a3ad361a37e9b7f5fac5731633a478f35bb#ddba9a3ad361a37e9b7f5fac5731633a478f35bb"
+source = "git+https://github.com/moritzbrantner/audio-analysis?rev=d7c78028a1e84d0ebde8f6a93a19c4565534b0bc#d7c78028a1e84d0ebde8f6a93a19c4565534b0bc"
 dependencies = [
  "moenarch-audio-contracts",
  "moenarch-math-signal-core",
@@ -1208,7 +1208,7 @@ dependencies = [
 [[package]]
 name = "moenarch-audio-analysis-io"
 version = "0.1.1"
-source = "git+https://github.com/moritzbrantner/audio-analysis?rev=ddba9a3ad361a37e9b7f5fac5731633a478f35bb#ddba9a3ad361a37e9b7f5fac5731633a478f35bb"
+source = "git+https://github.com/moritzbrantner/audio-analysis?rev=d7c78028a1e84d0ebde8f6a93a19c4565534b0bc#d7c78028a1e84d0ebde8f6a93a19c4565534b0bc"
 dependencies = [
  "hound",
  "moenarch-audio-analysis-core",
@@ -1221,7 +1221,7 @@ dependencies = [
 [[package]]
 name = "moenarch-audio-analysis-recognition"
 version = "0.1.0"
-source = "git+https://github.com/moritzbrantner/audio-analysis?rev=ddba9a3ad361a37e9b7f5fac5731633a478f35bb#ddba9a3ad361a37e9b7f5fac5731633a478f35bb"
+source = "git+https://github.com/moritzbrantner/audio-analysis?rev=d7c78028a1e84d0ebde8f6a93a19c4565534b0bc#d7c78028a1e84d0ebde8f6a93a19c4565534b0bc"
 dependencies = [
  "moenarch-audio-analysis-core",
  "moenarch-audio-contracts",
@@ -1235,7 +1235,7 @@ dependencies = [
 [[package]]
 name = "moenarch-audio-analysis-speakers"
 version = "0.1.4"
-source = "git+https://github.com/moritzbrantner/audio-analysis?rev=ddba9a3ad361a37e9b7f5fac5731633a478f35bb#ddba9a3ad361a37e9b7f5fac5731633a478f35bb"
+source = "git+https://github.com/moritzbrantner/audio-analysis?rev=d7c78028a1e84d0ebde8f6a93a19c4565534b0bc#d7c78028a1e84d0ebde8f6a93a19c4565534b0bc"
 dependencies = [
  "hex",
  "moenarch-audio-analysis-core",
@@ -1253,7 +1253,7 @@ dependencies = [
 [[package]]
 name = "moenarch-audio-analysis-transcription"
 version = "0.1.15"
-source = "git+https://github.com/moritzbrantner/audio-analysis?rev=ddba9a3ad361a37e9b7f5fac5731633a478f35bb#ddba9a3ad361a37e9b7f5fac5731633a478f35bb"
+source = "git+https://github.com/moritzbrantner/audio-analysis?rev=d7c78028a1e84d0ebde8f6a93a19c4565534b0bc#d7c78028a1e84d0ebde8f6a93a19c4565534b0bc"
 dependencies = [
  "candle-core",
  "candle-nn",
