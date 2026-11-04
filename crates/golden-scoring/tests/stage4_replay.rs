@@ -132,6 +132,17 @@ fn replay_produces_diagnostics_and_refuses_baseline_or_document_drift() {
         "entailment"
     );
 
+    let diagnostic_path = dir.join("attributions-diagnostics.json");
+    let unchanged_metadata = std::fs::metadata(&diagnostic_path).unwrap();
+    let output = command();
+    assert!(output.status.success());
+    let repeated_metadata = std::fs::metadata(&diagnostic_path).unwrap();
+    assert_eq!(
+        repeated_metadata.modified().unwrap(),
+        unchanged_metadata.modified().unwrap(),
+        "replaying unchanged observations must not rewrite diagnostics"
+    );
+
     let mut stale: Value =
         serde_json::from_slice(&std::fs::read(dir.join("attributions-report.json")).unwrap())
             .unwrap();

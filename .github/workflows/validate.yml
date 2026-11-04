@@ -21,7 +21,7 @@ jobs:
       install_command: ""
       format_command: cargo fmt --all -- --check
       lint_command: cargo clippy --workspace --all-targets -- -D warnings
-      test_command: cargo test --workspace && cargo run --quiet
+      test_command: cargo test --workspace && cargo run --quiet && python3 -m unittest discover -s scripts/tests -p 'test_russell_copleston_stage4.py'
       cache_bun: false
       cache_cargo: true
       artifact_paths: ""

@@ -25,6 +25,10 @@ fn digest(bytes: &[u8]) -> String {
 }
 
 fn write_atomic(path: &Path, contents: &[u8]) -> Result<(), String> {
+    // A successful replay is a true no-op for unchanged output, including file metadata.
+    if std::fs::read(path).is_ok_and(|existing| existing.as_slice() == contents) {
+        return Ok(());
+    }
     let name = path
         .file_name()
         .and_then(|name| name.to_str())

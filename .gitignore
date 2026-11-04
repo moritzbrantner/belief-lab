@@ -4,3 +4,4 @@
 
 site/node_modules/
 /crates/golden-media/target
+__pycache__/
