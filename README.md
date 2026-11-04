@@ -43,7 +43,44 @@ Golden outputs for every case in `fixtures/explain/` are checked by `cargo test 
 
 `fixtures/golden/russell-copleston-1948/` holds the owner-approved expectations and the committed original audio stream. `audio/source.json` records where the audio came from and its digest. `cargo test --workspace` checks those bytes and the scoring code offline. The real-model run is opt-in. It runs real producer code from audio-analysis: Whisper medium (native Candle) and pyannote community-1 (native ONNX). It then scores golden-excerpt recall in the transcript and speaker-turn agreement (overall and per speaker), and writes a per-stage report to `target/golden/russell-copleston-1948/report.json`:
 
-Run the stages one after another (never in parallel: each loads a large model):
+**One command** on your workstation (Python 3 standard library; no Python environment to install):
+
+```bash
+python3 scripts/russell_copleston_stage4.py
+```
+
+The runner validates the committed audio and each saved stage's source/model receipts.
+It reuses transcript/turns, pinned proposition-api candidate drafts, and the recorded
+e5/NLI score if the offline replay matches the saved baseline. Missing stages run in order,
+never concurrently. It fetches proposition-api at its **pinned commit** into
+`target/golden/russell-copleston-1948/.producers/` when required, starts its pinned local
+`llama-server`, and stops only that server when extraction ends. Interrupted Qwen draft windows
+resume from their request-hash cache. Re-running with complete inputs performs only the
+cheap offline replay, and unchanged diagnostic files are not rewritten.
+
+To **require offline-only behavior** (no downloads or model execution), run:
+
+```bash
+python3 scripts/russell_copleston_stage4.py --replay-only
+```
+
+A completely fresh checkout contains the original audio but **not** the model weights or
+intermediate inference results. The first full run needs Rust/Cargo, Bun, `llama-server` and
+the pinned local model bundles from their owning producers. In particular,
+`GOLDEN_PYANNOTE_BUNDLE` must point to the approved gated community-1 ONNX snapshot, and
+`ORT_DYLIB_PATH` must resolve the compatible ONNX Runtime library if it is not installed in
+the default search path. The Qwen3 model can be downloaded using the exact command printed
+by proposition-api's `scripts/llama-server.sh --env`; the e5/NLI bundles must be materialized
+through nlp-stack/model-runtime. The runner fails with the missing prerequisite instead of
+substituting heuristics or pretending the acceptance test passed. A new machine without those
+gated assets cannot finish solely from a Git checkout. Once they are prepared, the command
+is resumable and does not redownload or re-infer on subsequent runs.
+
+When Stage 4 produces its current known golden failures, the runner still preserves the
+complete report and replays its score before reporting diagnostics. It prints the failed
+acceptance warning separately from a model/runtime failure.
+
+The individual stages are still available for troubleshooting:
 
 ```bash
 M=crates/golden-media/Cargo.toml
