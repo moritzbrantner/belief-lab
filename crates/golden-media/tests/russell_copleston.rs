@@ -6,9 +6,14 @@
 //! Both are scored against the owner-approved golden file; a per-stage report is written to
 //! `target/golden/russell-copleston-1948/report.json`.
 //!
+//! It also persists the transcript, the diarized turns and the stage-4 extraction document
+//! (`transcript.json`, `speaker-turns.json`, `stage4-document.json`), so stage 4
+//! (`tests/russell_copleston_stage4.rs`) re-runs without re-transcribing.
+//!
 //! Requires `GOLDEN_PYANNOTE_BUNDLE` (the approved local ONNX snapshot). Whisper medium is
 //! downloaded from Hugging Face on first use. `GOLDEN_THREADS` caps CPU threads (default 4).
 use audio_analysis_transcription::{transcribe, TranscriptionPipelineRequest};
+use golden_scoring::stage4::build_document;
 use golden_scoring::{score_transcript, score_turns, GoldenExpectations, PredictedTurn, TimedText};
 use serde_json::{json, Value};
 use sha2::{Digest, Sha256};
@@ -35,7 +40,7 @@ fn sha256_hex(bytes: &[u8]) -> String {
 
 #[test]
 #[ignore = "runs Whisper medium and pyannote community-1 on 17 minutes of audio (CPU, tens of minutes)"]
-fn russell_copleston_transcript_and_speaker_turns_match_the_golden_file() {
+fn stage1_3_transcript_and_speaker_turns_match_the_golden_file() {
     let threads = std::env::var("GOLDEN_THREADS").unwrap_or_else(|_| "4".into());
     std::env::set_var("RAYON_NUM_THREADS", &threads);
 
@@ -130,6 +135,36 @@ fn russell_copleston_transcript_and_speaker_turns_match_the_golden_file() {
 
     let out = root().join("target/golden/russell-copleston-1948");
     std::fs::create_dir_all(&out).unwrap();
+    let write = |name: &str, value: &Value| {
+        std::fs::write(out.join(name), serde_json::to_string_pretty(value).unwrap()).unwrap();
+    };
+    write(
+        "transcript.json",
+        &json!({
+            "audioSha256": audio_sha256,
+            "provider": response.provider,
+            "modelId": response.model_id,
+            "segments": transcript,
+        }),
+    );
+    write(
+        "speaker-turns.json",
+        &json!({
+            "modelId": diarization.model_id,
+            "artifactSetSha256": bundle_report.artifact_set_sha256,
+            // Producer labels → golden people by the best one-to-one agreement with the golden turns.
+            "labelMapping": turn_score.label_mapping,
+            "turns": turns,
+        }),
+    );
+    let document = build_document(
+        "russell-copleston-1948",
+        "en",
+        &transcript,
+        &turns,
+        &turn_score.label_mapping,
+    );
+    write("stage4-document.json", &serde_json::to_value(&document).unwrap());
     let report = json!({
         "case": "russell-copleston-1948",
         "threads": threads,
@@ -148,7 +183,7 @@ fn russell_copleston_transcript_and_speaker_turns_match_the_golden_file() {
                 "producerSegments": turns.len(),
                 "score": turn_score,
             },
-            "attributions": {"status": "not_run", "reason": "belief-lab#63 PR 2"},
+            "attributions": {"status": "not_run", "reason": "run tests/russell_copleston_stage4.rs"},
         },
         "diagnostics": response.diagnostics,
     });

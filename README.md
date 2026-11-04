@@ -43,12 +43,35 @@ Golden outputs for every case in `fixtures/explain/` are checked by `cargo test 
 
 `fixtures/golden/russell-copleston-1948/` holds the owner-approved expectations and the committed original audio stream. `audio/source.json` records where the audio came from and its digest. `cargo test --workspace` checks those bytes and the scoring code offline. The real-model run is opt-in. It runs real producer code from audio-analysis: Whisper medium (native Candle) and pyannote community-1 (native ONNX). It then scores golden-excerpt recall in the transcript and speaker-turn agreement (overall and per speaker), and writes a per-stage report to `target/golden/russell-copleston-1948/report.json`:
 
+Run the stages one after another (never in parallel: each loads a large model):
+
 ```bash
-GOLDEN_PYANNOTE_BUNDLE=/path/to/approved/community-1-onnx-snapshot \
-  cargo test --release --manifest-path crates/golden-media/Cargo.toml -- --ignored --nocapture
+M=crates/golden-media/Cargo.toml
+# Stages 1-3: Whisper medium + pyannote. Persists transcript.json, speaker-turns.json and
+# stage4-document.json, so stage 4 re-runs without re-transcribing.
+ORT_DYLIB_PATH=/path/to/libonnxruntime.so GOLDEN_PYANNOTE_BUNDLE=/path/to/approved/community-1-onnx-snapshot \
+  cargo test --release --manifest-path $M --test russell_copleston -- --ignored --nocapture
+
+# Stage 4a: draft claims with proposition-api (PR #12 at the commit pinned in stage4/extract.ts)
+# against its pinned Qwen3-8B llama-server; writes stage4-candidates.json.
+(cd ../proposition-api && scripts/llama-server.sh) &
+eval "$(../proposition-api/scripts/llama-server.sh --env)"
+bun crates/golden-media/stage4/extract.ts ../proposition-api target/golden/russell-copleston-1948
+
+# Stage 4b: match claims with multilingual-e5-base (nlp-stack PR #193, cached bundle), map
+# attributions, score, and export them to belief-lab's evidence and attribution contracts.
+cargo test --release --manifest-path $M --test russell_copleston_stage4 -- --ignored --nocapture
 ```
 
-`crates/golden-media` sits outside the workspace, so ordinary builds never compile the model stacks. Whisper medium downloads on first use. `GOLDEN_THREADS` caps CPU threads (default 4). Proposition candidates and person attributions (stage 4) are not run yet.
+`crates/golden-media` sits outside the workspace, so ordinary builds never compile the model stacks. Whisper medium downloads on first use. `GOLDEN_THREADS` caps CPU threads (default 4). The approved pyannote snapshot is the one audio-analysis's `loadCommunityDiarizationResources` materializes; its two gated PLDA inputs can come from a local Hugging Face cache of the pinned revision (the loader checks every digest).
+
+Stage 4 follows the owner decisions of 2026-11-04 (#63):
+
+- **Document.** The transcript text, one segment per speaker turn (consecutive Whisper segments whose longest-overlapping diarization label maps to the same golden person). The label → person mapping is the one-to-one assignment with the most agreement against the golden turns, as in the stage-3 score. A byte offset's time is interpolated linearly inside its Whisper segment.
+- **Spans.** A candidate is attributed only when its quote is exactly the transcript bytes at its offsets and its speaker is its turn's speaker.
+- **Stance.** For the speaker (empty reporting) or the innermost holder: `asserted` → `endorses`, `negated` → `endorses_negation`, `questioned` → `no_stance`, `hedged` → `no_stance` plus a `hedged` flag (never `suspends_judgment`). Outer reporting layers whose holder is the speaker ("I think") are the speaker's own assertion. Otherwise every outer reporter gets `no_stance` / `reported_position` with `aboutPerson` and `attributedStance`, and a holder who is a golden person gets the stance as a `reported_position` `via` the reporter. Holders resolve to golden people by a unique name word ("Father Copleston" → `copleston`); others ("Sartre", "he") stay unresolved.
+- **Matching.** A claim matches an expected attribution when the e5 cosine (symmetric input) between its canonical text and the golden proposition is at least `SIMILARITY_THRESHOLD` and its time is within ±30 s of `approxSeconds`. An attribution is a hit when person, stance, kind, reporter (`via`/`aboutPerson`/`attributedStance`) and span (half the words of the shorter quote shared) all agree. `no_stance_evidence` entries and `expectedNoAttribution` rules are violated by an attributed stance on a matching claim; for the latter only from the person's own words (a report `via` someone is allowed). A fabricated attribution states a stance on a matched golden proposition that the golden file does not give that person.
+- **Report.** `attributions-report.json` (every expected entry with its best check, fabrications, near-misses within 0.05 below the threshold or 30–60 s away, and the threshold calibration), `attributions-summary.md`, `claims.json`, and `belief-lab-evidence.json` / `belief-lab-investigation.json` (a `belief_evidence_interchange` v2 batch and a `belief_person_attributions` v3 investigation that belief-lab's attribution report accepts; the reporter chain is evidence parentage, the `hedged` flag has no field there).
 
 For real local semantic scoring:
 
