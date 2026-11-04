@@ -157,16 +157,13 @@ fn speaker_of(
 ) -> Option<String> {
     let mut overlap = BTreeMap::<&str, f64>::new();
     for turn in turns {
-        let seconds = turn.end_seconds.min(piece.end_seconds)
-            - turn.start_seconds.max(piece.start_seconds);
+        let seconds =
+            turn.end_seconds.min(piece.end_seconds) - turn.start_seconds.max(piece.start_seconds);
         if seconds > 0.0 {
             *overlap.entry(turn.speaker.as_str()).or_default() += seconds;
         }
     }
-    let label = overlap
-        .into_iter()
-        .max_by(|a, b| a.1.total_cmp(&b.1))?
-        .0;
+    let label = overlap.into_iter().max_by(|a, b| a.1.total_cmp(&b.1))?.0;
     label_mapping.get(label).cloned()
 }
 
@@ -350,7 +347,9 @@ pub fn map_candidates(
             continue;
         };
         if document.text.get(evidence.start..evidence.end) != Some(evidence.quote.as_str()) {
-            mapped.unattributed.push(reject("quote_not_transcript_bytes"));
+            mapped
+                .unattributed
+                .push(reject("quote_not_transcript_bytes"));
             continue;
         }
         let segment = document.segment_containing(evidence.start, evidence.end);
@@ -360,7 +359,9 @@ pub fn map_candidates(
                 && segment.speaker == candidate.speaker
         });
         let (Some(segment), Some(speaker), true) = (segment, &candidate.speaker, verified) else {
-            mapped.unattributed.push(reject("speaker_or_segment_mismatch"));
+            mapped
+                .unattributed
+                .push(reject("speaker_or_segment_mismatch"));
             continue;
         };
         mapped.verified += 1;
@@ -605,7 +606,10 @@ pub struct AttributionScore {
 }
 
 fn attributed(stance: &str) -> bool {
-    matches!(stance, "endorses" | "endorses_negation" | "suspends_judgment")
+    matches!(
+        stance,
+        "endorses" | "endorses_negation" | "suspends_judgment"
+    )
 }
 
 /// Share of the shorter quote's words found in the other (fragments split by `...`).
@@ -615,8 +619,14 @@ pub fn quote_overlap(golden_quote: &str, quote: &str) -> f64 {
     if golden.is_empty() || predicted.is_empty() {
         return 0.0;
     }
-    let golden_in = golden.iter().filter(|word| predicted.contains(word)).count() as f64;
-    let predicted_in = predicted.iter().filter(|word| golden.contains(word)).count() as f64;
+    let golden_in = golden
+        .iter()
+        .filter(|word| predicted.contains(word))
+        .count() as f64;
+    let predicted_in = predicted
+        .iter()
+        .filter(|word| golden.contains(word))
+        .count() as f64;
     (golden_in / golden.len() as f64).max(predicted_in / predicted.len() as f64)
 }
 
@@ -648,7 +658,12 @@ pub fn score_attributions(
                 .collect();
             expected_results.push(ExpectedResult {
                 expected: expected.clone(),
-                status: if violations.is_empty() { "held" } else { "violated" }.to_owned(),
+                status: if violations.is_empty() {
+                    "held"
+                } else {
+                    "violated"
+                }
+                .to_owned(),
                 matched_candidates: Vec::new(),
                 best: None,
                 violations,
@@ -786,9 +801,10 @@ pub fn score_attributions(
                     (predicted.seconds - approx).abs() <= config.time_window_seconds
                 })
             });
-            let ruled_out = golden.expected_no_attribution.iter().any(|rule| {
-                rule.person == predicted.person && rule.proposition == proposition.id
-            }) && predicted.via.is_none();
+            let ruled_out =
+                golden.expected_no_attribution.iter().any(|rule| {
+                    rule.person == predicted.person && rule.proposition == proposition.id
+                }) && predicted.via.is_none();
             let same_person: Vec<&&GoldenAttribution> = on_proposition
                 .iter()
                 .filter(|expected| expected.person == predicted.person)

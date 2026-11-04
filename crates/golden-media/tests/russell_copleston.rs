@@ -164,7 +164,10 @@ fn stage1_3_transcript_and_speaker_turns_match_the_golden_file() {
         &turns,
         &turn_score.label_mapping,
     );
-    write("stage4-document.json", &serde_json::to_value(&document).unwrap());
+    write(
+        "stage4-document.json",
+        &serde_json::to_value(&document).unwrap(),
+    );
     let report = json!({
         "case": "russell-copleston-1948",
         "threads": threads,

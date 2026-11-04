@@ -62,11 +62,19 @@ fn text(start_seconds: f64, end_seconds: f64, text: &str) -> TimedText {
 
 fn document() -> StageFourDocument {
     let transcript = [
-        text(0.0, 20.0, " Copleston is a believer who holds that God exists."),
+        text(
+            0.0,
+            20.0,
+            " Copleston is a believer who holds that God exists.",
+        ),
         text(20.0, 40.0, " Nobody knows."),
         text(60.0, 80.0, " I think the world has an explanation."),
         text(80.0, 100.0, " Perhaps it is caused."),
-        text(120.0, 140.0, " The world has no explanation. God does not exist."),
+        text(
+            120.0,
+            140.0,
+            " The world has no explanation. God does not exist.",
+        ),
     ];
     let turns = [
         PredictedTurn {
@@ -102,7 +110,9 @@ fn candidate(
     reporting: &[(&str, &str)],
 ) -> Value {
     let start = document.text.find(quote).unwrap();
-    let segment = document.segment_containing(start, start + quote.len()).unwrap();
+    let segment = document
+        .segment_containing(start, start + quote.len())
+        .unwrap();
     json!({
         "canonicalText": canonical,
         "evidence": {"quote": quote, "start": start, "end": start + quote.len(), "segmentId": segment.id},
@@ -119,15 +129,45 @@ fn candidate(
 fn candidates(document: &StageFourDocument) -> Vec<Candidate> {
     let values = vec![
         // 0: narrator reports Copleston's belief.
-        candidate(document, "God exists", "God exists.", "asserted", &[("Copleston", "holds")]),
+        candidate(
+            document,
+            "God exists",
+            "God exists.",
+            "asserted",
+            &[("Copleston", "holds")],
+        ),
         // 1: Copleston's own "I think" is his assertion.
-        candidate(document, "the world has an explanation", "The world has an explanation.", "asserted", &[("I", "think")]),
+        candidate(
+            document,
+            "the world has an explanation",
+            "The world has an explanation.",
+            "asserted",
+            &[("I", "think")],
+        ),
         // 2: hedged, never suspension.
-        candidate(document, "Perhaps it is caused", "The world is caused.", "hedged", &[]),
+        candidate(
+            document,
+            "Perhaps it is caused",
+            "The world is caused.",
+            "hedged",
+            &[],
+        ),
         // 3: Russell denies world-explained.
-        candidate(document, "The world has no explanation", "The world has an explanation.", "negated", &[]),
+        candidate(
+            document,
+            "The world has no explanation",
+            "The world has an explanation.",
+            "negated",
+            &[],
+        ),
         // 4: Russell in his own words on god-exists: violates expectedNoAttribution.
-        candidate(document, "God does not exist", "God exists.", "negated", &[]),
+        candidate(
+            document,
+            "God does not exist",
+            "God exists.",
+            "negated",
+            &[],
+        ),
     ];
     let mut parsed: Vec<Candidate> = values
         .into_iter()
@@ -152,12 +192,36 @@ fn similarities() -> Similarities {
         revision: "fixture".into(),
         input_kind: "symmetric".into(),
         candidates: vec![
-            row(&[("god-exists", 0.99), ("world-explained", 0.7), ("existence-pred", 0.6)]),
-            row(&[("god-exists", 0.7), ("world-explained", 0.98), ("existence-pred", 0.6)]),
-            row(&[("god-exists", 0.7), ("world-explained", 0.82), ("existence-pred", 0.6)]),
-            row(&[("god-exists", 0.7), ("world-explained", 0.95), ("existence-pred", 0.6)]),
-            row(&[("god-exists", 0.97), ("world-explained", 0.7), ("existence-pred", 0.6)]),
-            row(&[("god-exists", 0.7), ("world-explained", 0.95), ("existence-pred", 0.6)]),
+            row(&[
+                ("god-exists", 0.99),
+                ("world-explained", 0.7),
+                ("existence-pred", 0.6),
+            ]),
+            row(&[
+                ("god-exists", 0.7),
+                ("world-explained", 0.98),
+                ("existence-pred", 0.6),
+            ]),
+            row(&[
+                ("god-exists", 0.7),
+                ("world-explained", 0.82),
+                ("existence-pred", 0.6),
+            ]),
+            row(&[
+                ("god-exists", 0.7),
+                ("world-explained", 0.95),
+                ("existence-pred", 0.6),
+            ]),
+            row(&[
+                ("god-exists", 0.97),
+                ("world-explained", 0.7),
+                ("existence-pred", 0.6),
+            ]),
+            row(&[
+                ("god-exists", 0.7),
+                ("world-explained", 0.95),
+                ("existence-pred", 0.6),
+            ]),
         ],
     }
 }
@@ -261,10 +325,9 @@ fn scoring_reports_hits_misses_fabrications_and_the_no_attribution_rule() {
     assert_eq!(score.fabricated[0].predicted.person, "russell");
 
     // The hedged claim is 0.03 below the threshold near Copleston's world-explained entry.
-    assert!(score
-        .near_misses
-        .iter()
-        .any(|miss| miss.candidate == 2 && miss.reason == "similarity" && miss.expected_index == 1));
+    assert!(score.near_misses.iter().any(|miss| miss.candidate == 2
+        && miss.reason == "similarity"
+        && miss.expected_index == 1));
     let summary = summary_markdown(&score);
     assert!(summary.contains("3 hit, 0 partial, 1 miss of 4"));
     assert!(summary.contains("VIOLATED"));
@@ -325,10 +388,7 @@ fn the_export_is_accepted_by_belief_lab_attribution_compare() {
     let report = compare(&ComparisonInput {
         evidence_json: &batch.to_string(),
         attributions_json: &investigation.to_string(),
-        policy: BTreeMap::from([(
-            "BELIEF_POLICY_PROFILE".into(),
-            "semantic_research".into(),
-        )]),
+        policy: BTreeMap::from([("BELIEF_POLICY_PROFILE".into(), "semantic_research".into())]),
     })
     .unwrap();
     let report = serde_json::to_value(report).unwrap();

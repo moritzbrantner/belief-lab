@@ -107,20 +107,18 @@ pub fn belief_lab_export(
         let proposition =
             linked_proposition(golden, similarities, attribution.candidate, threshold)
                 .unwrap_or_else(|| format!("candidate-{}", attribution.candidate));
-        propositions
-            .entry(proposition.clone())
-            .or_insert_with(|| {
-                match golden.propositions.iter().find(|p| p.id == proposition) {
-                    Some(golden) => {
-                        json!({"id": golden.id, "text": golden.text, "scope": golden.scope})
-                    }
-                    None => json!({
-                        "id": proposition,
-                        "text": attribution.canonical_text,
-                        "scope": "Unreviewed draft claim candidate",
-                    }),
+        propositions.entry(proposition.clone()).or_insert_with(|| {
+            match golden.propositions.iter().find(|p| p.id == proposition) {
+                Some(golden) => {
+                    json!({"id": golden.id, "text": golden.text, "scope": golden.scope})
                 }
-            });
+                None => json!({
+                    "id": proposition,
+                    "text": attribution.canonical_text,
+                    "scope": "Unreviewed draft claim candidate",
+                }),
+            }
+        });
         observations.push(json!({
             "id": format!("o-{:04}", index + 1),
             "propositionId": proposition,

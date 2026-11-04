@@ -2,7 +2,7 @@
 //
 // Calls proposition-api's `llama-cpp` draft provider directly on the persisted
 // `stage4-document.json` and writes the raw candidates, diagnostics and receipts.
-// The provider is the pinned proposition-api commit (PR #12, merged to main); a different or
+// The provider is the pinned proposition-api commit (PRs #12 and #14, merged to main); a different or
 // dirty checkout is refused. Each llama-server completion is cached by request digest, so an
 // interrupted run resumes without recomputing finished windows (temperature 0, seed 0).
 //
@@ -14,7 +14,7 @@ import { execFileSync } from "node:child_process";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 
-export const PROPOSITION_API_COMMIT = "8049067b1a83820c179bcd7fe92bcd1ec3c286b0";
+export const PROPOSITION_API_COMMIT = "e9a6c50f758fc0e76e126eeb68a321327b25e588";
 
 const [apiDir, outDir] = process.argv.slice(2);
 if (!apiDir || !outDir) {
@@ -58,7 +58,9 @@ const cachedFetch = (async (url: string | URL | Request, init?: RequestInit) => 
   if (existsSync(file)) {
     text = readFileSync(file, "utf8");
   } else {
-    const response = await fetch(url, init);
+    // Bun aborts a fetch after 300 s by default; a CPU draft window can take longer. The
+    // provider's own AbortSignal (PROPOSITION_LLAMA_TIMEOUT_MS) still bounds the request.
+    const response = await fetch(url, { ...init, timeout: false } as RequestInit);
     text = await response.text();
     if (!response.ok) {
       return new Response(text, { status: response.status });
@@ -78,7 +80,7 @@ const output = {
   producer: {
     repository: "https://github.com/moritzbrantner/proposition-api",
     commit: PROPOSITION_API_COMMIT,
-    pullRequest: 12, // merged to main
+    pullRequests: [12, 14], // merged to main
     provider: provider.id,
     promptVersion: LLAMA_DRAFT_PROMPT_VERSION,
     llamaModelFile: config.modelFile,

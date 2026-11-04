@@ -1768,7 +1768,7 @@ dependencies = [
 [[package]]
 name = "moenarch-text-core"
 version = "0.1.1"
-source = "git+https://github.com/moritzbrantner/nlp-stack?rev=1c3a55a9b3ac09da8816fa1ff050b84a66a3ed49#1c3a55a9b3ac09da8816fa1ff050b84a66a3ed49"
+source = "git+https://github.com/moritzbrantner/nlp-stack?rev=815d9ddd3858958438bb9d28d3797c41ea4c6757#815d9ddd3858958438bb9d28d3797c41ea4c6757"
 dependencies = [
  "moenarch-media-core",
  "moenarch-runtime-core",
@@ -1782,7 +1782,7 @@ dependencies = [
 [[package]]
 name = "moenarch-text-embeddings"
 version = "0.1.1"
-source = "git+https://github.com/moritzbrantner/nlp-stack?rev=1c3a55a9b3ac09da8816fa1ff050b84a66a3ed49#1c3a55a9b3ac09da8816fa1ff050b84a66a3ed49"
+source = "git+https://github.com/moritzbrantner/nlp-stack?rev=815d9ddd3858958438bb9d28d3797c41ea4c6757#815d9ddd3858958438bb9d28d3797c41ea4c6757"
 dependencies = [
  "candle-core 0.11.1",
  "candle-nn 0.11.1",
@@ -1804,7 +1804,7 @@ dependencies = [
 [[package]]
 name = "moenarch-text-lexical"
 version = "0.1.1"
-source = "git+https://github.com/moritzbrantner/nlp-stack?rev=1c3a55a9b3ac09da8816fa1ff050b84a66a3ed49#1c3a55a9b3ac09da8816fa1ff050b84a66a3ed49"
+source = "git+https://github.com/moritzbrantner/nlp-stack?rev=815d9ddd3858958438bb9d28d3797c41ea4c6757#815d9ddd3858958438bb9d28d3797c41ea4c6757"
 dependencies = [
  "moenarch-math-sparse-data",
  "moenarch-runtime-core",

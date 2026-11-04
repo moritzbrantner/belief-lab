@@ -58,7 +58,7 @@ ORT_DYLIB_PATH=/path/to/libonnxruntime.so GOLDEN_PYANNOTE_BUNDLE=/path/to/approv
 eval "$(../proposition-api/scripts/llama-server.sh --env)"
 bun crates/golden-media/stage4/extract.ts ../proposition-api target/golden/russell-copleston-1948
 
-# Stage 4b: match claims with multilingual-e5-base (nlp-stack PR #193, cached bundle), map
+# Stage 4b: match claims with multilingual-e5-base (nlp-stack#188 preset, cached bundle), map
 # attributions, score, and export them to belief-lab's evidence and attribution contracts.
 cargo test --release --manifest-path $M --test russell_copleston_stage4 -- --ignored --nocapture
 ```
@@ -72,6 +72,31 @@ Stage 4 follows the owner decisions of 2026-11-04 (#63):
 - **Stance.** For the speaker (empty reporting) or the innermost holder: `asserted` → `endorses`, `negated` → `endorses_negation`, `questioned` → `no_stance`, `hedged` → `no_stance` plus a `hedged` flag (never `suspends_judgment`). Outer reporting layers whose holder is the speaker ("I think") are the speaker's own assertion. Otherwise every outer reporter gets `no_stance` / `reported_position` with `aboutPerson` and `attributedStance`, and a holder who is a golden person gets the stance as a `reported_position` `via` the reporter. Holders resolve to golden people by a unique name word ("Father Copleston" → `copleston`); others ("Sartre", "he") stay unresolved.
 - **Matching.** A claim matches an expected attribution when the e5 cosine (symmetric input) between its canonical text and the golden proposition is at least `SIMILARITY_THRESHOLD` and its time is within ±30 s of `approxSeconds`. An attribution is a hit when person, stance, kind, reporter (`via`/`aboutPerson`/`attributedStance`) and span (half the words of the shorter quote shared) all agree. `no_stance_evidence` entries and `expectedNoAttribution` rules are violated by an attributed stance on a matching claim; for the latter only from the person's own words (a report `via` someone is allowed). A fabricated attribution states a stance on a matched golden proposition that the golden file does not give that person.
 - **Report.** `attributions-report.json` (every expected entry with its best check, fabrications, near-misses within 0.05 below the threshold or 30–60 s away, and the threshold calibration), `attributions-summary.md`, `claims.json`, and `belief-lab-evidence.json` / `belief-lab-investigation.json` (a `belief_evidence_interchange` v2 batch and a `belief_person_attributions` v3 investigation that belief-lab's attribution report accepts; the reporter chain is evidence parentage, the `hedged` flag has no field there).
+
+#### Stage 4 calibration (2026-11-04 run)
+
+`SIMILARITY_THRESHOLD` is **0.88**. It was chosen from the threshold sweep that `attributions-report.json` records (`calibration.thresholdSweep`), on the run with Whisper medium + pyannote community-1 (turn agreement 0.979), proposition-api main `llama-cpp` draft-v2 on Qwen3-8B Q4_K_M (126 grounded candidates out of 158 drafted), and multilingual-e5-base (symmetric `query: ` input):
+
+| threshold | hit | partial | miss | fabricated | `no_stance_evidence` violated | `expectedNoAttribution` held |
+|---|---|---|---|---|---|---|
+| 0.80 | 4 | 9 | 0 | 170 | 1 | no |
+| 0.84 | 4 | 5 | 4 | 43 | 1 | no |
+| 0.86 | 4 | 4 | 5 | 25 | 1 | no |
+| 0.87 | 4 | 4 | 5 | 21 | 1 | no |
+| **0.88** | **4** | **1** | **8** | **8** | **1** | **no** |
+| 0.89 | 2 | 0 | 11 | 5 | 0 | no |
+| 0.92 | 2 | 0 | 11 | 2 | 0 | no |
+| 0.94 | 0 | 0 | 13 | 1 | 0 | no |
+
+0.88 is the highest threshold that keeps every hit; above it hits drop faster than fabrications. e5 cosines are compressed on this material: golden proposition pairs score 0.749–0.904 against each other (median 0.829), and for 5 of the 13 golden quotes the closest *other* proposition is at least as close as their own. A cosine threshold alone therefore cannot separate the propositions; the near-misses (0.05 below the threshold or 30–60 s away) are listed in the report for further tuning.
+
+Known gaps of this run, recorded rather than worked around:
+
+- **Kinds the mapping does not produce.** The golden file expects `inferred_belief` (#13, Copleston on world-cause-question-legitimate) and `quotation_or_criticism` (#14, Copleston on Sartre's "gratuitous"). The candidate mapping only yields `explicit_endorsement` and `reported_position`, so these score at best partial.
+- **Polarity.** Cosine matching ignores polarity: Russell's "the notion of the world having an explanation is a mistake" matches world-has-explanation and is scored `endorses` (fabricated, wrong stance) instead of `endorses_negation`.
+- **Hypotheticals.** The draft marks conditional or dialectical steps as `asserted` (Russell at 537 s, "Then God exists"), which violates `expectedNoAttribution` for russell / god-exists.
+- **Invented self-layers.** The draft often adds the speaker as a reporting layer with the cue "says", which the transcript does not contain. proposition-api rejects those candidates (`reporting_cue_not_in_source`, 20 of 158), including Russell's "existence … is not a predicate".
+- **Name spelling.** Whisper writes "Coppiston" for Copleston in the narrator's introduction, and the draft gives his reported position no reporting layer, so the narrator's report (#1–#3) is missed.
 
 For real local semantic scoring:
 

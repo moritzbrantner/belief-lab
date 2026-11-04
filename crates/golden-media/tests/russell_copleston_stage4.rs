@@ -5,7 +5,7 @@
 //! - `stage4-document.json` from the stage 1–3 test (transcript text, speaker turns, timing);
 //! - `stage4-candidates.json` from `stage4/extract.ts` (proposition-api `llama-cpp` draft, PR #12).
 //!
-//! Claims are matched to golden propositions with multilingual-e5-base (nlp-stack PR #193) from
+//! Claims are matched to golden propositions with multilingual-e5-base (nlp-stack#188 preset) from
 //! the local `model-runtime` bundle (`TEXT_EMBEDDINGS_MODEL_DIR`, default
 //! `~/.cache/model-runtime`; never downloaded here). Writes `attributions-report.json`,
 //! `attributions-summary.md`, `similarities.json`, the belief-lab evidence batch and
@@ -13,8 +13,8 @@
 use belief_cli::attribution::{compare, ComparisonInput};
 use golden_scoring::interchange::{belief_lab_export, ExportProvenance};
 use golden_scoring::stage4::{
-    map_candidates, score_attributions, summary_markdown, Candidate,
-    ScoringConfig, Similarities, StageFourDocument,
+    map_candidates, score_attributions, summary_markdown, Candidate, ScoringConfig, Similarities,
+    StageFourDocument,
 };
 use golden_scoring::GoldenExpectations;
 use serde_json::{json, Value};
@@ -27,8 +27,9 @@ use text_embeddings::{
     TextEmbeddingBackend,
 };
 
-/// e5 cosine a claim needs to match a golden proposition. See the README for how it was chosen.
-const SIMILARITY_THRESHOLD: f64 = 0.86;
+/// e5 cosine a claim needs to match a golden proposition, chosen from the 2026-11-04 threshold
+/// sweep (README "Stage 4 calibration"): the highest hit count with the fewest fabrications.
+const SIMILARITY_THRESHOLD: f64 = 0.88;
 
 fn root() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR")).join("../..")
@@ -63,7 +64,9 @@ fn stage4_attributions_match_the_golden_file() {
     let out = root().join("target/golden/russell-copleston-1948");
     let read = |name: &str| -> Vec<u8> {
         std::fs::read(out.join(name)).unwrap_or_else(|error| {
-            panic!("{name} is missing ({error}); run the stage 1-3 test and stage4/extract.ts first")
+            panic!(
+                "{name} is missing ({error}); run the stage 1-3 test and stage4/extract.ts first"
+            )
         })
     };
     let golden_json = std::fs::read_to_string(
@@ -88,7 +91,8 @@ fn stage4_attributions_match_the_golden_file() {
     let started = Instant::now();
     let mut options = EmbeddingPresetLoadOptions::default();
     if std::env::var_os("TEXT_EMBEDDINGS_MODEL_DIR").is_none() {
-        options.bundle_root = PathBuf::from(std::env::var("HOME").unwrap()).join(".cache/model-runtime");
+        options.bundle_root =
+            PathBuf::from(std::env::var("HOME").unwrap()).join(".cache/model-runtime");
     }
     let preset = MultilingualEmbeddingPreset::MultilingualE5Base;
     let embedder = load_embedding_preset(preset, &options).expect("multilingual-e5-base bundle");
@@ -99,9 +103,16 @@ fn stage4_attributions_match_the_golden_file() {
             .map(|vector| vector.as_slice().to_vec())
             .collect()
     };
-    let proposition_texts: Vec<&str> = golden.propositions.iter().map(|p| p.text.as_str()).collect();
+    let proposition_texts: Vec<&str> = golden
+        .propositions
+        .iter()
+        .map(|p| p.text.as_str())
+        .collect();
     let proposition_vectors = embed(&proposition_texts);
-    let candidate_texts: Vec<&str> = candidates.iter().map(|c| c.canonical_text.as_str()).collect();
+    let candidate_texts: Vec<&str> = candidates
+        .iter()
+        .map(|c| c.canonical_text.as_str())
+        .collect();
     let candidate_vectors = embed(&candidate_texts);
     let row = |vector: &[f32]| -> BTreeMap<String, f64> {
         golden
@@ -164,6 +175,20 @@ fn stage4_attributions_match_the_golden_file() {
         ScoringConfig::with_threshold(SIMILARITY_THRESHOLD),
     );
 
+    // Threshold sweep on this run: how hits, fabrications and the no-attribution rules move with
+    // the threshold. The fixed threshold above is chosen from it (see the README).
+    let sweep: Vec<Value> = (80..=95)
+        .map(|step| {
+            let threshold = f64::from(step) / 100.0;
+            let at = score_attributions(&golden, &mapped, &similarities, ScoringConfig::with_threshold(threshold));
+            json!({"threshold": threshold, "hits": at.hits, "partial": at.partial, "misses": at.misses,
+                   "fabricated": at.fabricated.len(),
+                   "noStanceEvidenceViolated": at.expected.iter().filter(|r| r.status == "violated").count(),
+                   "noAttributionHeld": at.no_attribution.iter().all(|rule| rule.held),
+                   "candidatesMatchingNoProposition": at.candidates_matching_no_proposition})
+        })
+        .collect();
+
     let write = |name: &str, value: &Value| {
         std::fs::write(out.join(name), serde_json::to_string_pretty(value).unwrap()).unwrap();
     };
@@ -188,20 +213,27 @@ fn stage4_attributions_match_the_golden_file() {
                    "closestProposition": best, "similarity": similarity})
         })
         .collect();
-    write("similarities.json", &serde_json::to_value(&similarities).unwrap());
+    write(
+        "similarities.json",
+        &serde_json::to_value(&similarities).unwrap(),
+    );
     write("claims.json", &json!(claims));
     write(
         "attributions-report.json",
         &json!({
             "score": score,
-            "calibration": {"quotes": calibration, "propositionPairs": proposition_pairs},
+            "calibration": {"quotes": calibration, "propositionPairs": proposition_pairs, "thresholdSweep": sweep},
             "embeddingSeconds": embedding_seconds,
             "extraction": {"producer": extraction["producer"], "seconds": extraction["seconds"],
                            "windows": extraction["windows"], "diagnostics": extraction["diagnostics"]},
             "quoteOverlapMetric": "max share of either quote's words found in the other",
         }),
     );
-    std::fs::write(out.join("attributions-summary.md"), summary_markdown(&score)).unwrap();
+    std::fs::write(
+        out.join("attributions-summary.md"),
+        summary_markdown(&score),
+    )
+    .unwrap();
 
     // The same attributions in belief-lab's own contracts, run through its attribution report.
     let provenance = ExportProvenance {
@@ -229,10 +261,7 @@ fn stage4_attributions_match_the_golden_file() {
     let belief_report = compare(&ComparisonInput {
         evidence_json: &batch.to_string(),
         attributions_json: &investigation.to_string(),
-        policy: BTreeMap::from([(
-            "BELIEF_POLICY_PROFILE".into(),
-            "semantic_research".into(),
-        )]),
+        policy: BTreeMap::from([("BELIEF_POLICY_PROFILE".into(), "semantic_research".into())]),
     })
     .expect("belief-lab accepts the exported attributions");
     write(
