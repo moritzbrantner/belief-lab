@@ -2,7 +2,7 @@
 //
 // Calls proposition-api's `llama-cpp` draft provider directly on the persisted
 // `stage4-document.json` and writes the raw candidates, diagnostics and receipts.
-// The provider is the pinned proposition-api commit (PR #12, unmerged); a different or
+// The provider is the pinned proposition-api commit (PR #12, merged to main); a different or
 // dirty checkout is refused. Each llama-server completion is cached by request digest, so an
 // interrupted run resumes without recomputing finished windows (temperature 0, seed 0).
 //
@@ -14,7 +14,7 @@ import { execFileSync } from "node:child_process";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 
-export const PROPOSITION_API_COMMIT = "1e1258e7a961722f169b28f5c84cf90bb3377693";
+export const PROPOSITION_API_COMMIT = "8049067b1a83820c179bcd7fe92bcd1ec3c286b0";
 
 const [apiDir, outDir] = process.argv.slice(2);
 if (!apiDir || !outDir) {
@@ -78,7 +78,7 @@ const output = {
   producer: {
     repository: "https://github.com/moritzbrantner/proposition-api",
     commit: PROPOSITION_API_COMMIT,
-    pullRequest: 12,
+    pullRequest: 12, // merged to main
     provider: provider.id,
     promptVersion: LLAMA_DRAFT_PROMPT_VERSION,
     llamaModelFile: config.modelFile,

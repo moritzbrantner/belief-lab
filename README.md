@@ -52,7 +52,7 @@ M=crates/golden-media/Cargo.toml
 ORT_DYLIB_PATH=/path/to/libonnxruntime.so GOLDEN_PYANNOTE_BUNDLE=/path/to/approved/community-1-onnx-snapshot \
   cargo test --release --manifest-path $M --test russell_copleston -- --ignored --nocapture
 
-# Stage 4a: draft claims with proposition-api (PR #12 at the commit pinned in stage4/extract.ts)
+# Stage 4a: draft claims with proposition-api (main at the commit pinned in stage4/extract.ts)
 # against its pinned Qwen3-8B llama-server; writes stage4-candidates.json.
 (cd ../proposition-api && scripts/llama-server.sh) &
 eval "$(../proposition-api/scripts/llama-server.sh --env)"

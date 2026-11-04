@@ -3,7 +3,7 @@
 //!
 //! Inputs, all under `target/golden/russell-copleston-1948/`:
 //! - `stage4-document.json` from the stage 1–3 test (transcript text, speaker turns, timing);
-//! - `stage4-candidates.json` from `stage4/extract.ts` (proposition-api PR #12 `llama-cpp` draft).
+//! - `stage4-candidates.json` from `stage4/extract.ts` (proposition-api `llama-cpp` draft, PR #12).
 //!
 //! Claims are matched to golden propositions with multilingual-e5-base (nlp-stack PR #193) from
 //! the local `model-runtime` bundle (`TEXT_EMBEDDINGS_MODEL_DIR`, default
