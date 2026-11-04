@@ -71,6 +71,14 @@ class GoldenPipelineTests(unittest.TestCase):
             },
         )
 
+    def test_gpu_command_enables_cuda_without_changing_test_selection(self):
+        cpu = stage.stage13_command(gpu=False)
+        gpu = stage.stage13_command(gpu=True)
+        self.assertEqual(gpu[:5], cpu[:5])
+        self.assertEqual(gpu[5:7], ["--features", "cuda"])
+        self.assertEqual(gpu[7:], cpu[5:])
+        self.assertNotIn("--features", cpu)
+
     def candidates(self):
         write_json(
             self.out / "stage4-candidates.json",
@@ -123,7 +131,7 @@ class GoldenPipelineTests(unittest.TestCase):
     def test_complete_cached_run_only_replays(self, _command, replay):
         self.stage13()
         self.candidates()
-        stage.run_pipeline(self.root, self.out, replay_only=False, api_dir=None)
+        stage.run_pipeline(self.root, self.out, replay_only=False, api_dir=None, gpu=True)
         stage.run_pipeline(self.root, self.out, replay_only=False, api_dir=None)
         self.assertEqual(replay.call_count, 2)
         replay.assert_called_with(self.root, self.out)

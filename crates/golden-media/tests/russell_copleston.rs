@@ -11,7 +11,9 @@
 //! (`tests/russell_copleston_stage4.rs`) re-runs without re-transcribing.
 //!
 //! Requires `GOLDEN_PYANNOTE_BUNDLE` (the approved local ONNX snapshot). Whisper medium is
-//! downloaded from Hugging Face on first use. `GOLDEN_THREADS` caps CPU threads (default 4).
+//! downloaded from Hugging Face on first use. `--features cuda` selects CUDA device 0
+//! with FP16 Whisper inference (and fails if unavailable); otherwise Whisper uses CPU.
+//! `GOLDEN_THREADS` caps CPU threads (default 4).
 use audio_analysis_transcription::{transcribe, TranscriptionPipelineRequest};
 use golden_scoring::stage4::build_document;
 use golden_scoring::{score_transcript, score_turns, GoldenExpectations, PredictedTurn, TimedText};
@@ -39,7 +41,7 @@ fn sha256_hex(bytes: &[u8]) -> String {
 }
 
 #[test]
-#[ignore = "runs Whisper medium and pyannote community-1 on 17 minutes of audio (CPU, tens of minutes)"]
+#[ignore = "runs Whisper medium and pyannote community-1 on 17 minutes of audio (CPU by default; --features cuda for GPU)"]
 fn stage1_3_transcript_and_speaker_turns_match_the_golden_file() {
     let threads = std::env::var("GOLDEN_THREADS").unwrap_or_else(|_| "4".into());
     std::env::set_var("RAYON_NUM_THREADS", &threads);
@@ -85,9 +87,17 @@ fn stage1_3_transcript_and_speaker_turns_match_the_golden_file() {
         "use the approved bundle the golden turns were checked against"
     );
 
+    let whisper_device = if cfg!(feature = "cuda") {
+        "cuda"
+    } else {
+        "cpu"
+    };
+    eprintln!(
+        "Stage 2–3: Whisper medium on {whisper_device} (pyannote community-1 follows); this may take some time"
+    );
     let request: TranscriptionPipelineRequest = serde_json::from_value(json!({
         "source": {"path": audio},
-        "provider": {"kind": "candleWhisper", "modelId": "medium", "language": "en", "device": "cpu"},
+        "provider": {"kind": "candleWhisper", "modelId": "medium", "language": "en", "device": whisper_device},
         "diarization": {
             "enabled": true,
             "modelId": "pyannote/speaker-diarization-community-1",
@@ -171,6 +181,7 @@ fn stage1_3_transcript_and_speaker_turns_match_the_golden_file() {
     let report = json!({
         "case": "russell-copleston-1948",
         "threads": threads,
+        "whisperDeviceRequested": whisper_device,
         "pipelineSeconds": seconds,
         "stages": {
             "acquire": {"audioSha256": audio_sha256, "matchesManifest": true, "ytDlpFormatId": manifest["stream"]["ytDlpFormatId"]},

@@ -8,6 +8,10 @@ publish = false
 # workspace so `cargo test --workspace` stays offline and light. Run it with:
 #   cargo test --release --manifest-path crates/golden-media/Cargo.toml -- --ignored --nocapture
 
+[features]
+# Opt in to the pinned audio-analysis producer's CUDA backend for Whisper medium.
+cuda = ["audio-analysis-transcription/cuda"]
+
 [dependencies]
 
 [dev-dependencies]

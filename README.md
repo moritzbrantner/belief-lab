@@ -49,6 +49,28 @@ Golden outputs for every case in `fixtures/explain/` are checked by `cargo test 
 python3 scripts/russell_copleston_stage4.py
 ```
 
+To run Whisper medium on an NVIDIA GPU (recommended for the first 17-minute audio pass),
+use a working CUDA toolkit and NVIDIA driver, then run:
+
+```bash
+nvidia-smi
+nvcc --version
+python3 scripts/russell_copleston_stage4.py --gpu
+```
+
+`--gpu` compiles the pinned `audio-analysis` dependency with its `cuda` feature, then
+requests CUDA device 0 explicitly. Whisper uses FP16 on CUDA instead of CPU FP32.
+It fails if CUDA cannot initialize instead of silently running Whisper on CPU.
+The pyannote community-1 ONNX stage still uses its existing runtime; this flag
+does not imply GPU acceleration for that stage or subsequent e5/NLI scoring.
+The first CUDA build may take several minutes. Later runs reuse the compiled
+artifact and cached stage outputs. To run only Stages 1–3 with CUDA:
+
+```bash
+cargo test --release --manifest-path crates/golden-media/Cargo.toml \
+  --features cuda --test russell_copleston -- --ignored --nocapture
+```
+
 The runner validates the committed audio and each saved stage's source/model receipts.
 It reuses transcript/turns, pinned proposition-api candidate drafts, and the recorded
 e5/NLI score if the offline replay matches the saved baseline. Missing stages run in order,
@@ -107,7 +129,7 @@ cargo run -p golden-scoring --bin stage4-diagnostics -- \
   target/golden/russell-copleston-1948
 ```
 
-`crates/golden-media` sits outside the workspace, so ordinary builds never compile the model stacks. Whisper medium downloads on first use. `GOLDEN_THREADS` caps CPU threads (default 4). The approved pyannote snapshot is the one audio-analysis's `loadCommunityDiarizationResources` materializes; its two gated PLDA inputs can come from a local Hugging Face cache of the pinned revision (the loader checks every digest).
+`crates/golden-media` sits outside the workspace, so ordinary builds never compile the model stacks. Whisper medium downloads on first use. `GOLDEN_THREADS` caps CPU threads (default 4); `--gpu` accelerates Whisper and leaves other stage execution unchanged. The approved pyannote snapshot is the one audio-analysis's `loadCommunityDiarizationResources` materializes; its two gated PLDA inputs can come from a local Hugging Face cache of the pinned revision (the loader checks every digest).
 
 Stage 4 follows the owner decisions of 2026-11-04 (#63):
 
