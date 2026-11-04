@@ -263,6 +263,8 @@ pub fn stance_from_cue(cue: &str) -> Option<(&'static str, bool)> {
         "negated" => Some(("endorses_negation", false)),
         "questioned" => Some(("no_stance", false)),
         "hedged" => Some(("no_stance", true)),
+        // Only supposed (proposition-api draft-v3, owner decision 2026-11-04): no stance.
+        "conditional" => Some(("no_stance", false)),
         _ => None,
     }
 }
@@ -485,6 +487,76 @@ impl Similarities {
     }
 }
 
+/// One NLI judgment of a claim (premise) against a golden proposition (hypothesis).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum NliLabel {
+    Entailment,
+    Neutral,
+    Contradiction,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct NliJudgment {
+    pub label: NliLabel,
+    /// Model probabilities for entailment, neutral and contradiction, as the receipt.
+    pub probabilities: [f64; 3],
+}
+
+/// NLI judgments for the claim/proposition pairs that pass the e5 match, computed by the caller's
+/// pinned NLI model (owner decision, belief-lab#63, 2026-11-04).
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Polarity {
+    pub model: String,
+    pub revision: String,
+    /// `candidates[i][propositionId]` for candidate i.
+    pub candidates: Vec<BTreeMap<String, NliJudgment>>,
+}
+
+impl Polarity {
+    pub fn label(&self, candidate: usize, proposition: &str) -> Option<NliLabel> {
+        self.candidates
+            .get(candidate)
+            .and_then(|row| row.get(proposition))
+            .map(|judgment| judgment.label)
+    }
+
+    /// Every pair at or above the similarity threshold needs a judgment: no silent default.
+    pub fn check_complete(
+        &self,
+        golden: &GoldenExpectations,
+        similarities: &Similarities,
+        candidates: usize,
+        threshold: f64,
+    ) -> Result<(), String> {
+        for candidate in 0..candidates {
+            for proposition in &golden.propositions {
+                if similarities.get(candidate, &proposition.id) >= threshold
+                    && self.label(candidate, &proposition.id).is_none()
+                {
+                    return Err(format!(
+                        "no NLI judgment for candidate {candidate} and `{}` from {}@{}",
+                        proposition.id, self.model, self.revision
+                    ));
+                }
+            }
+        }
+        Ok(())
+    }
+}
+
+/// `endorses` ↔ `endorses_negation`; every other stance is unchanged.
+pub fn flip_stance(stance: &str) -> String {
+    match stance {
+        "endorses" => "endorses_negation",
+        "endorses_negation" => "endorses",
+        other => other,
+    }
+    .to_owned()
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ScoringConfig {
@@ -591,7 +663,8 @@ pub struct NearMiss {
     pub canonical_text: String,
     pub similarity: f64,
     pub delta_seconds: f64,
-    /// `similarity` (below the threshold by at most the margin) or `time` (outside ±30 s).
+    /// `similarity` (below the threshold by at most the margin), `time` (outside ±30 s) or
+    /// `nli_neutral` (above the threshold, but NLI found neither entailment nor contradiction).
     pub reason: String,
 }
 
@@ -599,6 +672,8 @@ pub struct NearMiss {
 #[serde(rename_all = "camelCase")]
 pub struct AttributionScore {
     pub config: ScoringConfig,
+    /// The NLI model that checked polarity, or none for the cosine-only baseline.
+    pub polarity_model: Option<String>,
     pub similarity_model: String,
     pub similarity_revision: String,
     pub candidates: usize,
@@ -642,13 +717,52 @@ pub fn quote_overlap(golden_quote: &str, quote: &str) -> f64 {
     (golden_in / golden.len() as f64).max(predicted_in / predicted.len() as f64)
 }
 
+/// Scores without a polarity check: the e5 match alone decides (the 2026-11-04 baseline).
 pub fn score_attributions(
     golden: &GoldenExpectations,
     mapped: &MappedCandidates,
     similarities: &Similarities,
     config: ScoringConfig,
 ) -> AttributionScore {
+    score_with_polarity(golden, mapped, similarities, None, config)
+        .expect("scoring without a polarity table cannot fail")
+}
+
+/// Scores with the owner's polarity rule (belief-lab#63, 2026-11-04) when `polarity` is given:
+/// a claim that passes the e5 match is checked against the golden proposition with NLI;
+/// `entailment` keeps its stance, `contradiction` flips it (`endorses` ↔ `endorses_negation`),
+/// `neutral` is no match. Fails when the table lacks a pair at or above the threshold.
+pub fn score_with_polarity(
+    golden: &GoldenExpectations,
+    mapped: &MappedCandidates,
+    similarities: &Similarities,
+    polarity: Option<&Polarity>,
+    config: ScoringConfig,
+) -> Result<AttributionScore, String> {
     let threshold = config.similarity_threshold;
+    if let Some(polarity) = polarity {
+        polarity.check_complete(golden, similarities, mapped.candidates, threshold)?;
+    }
+    let label = |candidate: usize, proposition: &str| {
+        polarity.and_then(|polarity| polarity.label(candidate, proposition))
+    };
+    // Similarity as the matcher sees it: a neutral NLI judgment is no match.
+    let similarities_get = |candidate: usize, proposition: &str| {
+        if label(candidate, proposition) == Some(NliLabel::Neutral) {
+            f64::NEG_INFINITY
+        } else {
+            similarities.get(candidate, proposition)
+        }
+    };
+    // The attribution's stance relative to one golden proposition.
+    let relative = |predicted: &PredictedAttribution, proposition: &str| {
+        let mut predicted = predicted.clone();
+        if label(predicted.candidate, proposition) == Some(NliLabel::Contradiction) {
+            predicted.stance = flip_stance(&predicted.stance);
+            predicted.attributed_stance = predicted.attributed_stance.as_deref().map(flip_stance);
+        }
+        predicted
+    };
     let candidate_seconds: BTreeMap<usize, f64> = mapped
         .attributions
         .iter()
@@ -661,12 +775,12 @@ pub fn score_attributions(
             let violations: Vec<PredictedAttribution> = mapped
                 .attributions
                 .iter()
+                .map(|predicted| relative(predicted, &expected.proposition))
                 .filter(|predicted| {
                     predicted.person == expected.person
                         && attributed(&predicted.stance)
-                        && similarities.get(predicted.candidate, &expected.proposition) >= threshold
+                        && similarities_get(predicted.candidate, &expected.proposition) >= threshold
                 })
-                .cloned()
                 .collect();
             expected_results.push(ExpectedResult {
                 expected: expected.clone(),
@@ -687,13 +801,19 @@ pub fn score_attributions(
         };
         let mut matched = Vec::new();
         for (&candidate, &seconds) in &candidate_seconds {
-            let similarity = similarities.get(candidate, &expected.proposition);
+            let similarity = similarities_get(candidate, &expected.proposition);
             let delta = (seconds - approx).abs();
             if similarity >= threshold && delta <= config.time_window_seconds {
                 matched.push(candidate);
                 continue;
             }
-            let reason = if similarity < threshold
+            let raw = similarities.get(candidate, &expected.proposition);
+            let reason = if label(candidate, &expected.proposition) == Some(NliLabel::Neutral)
+                && raw >= threshold
+                && delta <= config.near_miss_seconds
+            {
+                Some("nli_neutral")
+            } else if similarity < threshold
                 && similarity >= threshold - config.near_miss_similarity
                 && delta <= config.near_miss_seconds
             {
@@ -716,7 +836,7 @@ pub fn score_attributions(
                     proposition: expected.proposition.clone(),
                     candidate,
                     canonical_text,
-                    similarity,
+                    similarity: raw,
                     delta_seconds: seconds - approx,
                     reason: reason.to_owned(),
                 });
@@ -726,8 +846,9 @@ pub fn score_attributions(
             .attributions
             .iter()
             .filter(|predicted| matched.contains(&predicted.candidate))
+            .map(|predicted| relative(predicted, &expected.proposition))
             .map(|predicted| AttributionCheck {
-                similarity: similarities.get(predicted.candidate, &expected.proposition),
+                similarity: similarities_get(predicted.candidate, &expected.proposition),
                 delta_seconds: predicted.seconds - approx,
                 person_ok: predicted.person == expected.person,
                 stance_ok: predicted.stance == expected.stance,
@@ -764,19 +885,20 @@ pub fn score_attributions(
         .expected_no_attribution
         .iter()
         .map(|rule| {
-            let about: Vec<&PredictedAttribution> = mapped
+            let about: Vec<PredictedAttribution> = mapped
                 .attributions
                 .iter()
+                .map(|predicted| relative(predicted, &rule.proposition))
                 .filter(|predicted| {
                     predicted.person == rule.person
                         && attributed(&predicted.stance)
-                        && similarities.get(predicted.candidate, &rule.proposition) >= threshold
+                        && similarities_get(predicted.candidate, &rule.proposition) >= threshold
                 })
                 .collect();
             let violations: Vec<PredictedAttribution> = about
                 .iter()
                 .filter(|predicted| predicted.via.is_none())
-                .map(|predicted| (*predicted).clone())
+                .cloned()
                 .collect();
             NoAttributionResult {
                 person: rule.person.clone(),
@@ -786,20 +908,20 @@ pub fn score_attributions(
                 reported: about
                     .iter()
                     .filter(|predicted| predicted.via.is_some())
-                    .map(|predicted| (*predicted).clone())
+                    .cloned()
                     .collect(),
             }
         })
         .collect();
 
     let mut fabricated = Vec::new();
-    for predicted in mapped
-        .attributions
-        .iter()
-        .filter(|predicted| attributed(&predicted.stance))
-    {
+    for unrelated in &mapped.attributions {
         for proposition in &golden.propositions {
-            let similarity = similarities.get(predicted.candidate, &proposition.id);
+            let predicted = &relative(unrelated, &proposition.id);
+            if !attributed(&predicted.stance) {
+                continue;
+            }
+            let similarity = similarities_get(predicted.candidate, &proposition.id);
             if similarity < threshold {
                 continue;
             }
@@ -857,7 +979,7 @@ pub fn score_attributions(
             golden
                 .propositions
                 .iter()
-                .all(|proposition| similarities.get(candidate, &proposition.id) < threshold)
+                .all(|proposition| similarities_get(candidate, &proposition.id) < threshold)
         })
         .count();
     let count = |status: &str| {
@@ -866,8 +988,10 @@ pub fn score_attributions(
             .filter(|result| result.status == status)
             .count()
     };
-    AttributionScore {
+    Ok(AttributionScore {
         config,
+        polarity_model: polarity
+            .map(|polarity| format!("{}@{}", polarity.model, polarity.revision)),
         similarity_model: similarities.model.clone(),
         similarity_revision: similarities.revision.clone(),
         candidates: mapped.candidates,
@@ -883,7 +1007,7 @@ pub fn score_attributions(
         no_attribution,
         fabricated,
         near_misses,
-    }
+    })
 }
 
 /// A short human-readable summary of an attribution score.
