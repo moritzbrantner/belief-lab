@@ -13,8 +13,8 @@
 use belief_cli::attribution::{compare, ComparisonInput};
 use golden_scoring::interchange::{belief_lab_export, ExportProvenance};
 use golden_scoring::stage4::{
-    map_candidates, score_attributions, summary_markdown, Candidate, ScoringConfig, Similarities,
-    StageFourDocument,
+    map_candidates, score_attributions, score_with_polarity, summary_markdown, Candidate,
+    NliJudgment, NliLabel, Polarity, ScoringConfig, Similarities, StageFourDocument,
 };
 use golden_scoring::GoldenExpectations;
 use serde_json::{json, Value};
@@ -22,14 +22,18 @@ use sha2::{Digest, Sha256};
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 use std::time::Instant;
+use text_classification::{load_nli_preset, NliPreset, NliPresetLoadOptions};
 use text_embeddings::{
     load_embedding_preset, EmbeddingPresetLoadOptions, MultilingualEmbeddingPreset,
     TextEmbeddingBackend,
 };
 
-/// e5 cosine a claim needs to match a golden proposition, chosen from the 2026-11-04 threshold
-/// sweep (README "Stage 4 calibration"): the highest hit count with the fewest fabrications.
-const SIMILARITY_THRESHOLD: f64 = 0.88;
+/// e5 cosine a claim needs to match a golden proposition, chosen from the polarity threshold
+/// sweep of the draft-v3 run (README "Stage 4 calibration"): the highest threshold that keeps the
+/// most hits, which also gives the fewest fabrications.
+const SIMILARITY_THRESHOLD: f64 = 0.92;
+/// Lowest threshold of the calibration sweep; NLI judges every pair at or above it.
+const SWEEP_MIN: f64 = 0.80;
 
 fn root() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR")).join("../..")
@@ -167,25 +171,100 @@ fn stage4_attributions_match_the_golden_file() {
         .collect();
     let embedding_seconds = started.elapsed().as_secs_f64();
 
+    // Polarity (owner decision 2026-11-04): the pinned multilingual NLI preset judges every
+    // claim/proposition pair at or above the lowest swept threshold. Premise: the claim's
+    // canonical text; hypothesis: the golden proposition. A missing bundle fails the test.
+    let started = Instant::now();
+    let mut nli_options = NliPresetLoadOptions::default();
+    if std::env::var_os("TEXT_CLASSIFICATION_MODEL_DIR").is_none() {
+        nli_options.bundle_root =
+            PathBuf::from(std::env::var("HOME").unwrap()).join(".cache/model-runtime");
+    }
+    let nli_preset = NliPreset::MdebertaV3BaseXnliMultilingual;
+    let mut nli = load_nli_preset(nli_preset, &nli_options).expect("pinned NLI bundle");
+    let polarity = Polarity {
+        model: nli_preset.repo_id().to_owned(),
+        revision: nli_preset.revision().to_owned(),
+        candidates: candidates
+            .iter()
+            .enumerate()
+            .map(|(index, candidate)| {
+                golden
+                    .propositions
+                    .iter()
+                    .filter(|proposition| similarities.get(index, &proposition.id) >= SWEEP_MIN)
+                    .map(|proposition| {
+                        let judged = nli
+                            .classify(&candidate.canonical_text, &proposition.text)
+                            .unwrap();
+                        let label = match judged.label {
+                            text_classification::NliLabel::Entailment => NliLabel::Entailment,
+                            text_classification::NliLabel::Neutral => NliLabel::Neutral,
+                            text_classification::NliLabel::Contradiction => NliLabel::Contradiction,
+                        };
+                        let probabilities =
+                            [judged.entailment, judged.neutral, judged.contradiction]
+                                .map(f64::from);
+                        (
+                            proposition.id.clone(),
+                            NliJudgment {
+                                label,
+                                probabilities,
+                            },
+                        )
+                    })
+                    .collect()
+            })
+            .collect(),
+    };
+    let nli_seconds = started.elapsed().as_secs_f64();
+    let nli_pairs: usize = polarity.candidates.iter().map(BTreeMap::len).sum();
+
     let mapped = map_candidates(&document, &golden.people, &candidates);
-    let score = score_attributions(
+    let score = score_with_polarity(
         &golden,
         &mapped,
         &similarities,
+        Some(&polarity),
         ScoringConfig::with_threshold(SIMILARITY_THRESHOLD),
-    );
+    )
+    .unwrap();
 
-    // Threshold sweep on this run: how hits, fabrications and the no-attribution rules move with
-    // the threshold. The fixed threshold above is chosen from it (see the README).
-    let sweep: Vec<Value> = (80..=95)
-        .map(|step| {
-            let threshold = f64::from(step) / 100.0;
-            let at = score_attributions(&golden, &mapped, &similarities, ScoringConfig::with_threshold(threshold));
-            json!({"threshold": threshold, "hits": at.hits, "partial": at.partial, "misses": at.misses,
-                   "fabricated": at.fabricated.len(),
-                   "noStanceEvidenceViolated": at.expected.iter().filter(|r| r.status == "violated").count(),
-                   "noAttributionHeld": at.no_attribution.iter().all(|rule| rule.held),
-                   "candidatesMatchingNoProposition": at.candidates_matching_no_proposition})
+    // Threshold sweep on this run, with and without the polarity check: how hits, fabrications
+    // and the no-attribution rules move with the threshold. The fixed threshold above is chosen
+    // from the polarity sweep (see the README).
+    let summarize = |threshold: f64, at: &golden_scoring::stage4::AttributionScore| {
+        json!({"threshold": threshold, "hits": at.hits, "partial": at.partial, "misses": at.misses,
+               "fabricated": at.fabricated.len(),
+               "noStanceEvidenceViolated": at.expected.iter().filter(|r| r.status == "violated").count(),
+               "noAttributionHeld": at.no_attribution.iter().all(|rule| rule.held),
+               "candidatesMatchingNoProposition": at.candidates_matching_no_proposition})
+    };
+    let steps = || (80..=95).map(|step| f64::from(step) / 100.0);
+    let sweep: Vec<Value> = steps()
+        .map(|threshold| {
+            let at = score_with_polarity(
+                &golden,
+                &mapped,
+                &similarities,
+                Some(&polarity),
+                ScoringConfig::with_threshold(threshold),
+            )
+            .unwrap();
+            summarize(threshold, &at)
+        })
+        .collect();
+    let sweep_cosine_only: Vec<Value> = steps()
+        .map(|threshold| {
+            summarize(
+                threshold,
+                &score_attributions(
+                    &golden,
+                    &mapped,
+                    &similarities,
+                    ScoringConfig::with_threshold(threshold),
+                ),
+            )
         })
         .collect();
 
@@ -217,12 +296,16 @@ fn stage4_attributions_match_the_golden_file() {
         "similarities.json",
         &serde_json::to_value(&similarities).unwrap(),
     );
+    write("polarity.json", &serde_json::to_value(&polarity).unwrap());
     write("claims.json", &json!(claims));
     write(
         "attributions-report.json",
         &json!({
             "score": score,
-            "calibration": {"quotes": calibration, "propositionPairs": proposition_pairs, "thresholdSweep": sweep},
+            "calibration": {"quotes": calibration, "propositionPairs": proposition_pairs,
+                            "thresholdSweep": sweep, "thresholdSweepCosineOnly": sweep_cosine_only},
+            "polarity": {"model": polarity.model, "revision": polarity.revision, "pairs": nli_pairs,
+                         "seconds": nli_seconds, "pairsFrom": SWEEP_MIN},
             "embeddingSeconds": embedding_seconds,
             "extraction": {"producer": extraction["producer"], "seconds": extraction["seconds"],
                            "windows": extraction["windows"], "diagnostics": extraction["diagnostics"]},

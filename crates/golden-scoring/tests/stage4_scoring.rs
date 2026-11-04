@@ -3,8 +3,9 @@
 use belief_cli::attribution::{compare, ComparisonInput};
 use golden_scoring::interchange::{belief_lab_export, ExportProvenance};
 use golden_scoring::stage4::{
-    build_document, map_candidates, resolve_holder, score_attributions, summary_markdown,
-    Candidate, ScoringConfig, Similarities, StageFourDocument,
+    build_document, map_candidates, resolve_holder, score_attributions, score_with_polarity,
+    summary_markdown, Candidate, NliJudgment, NliLabel, Polarity, ScoringConfig, Similarities,
+    StageFourDocument,
 };
 use golden_scoring::{GoldenExpectations, PredictedTurn, TimedText};
 use serde_json::{json, Value};
@@ -505,4 +506,92 @@ fn an_own_words_prohibition_is_fabricated_even_when_a_reported_entry_has_that_st
             && item.proposition == "god-exists"
             && item.reason == "contradicts_no_stance"));
     assert!(!score.no_attribution[1].held);
+}
+
+fn judgment(label: NliLabel) -> NliJudgment {
+    let probabilities = match label {
+        NliLabel::Entailment => [0.9, 0.05, 0.05],
+        NliLabel::Neutral => [0.1, 0.8, 0.1],
+        NliLabel::Contradiction => [0.05, 0.05, 0.9],
+    };
+    NliJudgment {
+        label,
+        probabilities,
+    }
+}
+
+/// A recorded NLI table for every pair at or above the threshold (fixture, no model).
+fn polarity(overrides: &[(usize, &str, NliLabel)]) -> Polarity {
+    let similarities = similarities();
+    let mut candidates: Vec<BTreeMap<String, NliJudgment>> = similarities
+        .candidates
+        .iter()
+        .map(|row| {
+            row.iter()
+                .filter(|(_, value)| **value >= THRESHOLD)
+                .map(|(id, _)| (id.clone(), judgment(NliLabel::Entailment)))
+                .collect()
+        })
+        .collect();
+    for (candidate, proposition, label) in overrides {
+        candidates[*candidate].insert((*proposition).to_string(), judgment(*label));
+    }
+    Polarity {
+        model: "fixture-nli".into(),
+        revision: "fixture".into(),
+        candidates,
+    }
+}
+
+#[test]
+fn polarity_flips_contradictions_and_drops_neutral_matches() {
+    let golden = golden();
+    let document = document();
+    let mut candidates = candidates(&document);
+    // Russell "asserts" a claim that contradicts world-explained: with NLI it is his negation.
+    candidates[3].stance_cue = Some("asserted".into());
+    let mapped = map_candidates(&document, &golden.people, &candidates);
+    let config = ScoringConfig::with_threshold(THRESHOLD);
+
+    let baseline = score_attributions(&golden, &mapped, &similarities(), config);
+    assert_eq!(baseline.expected[2].status, "partial");
+    assert_eq!(baseline.polarity_model, None);
+
+    let table = polarity(&[
+        (3, "world-explained", NliLabel::Contradiction),
+        (1, "world-explained", NliLabel::Neutral),
+    ]);
+    let score =
+        score_with_polarity(&golden, &mapped, &similarities(), Some(&table), config).unwrap();
+    assert_eq!(score.polarity_model.as_deref(), Some("fixture-nli@fixture"));
+    assert_eq!(
+        score.expected[2].status, "hit",
+        "the flipped stance is endorses_negation"
+    );
+    assert_eq!(
+        score.expected[1].status, "miss",
+        "a neutral pair is no match"
+    );
+    assert!(score
+        .near_misses
+        .iter()
+        .any(|miss| miss.candidate == 1 && miss.reason == "nli_neutral"));
+}
+
+#[test]
+fn a_missing_nli_judgment_fails_instead_of_defaulting() {
+    let golden = golden();
+    let document = document();
+    let mapped = map_candidates(&document, &golden.people, &candidates(&document));
+    let mut table = polarity(&[]);
+    table.candidates[0].remove("god-exists");
+    let error = score_with_polarity(
+        &golden,
+        &mapped,
+        &similarities(),
+        Some(&table),
+        ScoringConfig::with_threshold(THRESHOLD),
+    )
+    .unwrap_err();
+    assert!(error.contains("candidate 0") && error.contains("god-exists"));
 }

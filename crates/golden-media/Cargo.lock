@@ -1059,6 +1059,7 @@ dependencies = [
  "golden-scoring",
  "moenarch-audio-analysis-speakers",
  "moenarch-audio-analysis-transcription",
+ "moenarch-text-classification",
  "moenarch-text-embeddings",
  "serde_json",
  "sha2 0.11.1",
@@ -1766,9 +1767,25 @@ dependencies = [
 ]
 
 [[package]]
+name = "moenarch-text-classification"
+version = "0.1.1"
+source = "git+https://github.com/moritzbrantner/nlp-stack?rev=68c30750be83710c51b272bb4d09f00572848ca7#68c30750be83710c51b272bb4d09f00572848ca7"
+dependencies = [
+ "moenarch-model-runtime",
+ "moenarch-runtime-core",
+ "moenarch-runtime-onnx",
+ "moenarch-text-core",
+ "moenarch-text-lexical",
+ "serde",
+ "serde_json",
+ "sha2 0.10.9",
+ "tokenizers 0.23.2",
+]
+
+[[package]]
 name = "moenarch-text-core"
 version = "0.1.1"
-source = "git+https://github.com/moritzbrantner/nlp-stack?rev=815d9ddd3858958438bb9d28d3797c41ea4c6757#815d9ddd3858958438bb9d28d3797c41ea4c6757"
+source = "git+https://github.com/moritzbrantner/nlp-stack?rev=68c30750be83710c51b272bb4d09f00572848ca7#68c30750be83710c51b272bb4d09f00572848ca7"
 dependencies = [
  "moenarch-media-core",
  "moenarch-runtime-core",
@@ -1782,7 +1799,7 @@ dependencies = [
 [[package]]
 name = "moenarch-text-embeddings"
 version = "0.1.1"
-source = "git+https://github.com/moritzbrantner/nlp-stack?rev=815d9ddd3858958438bb9d28d3797c41ea4c6757#815d9ddd3858958438bb9d28d3797c41ea4c6757"
+source = "git+https://github.com/moritzbrantner/nlp-stack?rev=68c30750be83710c51b272bb4d09f00572848ca7#68c30750be83710c51b272bb4d09f00572848ca7"
 dependencies = [
  "candle-core 0.11.1",
  "candle-nn 0.11.1",
@@ -1804,7 +1821,7 @@ dependencies = [
 [[package]]
 name = "moenarch-text-lexical"
 version = "0.1.1"
-source = "git+https://github.com/moritzbrantner/nlp-stack?rev=815d9ddd3858958438bb9d28d3797c41ea4c6757#815d9ddd3858958438bb9d28d3797c41ea4c6757"
+source = "git+https://github.com/moritzbrantner/nlp-stack?rev=68c30750be83710c51b272bb4d09f00572848ca7#68c30750be83710c51b272bb4d09f00572848ca7"
 dependencies = [
  "moenarch-math-sparse-data",
  "moenarch-runtime-core",
