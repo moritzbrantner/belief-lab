@@ -153,7 +153,10 @@ fn trace(
     CandidateTrace {
         candidate: index,
         canonical_text: candidate.canonical_text.clone(),
-        source_quote: candidate.evidence.as_ref().map(|evidence| evidence.quote.clone()),
+        source_quote: candidate
+            .evidence
+            .as_ref()
+            .map(|evidence| evidence.quote.clone()),
         source_span: candidate.evidence.as_ref().map(|evidence| ByteSpan {
             start: evidence.start,
             end: evidence.end,
@@ -186,7 +189,12 @@ fn candidates_for_expected(
     similarities: &Similarities,
 ) -> Vec<usize> {
     let mut selected = BTreeSet::new();
-    selected.extend(score.expected[expected_index].matched_candidates.iter().copied());
+    selected.extend(
+        score.expected[expected_index]
+            .matched_candidates
+            .iter()
+            .copied(),
+    );
     // A no-stance-evidence expectation has no timed matches. Its violations are nevertheless
     // essential to the case diagnostic and must not be lost behind the top-three cosine limit.
     selected.extend(
@@ -424,7 +432,11 @@ pub fn diagnostics_markdown(report: &StageFourDiagnostics) -> String {
         "# Stage 4: attribution diagnostics\n\nDocument: `{}`. Observed scorer gates only; model-error causes require review.\n\n",
         report.document_id
     );
-    let hits = report.expected.iter().filter(|result| result.status == "hit").count();
+    let hits = report
+        .expected
+        .iter()
+        .filter(|result| result.status == "hit")
+        .count();
     let timed = report
         .expected
         .iter()
@@ -507,7 +519,12 @@ pub fn diagnostics_markdown(report: &StageFourDiagnostics) -> String {
             result.fabrication.predicted.stance,
             result.fabrication.proposition,
             result.fabrication.reason,
-            result.fabrication.predicted.quote.replace('\n', " ").replace('\r', " ")
+            result
+                .fabrication
+                .predicted
+                .quote
+                .replace('\n', " ")
+                .replace('\r', " ")
         ));
     }
     out.push_str("\n## Forbidden own-words attributions\n\n");

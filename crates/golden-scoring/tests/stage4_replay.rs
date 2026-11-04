@@ -88,8 +88,16 @@ fn replay_produces_diagnostics_and_refuses_baseline_or_document_drift() {
             },
         )])],
     };
-    write_json(&dir, "similarities.json", &serde_json::to_value(&similarities).unwrap());
-    write_json(&dir, "polarity.json", &serde_json::to_value(&polarity).unwrap());
+    write_json(
+        &dir,
+        "similarities.json",
+        &serde_json::to_value(&similarities).unwrap(),
+    );
+    write_json(
+        &dir,
+        "polarity.json",
+        &serde_json::to_value(&polarity).unwrap(),
+    );
     let mapped = map_candidates(&document, &golden.people, &candidates);
     let score = score_with_polarity(
         &golden,
@@ -109,13 +117,20 @@ fn replay_produces_diagnostics_and_refuses_baseline_or_document_drift() {
             .unwrap()
     };
     let output = command();
-    assert!(output.status.success(), "{}", String::from_utf8_lossy(&output.stderr));
+    assert!(
+        output.status.success(),
+        "{}",
+        String::from_utf8_lossy(&output.stderr)
+    );
     let report: Value =
         serde_json::from_slice(&std::fs::read(dir.join("attributions-diagnostics.json")).unwrap())
             .unwrap();
     assert_eq!(report["expected"].as_array().unwrap().len(), 1);
     assert_eq!(report["expected"][0]["status"], "hit");
-    assert_eq!(report["expected"][0]["candidateTraces"][0]["nli"]["label"], "entailment");
+    assert_eq!(
+        report["expected"][0]["candidateTraces"][0]["nli"]["label"],
+        "entailment"
+    );
 
     let mut stale: Value =
         serde_json::from_slice(&std::fs::read(dir.join("attributions-report.json")).unwrap())

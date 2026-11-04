@@ -348,15 +348,11 @@ fn stage4_diagnostics_trace_every_expected_and_fabricated_case_without_models() 
         &similarities,
         ScoringConfig::with_threshold(THRESHOLD),
     );
-    let diagnostic = diagnose_stage4(
-        &document,
-        &candidates,
-        &mapped,
-        &similarities,
-        None,
-        &score,
+    let diagnostic = diagnose_stage4(&document, &candidates, &mapped, &similarities, None, &score);
+    assert_eq!(
+        diagnostic.expected.len(),
+        golden.expected_attributions.len()
     );
-    assert_eq!(diagnostic.expected.len(), golden.expected_attributions.len());
     assert_eq!(diagnostic.fabricated.len(), score.fabricated.len());
     assert_eq!(diagnostic.no_attribution.len(), 1);
     assert!(!diagnostic.no_attribution[0].held);
@@ -370,15 +366,11 @@ fn stage4_diagnostics_trace_every_expected_and_fabricated_case_without_models() 
     assert_eq!(fabrication.fabrication.reason, "contradicts_no_stance");
     assert_eq!(fabrication.candidate_trace.candidate, 4);
     assert!(fabrication.candidate_trace.source_span.is_some());
-    assert_eq!(fabrication.candidate_trace.speaker.as_deref(), Some("russell"));
-    let repeat = diagnose_stage4(
-        &document,
-        &candidates,
-        &mapped,
-        &similarities,
-        None,
-        &score,
+    assert_eq!(
+        fabrication.candidate_trace.speaker.as_deref(),
+        Some("russell")
     );
+    let repeat = diagnose_stage4(&document, &candidates, &mapped, &similarities, None, &score);
     assert_eq!(
         serde_json::to_value(&diagnostic).unwrap(),
         serde_json::to_value(&repeat).unwrap()
@@ -413,7 +405,9 @@ fn stage4_diagnostics_preserve_nli_neutral_and_wrong_stance_evidence() {
         Some(&polarity),
         &score,
     );
-    assert!(diagnostic.expected[1].observed_blockers.contains(&"nli_neutral".into()));
+    assert!(diagnostic.expected[1]
+        .observed_blockers
+        .contains(&"nli_neutral".into()));
     let trace = diagnostic.expected[1]
         .candidate_traces
         .iter()
@@ -422,7 +416,10 @@ fn stage4_diagnostics_preserve_nli_neutral_and_wrong_stance_evidence() {
     assert_eq!(trace.nli.as_ref().unwrap().label, NliLabel::Neutral);
     assert_eq!(trace.nli.as_ref().unwrap().probabilities, [0.1, 0.8, 0.1]);
     assert!(trace.failed_gates.contains(&"nli_neutral".into()));
-    assert_eq!(diagnostic.expected[2].observed_blockers, vec!["stance".to_owned()]);
+    assert_eq!(
+        diagnostic.expected[2].observed_blockers,
+        vec!["stance".to_owned()]
+    );
 }
 
 #[test]
@@ -441,18 +438,14 @@ fn stage4_diagnostics_always_include_forbidden_stance_violations() {
         &similarities,
         ScoringConfig::with_threshold(THRESHOLD),
     );
-    let diagnostic = diagnose_stage4(
-        &document,
-        &candidates,
-        &mapped,
-        &similarities,
-        None,
-        &score,
-    );
+    let diagnostic = diagnose_stage4(&document, &candidates, &mapped, &similarities, None, &score);
     let rule = diagnostic.expected.last().unwrap();
     assert_eq!(rule.status, "violated");
     assert_eq!(rule.observed_blockers, ["unexpected_stance_evidence"]);
-    assert!(rule.candidate_traces.iter().any(|trace| trace.candidate == 4));
+    assert!(rule
+        .candidate_traces
+        .iter()
+        .any(|trace| trace.candidate == 4));
 }
 
 #[test]

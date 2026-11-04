@@ -14,8 +14,7 @@ fn read(path: &Path) -> Result<Vec<u8>, String> {
 }
 
 fn parse<T: serde::de::DeserializeOwned>(path: &Path) -> Result<T, String> {
-    serde_json::from_slice(&read(path)?)
-        .map_err(|error| format!("{}: {error}", path.display()))
+    serde_json::from_slice(&read(path)?).map_err(|error| format!("{}: {error}", path.display()))
 }
 
 fn digest(bytes: &[u8]) -> String {
@@ -73,16 +72,12 @@ fn replay(golden_path: &Path, run: &Path) -> Result<(), String> {
         return Err("saved similarity table is missing a candidate/proposition pair".into());
     }
     let mapped = map_candidates(&document, &golden.people, &candidates);
-    let score = score_with_polarity(
-        &golden,
-        &mapped,
-        &similarities,
-        Some(&polarity),
-        config,
-    )?;
+    let score = score_with_polarity(&golden, &mapped, &similarities, Some(&polarity), config)?;
     let score_value = serde_json::to_value(&score).map_err(|error| error.to_string())?;
     if score_value != previous["score"] {
-        return Err("replayed score differs from the saved baseline; inputs or scorer changed".into());
+        return Err(
+            "replayed score differs from the saved baseline; inputs or scorer changed".into(),
+        );
     }
     let diagnostic = diagnose_stage4(
         &document,
@@ -111,9 +106,7 @@ fn replay(golden_path: &Path, run: &Path) -> Result<(), String> {
 fn main() {
     let args: Vec<String> = std::env::args().collect();
     if args.len() != 3 {
-        eprintln!(
-            "Usage: stage4-diagnostics <expected-beliefs.json> <saved-stage4-run-directory>"
-        );
+        eprintln!("Usage: stage4-diagnostics <expected-beliefs.json> <saved-stage4-run-directory>");
         std::process::exit(2);
     }
     if let Err(error) = replay(&PathBuf::from(&args[1]), &PathBuf::from(&args[2])) {
