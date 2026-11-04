@@ -406,9 +406,7 @@ pub fn diagnose_stage4(
             violations: result
                 .violations
                 .iter()
-                .map(|violation| {
-                    trace(&context, violation.candidate, None, &result.proposition)
-                })
+                .map(|violation| trace(&context, violation.candidate, None, &result.proposition))
                 .collect(),
         })
         .collect();
