@@ -262,7 +262,16 @@ def replay(root: Path, out: Path) -> int:
     )
 
 
-def run_pipeline(root: Path, out: Path, *, replay_only: bool, api_dir: Path | None) -> None:
+def stage13_command(*, gpu: bool) -> list[str]:
+    args = ["cargo", "test", "--release", "--manifest-path", "crates/golden-media/Cargo.toml"]
+    if gpu:
+        args.extend(["--features", "cuda"])
+    return args + ["--test", "russell_copleston", "--", "--ignored", "--nocapture"]
+
+
+def run_pipeline(
+    root: Path, out: Path, *, replay_only: bool, api_dir: Path | None, gpu: bool = False
+) -> None:
     required_tool("cargo")
     out.mkdir(parents=True, exist_ok=True)
     # Only one runner can write a run's intermediates at a time.
@@ -284,9 +293,10 @@ def run_pipeline(root: Path, out: Path, *, replay_only: bool, api_dir: Path | No
                     "GOLDEN_PYANNOTE_BUNDLE must point to the approved gated community-1 ONNX snapshot. "
                     "Prepare it with audio-analysis, accept the upstream model terms, then rerun."
                 )
-            print("Compute: Whisper medium + pyannote community-1 (may take tens of minutes).")
+            device = "CUDA:0 (Whisper FP16)" if gpu else "CPU (Whisper FP32)"
+            print(f"Compute: Whisper medium on {device} + pyannote community-1 (ONNX).")
             code = command(
-                ["cargo", "test", "--release", "--manifest-path", "crates/golden-media/Cargo.toml", "--test", "russell_copleston", "--", "--ignored", "--nocapture"],
+                stage13_command(gpu=gpu),
                 cwd=root,
             )
             if not stage13_cached(out, audio_sha, bundle_sha):
@@ -326,10 +336,15 @@ def run_pipeline(root: Path, out: Path, *, replay_only: bool, api_dir: Path | No
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--replay-only", action="store_true", help="never run/download models; use saved results")
+    parser.add_argument(
+        "--gpu",
+        action="store_true",
+        help="run Whisper medium on CUDA device 0 (requires a CUDA-capable Rust build; never silently falls back to CPU)",
+    )
     parser.add_argument("--api-dir", type=Path, help="existing checkout of the exact pinned proposition-api commit")
     args = parser.parse_args()
     try:
-        run_pipeline(ROOT, ROOT / OUTPUT, replay_only=args.replay_only, api_dir=args.api_dir)
+        run_pipeline(ROOT, ROOT / OUTPUT, replay_only=args.replay_only, api_dir=args.api_dir, gpu=args.gpu)
     except (PipelineError, OSError, subprocess.SubprocessError) as error:
         print(f"Stage 4: {error}", file=sys.stderr)
         return 1
