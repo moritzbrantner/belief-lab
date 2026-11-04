@@ -9,6 +9,7 @@ use std::collections::BTreeMap;
 
 pub mod interchange;
 pub mod stage4;
+pub mod stage4_diagnostics;
 
 /// Frame step used for every time-based comparison.
 pub const FRAME_SECONDS: f64 = 0.01;

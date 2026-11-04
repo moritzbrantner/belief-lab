@@ -16,6 +16,7 @@ use golden_scoring::stage4::{
     map_candidates, score_attributions, score_with_polarity, summary_markdown, Candidate,
     NliJudgment, NliLabel, Polarity, ScoringConfig, Similarities, StageFourDocument,
 };
+use golden_scoring::stage4_diagnostics::{diagnose_stage4, diagnostics_markdown};
 use golden_scoring::GoldenExpectations;
 use serde_json::{json, Value};
 use sha2::{Digest, Sha256};
@@ -298,6 +299,23 @@ fn stage4_attributions_match_the_golden_file() {
     );
     write("polarity.json", &serde_json::to_value(&polarity).unwrap());
     write("claims.json", &json!(claims));
+    let diagnostics = diagnose_stage4(
+        &document,
+        &candidates,
+        &mapped,
+        &similarities,
+        Some(&polarity),
+        &score,
+    );
+    write(
+        "attributions-diagnostics.json",
+        &serde_json::to_value(&diagnostics).unwrap(),
+    );
+    std::fs::write(
+        out.join("attributions-diagnostics.md"),
+        diagnostics_markdown(&diagnostics),
+    )
+    .unwrap();
     write(
         "attributions-report.json",
         &json!({
