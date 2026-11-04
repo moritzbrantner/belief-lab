@@ -7,6 +7,7 @@ use golden_scoring::stage4::{
     summary_markdown, Candidate, NliJudgment, NliLabel, Polarity, ScoringConfig, Similarities,
     StageFourDocument,
 };
+use golden_scoring::stage4_diagnostics::{diagnose_stage4, diagnostics_markdown};
 use golden_scoring::{GoldenExpectations, PredictedTurn, TimedText};
 use serde_json::{json, Value};
 use std::collections::BTreeMap;
@@ -332,6 +333,119 @@ fn scoring_reports_hits_misses_fabrications_and_the_no_attribution_rule() {
     let summary = summary_markdown(&score);
     assert!(summary.contains("3 hit, 0 partial, 1 miss of 4"));
     assert!(summary.contains("VIOLATED"));
+}
+
+#[test]
+fn stage4_diagnostics_trace_every_expected_and_fabricated_case_without_models() {
+    let golden = golden();
+    let document = document();
+    let candidates = candidates(&document);
+    let mapped = map_candidates(&document, &golden.people, &candidates);
+    let similarities = similarities();
+    let score = score_attributions(
+        &golden,
+        &mapped,
+        &similarities,
+        ScoringConfig::with_threshold(THRESHOLD),
+    );
+    let diagnostic = diagnose_stage4(&document, &candidates, &mapped, &similarities, None, &score);
+    assert_eq!(
+        diagnostic.expected.len(),
+        golden.expected_attributions.len()
+    );
+    assert_eq!(diagnostic.fabricated.len(), score.fabricated.len());
+    assert_eq!(diagnostic.no_attribution.len(), 1);
+    assert!(!diagnostic.no_attribution[0].held);
+    assert_eq!(diagnostic.no_attribution[0].violations[0].candidate, 4);
+    assert!(!diagnostic.expected[3].observed_blockers.is_empty());
+    assert!(diagnostic.expected[3]
+        .candidate_traces
+        .iter()
+        .any(|trace| trace.source_quote.is_some() && trace.similarity.is_some()));
+    let fabrication = &diagnostic.fabricated[0];
+    assert_eq!(fabrication.fabrication.reason, "contradicts_no_stance");
+    assert_eq!(fabrication.candidate_trace.candidate, 4);
+    assert!(fabrication.candidate_trace.source_span.is_some());
+    assert_eq!(
+        fabrication.candidate_trace.speaker.as_deref(),
+        Some("russell")
+    );
+    let repeat = diagnose_stage4(&document, &candidates, &mapped, &similarities, None, &score);
+    assert_eq!(
+        serde_json::to_value(&diagnostic).unwrap(),
+        serde_json::to_value(&repeat).unwrap()
+    );
+    let markdown = diagnostics_markdown(&diagnostic);
+    assert!(markdown.contains("Expected #4"));
+    assert!(markdown.contains("Fabricated attributions"));
+}
+
+#[test]
+fn stage4_diagnostics_preserve_nli_neutral_and_wrong_stance_evidence() {
+    let golden = golden();
+    let document = document();
+    let mut candidates = candidates(&document);
+    candidates[3].stance_cue = Some("asserted".into());
+    let mapped = map_candidates(&document, &golden.people, &candidates);
+    let similarities = similarities();
+    let polarity = polarity(&[(1, "world-explained", NliLabel::Neutral)]);
+    let score = score_with_polarity(
+        &golden,
+        &mapped,
+        &similarities,
+        Some(&polarity),
+        ScoringConfig::with_threshold(THRESHOLD),
+    )
+    .unwrap();
+    let diagnostic = diagnose_stage4(
+        &document,
+        &candidates,
+        &mapped,
+        &similarities,
+        Some(&polarity),
+        &score,
+    );
+    assert!(diagnostic.expected[1]
+        .observed_blockers
+        .contains(&"nli_neutral".into()));
+    let trace = diagnostic.expected[1]
+        .candidate_traces
+        .iter()
+        .find(|trace| trace.candidate == 1)
+        .unwrap();
+    assert_eq!(trace.nli.as_ref().unwrap().label, NliLabel::Neutral);
+    assert_eq!(trace.nli.as_ref().unwrap().probabilities, [0.1, 0.8, 0.1]);
+    assert!(trace.failed_gates.contains(&"nli_neutral".into()));
+    assert_eq!(
+        diagnostic.expected[2].observed_blockers,
+        vec!["stance".to_owned()]
+    );
+}
+
+#[test]
+fn stage4_diagnostics_always_include_forbidden_stance_violations() {
+    let mut golden = golden();
+    let no_stance = golden.expected_attributions.last_mut().unwrap();
+    no_stance.person = "russell".into();
+    no_stance.proposition = "god-exists".into();
+    let document = document();
+    let candidates = candidates(&document);
+    let mapped = map_candidates(&document, &golden.people, &candidates);
+    let similarities = similarities();
+    let score = score_attributions(
+        &golden,
+        &mapped,
+        &similarities,
+        ScoringConfig::with_threshold(THRESHOLD),
+    );
+    let diagnostic = diagnose_stage4(&document, &candidates, &mapped, &similarities, None, &score);
+    let rule = diagnostic.expected.last().unwrap();
+    assert_eq!(rule.status, "violated");
+    assert_eq!(rule.observed_blockers, ["unexpected_stance_evidence"]);
+    assert!(rule
+        .candidate_traces
+        .iter()
+        .any(|trace| trace.candidate == 4));
 }
 
 #[test]

@@ -557,7 +557,7 @@ pub fn flip_stance(stance: &str) -> String {
     .to_owned()
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Serialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ScoringConfig {
     pub similarity_threshold: f64,
