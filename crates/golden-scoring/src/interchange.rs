@@ -64,12 +64,6 @@ pub fn belief_lab_export(
     let mut reporter_evidence = BTreeMap::<(usize, String), String>::new();
     for (index, attribution) in attributions.iter().enumerate() {
         let id = format!("e-{:04}", index + 1);
-        if attribution.via.is_none() {
-            reporter_evidence.insert(
-                (attribution.candidate, attribution.person.clone()),
-                id.clone(),
-            );
-        }
         let parents: Vec<String> = attribution
             .via
             .as_ref()
@@ -77,6 +71,12 @@ pub fn belief_lab_export(
             .cloned()
             .into_iter()
             .collect();
+        // Reporters precede the holders they report (outermost first), so every layer finds the
+        // evidence of the reporter directly outside it.
+        reporter_evidence.insert(
+            (attribution.candidate, attribution.person.clone()),
+            id.clone(),
+        );
         let start = (attribution.seconds * 1000.0).round().max(0.0) as i64;
         let end_seconds = document
             .seconds_at(attribution.span.end.saturating_sub(1))

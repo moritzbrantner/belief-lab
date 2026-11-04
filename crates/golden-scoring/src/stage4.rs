@@ -318,8 +318,9 @@ pub fn resolve_holder(holder: &str, speaker: &str, people: &[GoldenPerson]) -> O
 /// * Empty reporting (after dropping outer layers whose holder is the speaker): the speaker gets
 ///   the mapped stance as an `explicit_endorsement`.
 /// * Reporting layers: every outer reporter that is a golden person (the speaker, then the outer
-///   holders) gets `no_stance` / `reported_position` with `aboutPerson` = innermost holder and
-///   `attributedStance` = the mapped stance; the innermost holder, when it is a golden person, gets
+///   holders) gets `no_stance` / `reported_position` with `aboutPerson` = innermost holder,
+///   `attributedStance` = the mapped stance and `via` = the reporter directly outside it (none for
+///   the speaker); the innermost holder, when it is a golden person, gets
 ///   the mapped stance as a `reported_position` `via` the reporter directly outside it.
 ///
 /// A candidate whose quote is not the exact transcript bytes, or whose speaker is not its turn's,
@@ -346,6 +347,10 @@ pub fn map_candidates(
             mapped.unattributed.push(reject("no_evidence"));
             continue;
         };
+        if evidence.start >= evidence.end || evidence.quote.trim().is_empty() {
+            mapped.unattributed.push(reject("empty_evidence"));
+            continue;
+        }
         if document.text.get(evidence.start..evidence.end) != Some(evidence.quote.as_str()) {
             mapped
                 .unattributed
@@ -421,16 +426,23 @@ pub fn map_candidates(
             .unwrap_or_else(|| format!("unresolved:{innermost_raw}"));
         let mut reporters: Vec<Option<String>> = vec![Some(speaker.clone())];
         reporters.extend(outer.iter().map(|(_, person)| person.clone()));
-        for reporter in reporters.iter().flatten() {
+        for (position, reporter) in reporters.iter().enumerate() {
+            let Some(reporter) = reporter else { continue };
             if Some(reporter) == innermost.as_ref() {
                 continue;
             }
+            // Each intermediate reporter keeps the link to the reporter directly outside it, so
+            // the exported evidence chain stays connected (narrator → Copleston → Russell).
+            let via = position
+                .checked_sub(1)
+                .and_then(|outer| reporters[outer].clone());
             mapped.attributions.push(PredictedAttribution {
                 person: reporter.clone(),
                 stance: "no_stance".to_owned(),
                 kind: "reported_position".to_owned(),
                 about_person: Some(innermost_label.clone()),
                 attributed_stance: Some(stance.to_owned()),
+                via,
                 ..base.clone()
             });
         }
@@ -812,9 +824,12 @@ pub fn score_attributions(
             if !(in_window || ruled_out || !same_person.is_empty()) {
                 continue;
             }
-            if same_person
-                .iter()
-                .any(|expected| expected.stance == predicted.stance)
+            // An own-words prohibition wins over a golden entry with the same stance (which is
+            // then a reported position, not the person's own words).
+            if !ruled_out
+                && same_person
+                    .iter()
+                    .any(|expected| expected.stance == predicted.stance)
             {
                 continue;
             }

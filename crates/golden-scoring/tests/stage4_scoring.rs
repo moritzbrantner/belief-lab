@@ -401,3 +401,108 @@ fn the_export_is_accepted_by_belief_lab_attribution_compare() {
         .collect();
     assert!(ids.contains(&"god-exists") && ids.contains(&"candidate-2"));
 }
+
+#[test]
+fn empty_evidence_is_never_attributed() {
+    let document = document();
+    let mut candidates = candidates(&document);
+    let evidence = candidates[3].evidence.as_mut().unwrap();
+    evidence.end = evidence.start;
+    evidence.quote = String::new();
+    let mapped = map_candidates(&document, &golden().people, &candidates);
+    assert!(mapped
+        .unattributed
+        .iter()
+        .any(|item| item.candidate == 3 && item.reason == "empty_evidence"));
+    assert!(mapped.attributions.iter().all(|item| item.candidate != 3));
+}
+
+#[test]
+fn a_nested_report_keeps_the_whole_reporter_chain() {
+    let golden = golden();
+    let document = document();
+    // Narrator: "Copleston is a believer who holds that God exists", read as
+    // narrator → Copleston → Russell for the chain.
+    let nested: Candidate = serde_json::from_value(candidate(
+        &document,
+        "God exists",
+        "God exists.",
+        "asserted",
+        &[("Copleston", "believer"), ("Russell", "holds")],
+    ))
+    .unwrap();
+    let mapped = map_candidates(&document, &golden.people, &[nested]);
+    let chain: Vec<(&str, &str, Option<&str>)> = mapped
+        .attributions
+        .iter()
+        .map(|item| {
+            (
+                item.person.as_str(),
+                item.stance.as_str(),
+                item.via.as_deref(),
+            )
+        })
+        .collect();
+    assert_eq!(
+        chain,
+        [
+            ("narrator", "no_stance", None),
+            ("copleston", "no_stance", Some("narrator")),
+            ("russell", "endorses", Some("copleston")),
+        ]
+    );
+    let (batch, _) = belief_lab_export(
+        &golden,
+        &document,
+        &mapped.attributions,
+        &similarities(),
+        THRESHOLD,
+        &ExportProvenance {
+            exporter_revision: "git:fixture".into(),
+            source_repository: "belief-lab-golden".into(),
+            scope_id: "case".into(),
+            transcript_revision: "sha256:fixture".into(),
+            producer_name: "proposition-api".into(),
+            producer_revision: "git:fixture".into(),
+            producer_model: "fixture".into(),
+        },
+    );
+    let parents: Vec<Value> = batch["evidence"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|item| item["parentEvidenceIds"].clone())
+        .collect();
+    assert_eq!(parents, [json!([]), json!(["e-0001"]), json!(["e-0002"])]);
+}
+
+#[test]
+fn an_own_words_prohibition_is_fabricated_even_when_a_reported_entry_has_that_stance() {
+    let mut golden = golden();
+    // Copleston's endorsement of god-exists is approved only as the narrator's report.
+    golden
+        .expected_no_attribution
+        .push(golden_scoring::GoldenNoAttribution {
+            person: "copleston".into(),
+            proposition: "god-exists".into(),
+            reason: "only reported".into(),
+        });
+    let document = document();
+    let mapped = map_candidates(&document, &golden.people, &candidates(&document));
+    let mut similarities = similarities();
+    // Copleston's own "I think …" claim (candidate 1) now matches god-exists.
+    similarities.candidates[1].insert("god-exists".into(), 0.99);
+    let score = score_attributions(
+        &golden,
+        &mapped,
+        &similarities,
+        ScoringConfig::with_threshold(THRESHOLD),
+    );
+    assert!(score
+        .fabricated
+        .iter()
+        .any(|item| item.predicted.candidate == 1
+            && item.proposition == "god-exists"
+            && item.reason == "contradicts_no_stance"));
+    assert!(!score.no_attribution[1].held);
+}
