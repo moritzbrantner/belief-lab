@@ -28,9 +28,10 @@ use text_embeddings::{
     TextEmbeddingBackend,
 };
 
-/// e5 cosine a claim needs to match a golden proposition, chosen from the 2026-11-04 threshold
-/// sweep (README "Stage 4 calibration"): the highest hit count with the fewest fabrications.
-const SIMILARITY_THRESHOLD: f64 = 0.88;
+/// e5 cosine a claim needs to match a golden proposition, chosen from the polarity threshold
+/// sweep of the draft-v3 run (README "Stage 4 calibration"): the highest threshold that keeps the
+/// most hits, which also gives the fewest fabrications.
+const SIMILARITY_THRESHOLD: f64 = 0.92;
 /// Lowest threshold of the calibration sweep; NLI judges every pair at or above it.
 const SWEEP_MIN: f64 = 0.80;
 
