@@ -18,7 +18,9 @@ sha2 = "=0.11.1"
 audio-analysis-transcription = { package = "moenarch-audio-analysis-transcription", git = "https://github.com/moritzbrantner/audio-analysis", rev = "1cde9e09838db8cab954fad740892aaf31411810", features = ["candle", "model-bundles", "pyannote-diarization", "audio-io"] }
 audio-analysis-speakers = { package = "moenarch-audio-analysis-speakers", git = "https://github.com/moritzbrantner/audio-analysis", rev = "1cde9e09838db8cab954fad740892aaf31411810", features = ["pyannote-diarization"] }
 # Stage 4 claim matching: multilingual-e5-base preset (nlp-stack#188), pinned to nlp-stack main.
-text-embeddings = { package = "moenarch-text-embeddings", git = "https://github.com/moritzbrantner/nlp-stack", rev = "815d9ddd3858958438bb9d28d3797c41ea4c6757", features = ["candle", "model-bundles"] }
+# Stage 4 polarity: the owner-chosen multilingual NLI preset (nlp-stack#195).
+text-classification = { package = "moenarch-text-classification", git = "https://github.com/moritzbrantner/nlp-stack", rev = "68c30750be83710c51b272bb4d09f00572848ca7", features = ["onnx"] }
+text-embeddings = { package = "moenarch-text-embeddings", git = "https://github.com/moritzbrantner/nlp-stack", rev = "68c30750be83710c51b272bb4d09f00572848ca7", features = ["candle", "model-bundles"] }
 
 # The producer's own source graph at that revision: its Cargo.toml Candle backport and the
 # moenarch-foundation revision from its .coding-tooling.source-deps.json.
