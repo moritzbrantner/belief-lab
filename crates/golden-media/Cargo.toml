@@ -19,8 +19,8 @@ golden-scoring = { path = "../golden-scoring" }
 belief-cli = { path = "../../apps/belief-cli" }
 serde_json = "=1.0.154"
 sha2 = "=0.11.1"
-audio-analysis-transcription = { package = "moenarch-audio-analysis-transcription", git = "https://github.com/moritzbrantner/audio-analysis", rev = "1cde9e09838db8cab954fad740892aaf31411810", features = ["candle", "model-bundles", "pyannote-diarization", "audio-io"] }
-audio-analysis-speakers = { package = "moenarch-audio-analysis-speakers", git = "https://github.com/moritzbrantner/audio-analysis", rev = "1cde9e09838db8cab954fad740892aaf31411810", features = ["pyannote-diarization"] }
+audio-analysis-transcription = { package = "moenarch-audio-analysis-transcription", git = "https://github.com/moritzbrantner/audio-analysis", rev = "324dee37d319a7996f0134b8f7240bca591a1186", features = ["candle", "model-bundles", "pyannote-diarization", "audio-io"] }
+audio-analysis-speakers = { package = "moenarch-audio-analysis-speakers", git = "https://github.com/moritzbrantner/audio-analysis", rev = "324dee37d319a7996f0134b8f7240bca591a1186", features = ["pyannote-diarization"] }
 # Stage 4 claim matching: multilingual-e5-base preset (nlp-stack#188), pinned to nlp-stack main.
 # Stage 4 polarity: the owner-chosen multilingual NLI preset (nlp-stack#195).
 text-classification = { package = "moenarch-text-classification", git = "https://github.com/moritzbrantner/nlp-stack", rev = "68c30750be83710c51b272bb4d09f00572848ca7", features = ["onnx"] }
