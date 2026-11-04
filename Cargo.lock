@@ -246,6 +246,7 @@ dependencies = [
 name = "golden-scoring"
 version = "0.1.0"
 dependencies = [
+ "belief-cli",
  "serde",
  "serde_json",
  "sha2",
