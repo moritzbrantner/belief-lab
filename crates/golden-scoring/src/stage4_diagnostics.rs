@@ -81,17 +81,30 @@ pub struct StageFourDiagnostics {
     pub no_attribution: Vec<NoAttributionDiagnostic>,
 }
 
-fn trace(
-    document: &StageFourDocument,
-    candidates: &[Candidate],
-    mapped: &MappedCandidates,
-    similarities: &Similarities,
-    polarity: Option<&Polarity>,
+#[derive(Clone, Copy)]
+struct TraceContext<'a> {
+    document: &'a StageFourDocument,
+    candidates: &'a [Candidate],
+    mapped: &'a MappedCandidates,
+    similarities: &'a Similarities,
+    polarity: Option<&'a Polarity>,
     config: ScoringConfig,
+}
+
+fn trace(
+    context: &TraceContext<'_>,
     index: usize,
     expected: Option<&GoldenAttribution>,
     proposition: &str,
 ) -> CandidateTrace {
+    let TraceContext {
+        document,
+        candidates,
+        mapped,
+        similarities,
+        polarity,
+        config,
+    } = *context;
     let candidate = &candidates[index];
     let seconds = candidate
         .evidence
@@ -333,6 +346,14 @@ pub fn diagnose_stage4(
     polarity: Option<&Polarity>,
     score: &AttributionScore,
 ) -> StageFourDiagnostics {
+    let context = TraceContext {
+        document,
+        candidates,
+        mapped,
+        similarities,
+        polarity,
+        config: score.config,
+    };
     let expected = score
         .expected
         .iter()
@@ -353,12 +374,7 @@ pub fn diagnose_stage4(
             .into_iter()
             .map(|candidate| {
                 trace(
-                    document,
-                    candidates,
-                    mapped,
-                    similarities,
-                    polarity,
-                    score.config,
+                    &context,
                     candidate,
                     Some(&result.expected),
                     &result.expected.proposition,
@@ -373,12 +389,7 @@ pub fn diagnose_stage4(
         .map(|fabrication| FabricationDiagnostic {
             fabrication: fabrication.clone(),
             candidate_trace: trace(
-                document,
-                candidates,
-                mapped,
-                similarities,
-                polarity,
-                score.config,
+                &context,
                 fabrication.predicted.candidate,
                 None,
                 &fabrication.proposition,
@@ -396,17 +407,7 @@ pub fn diagnose_stage4(
                 .violations
                 .iter()
                 .map(|violation| {
-                    trace(
-                        document,
-                        candidates,
-                        mapped,
-                        similarities,
-                        polarity,
-                        score.config,
-                        violation.candidate,
-                        None,
-                        &result.proposition,
-                    )
+                    trace(&context, violation.candidate, None, &result.proposition)
                 })
                 .collect(),
         })
@@ -474,8 +475,7 @@ pub fn diagnostics_markdown(report: &StageFourDiagnostics) -> String {
                 .source_quote
                 .as_deref()
                 .unwrap_or("<no evidence>")
-                .replace('\n', " ")
-                .replace('\r', " ");
+                .replace(['\n', '\r'], " ");
             let seconds = candidate
                 .seconds
                 .map(|value| format!("{value:.0}"))
@@ -523,8 +523,7 @@ pub fn diagnostics_markdown(report: &StageFourDiagnostics) -> String {
                 .fabrication
                 .predicted
                 .quote
-                .replace('\n', " ")
-                .replace('\r', " ")
+                .replace(['\n', '\r'], " ")
         ));
     }
     out.push_str("\n## Forbidden own-words attributions\n\n");
