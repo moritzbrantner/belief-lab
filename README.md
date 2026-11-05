@@ -63,6 +63,10 @@ requests CUDA device 0 explicitly. Whisper uses FP16 on CUDA instead of CPU FP32
 It fails if CUDA cannot initialize instead of silently running Whisper on CPU.
 The pyannote community-1 ONNX stage still uses its existing runtime; this flag
 does not imply GPU acceleration for that stage or subsequent e5/NLI scoring.
+For the Qwen3 draft on the GPU, put a CUDA build of llama.cpp's `llama-server` on `PATH`
+(`cmake -B build -DGGML_CUDA=ON && cmake --build build --config Release -j`) and set
+`PROPOSITION_LLAMA_GPU_LAYERS=99`. The runner passes it to proposition-api's
+`scripts/llama-server.sh`, which adds `-ngl 99`. Qwen3-8B Q4_K_M fits in 8 GB of VRAM.
 The first CUDA build may take several minutes. Later runs reuse the compiled
 artifact and cached stage outputs. To run only Stages 1–3 with CUDA:
 
@@ -173,7 +177,7 @@ Cosine-only (`thresholdSweepCosineOnly`) gives the same 3 hits and 2 fabricated 
 Known gaps, recorded rather than worked around:
 
 - **Kinds the mapping does not produce:** `inferred_belief` (#13) and `quotation_or_criticism` (#14).
-- **Hypotheticals:** draft-v3 marks Russell's "Then God exists" (537 s) as `asserted`, which violates `expectedNoAttribution`. proposition-api draft-v4 adds the preceding turns as read-only context for this; it has not been re-drafted yet (see #63).
+- **Hypotheticals:** draft-v3 marks Russell's "Then God exists" (537 s) as `asserted`, which violates `expectedNoAttribution`. The pin is now proposition-api main `1b5ba66`: draft-v4 shows the preceding turns as read-only context, and `PROPOSITION_LLAMA_GPU_LAYERS` offloads to a GPU. The next full run therefore re-drafts. The table above is still the draft-v3 run (see #63).
 - **Name spelling:** Whisper writes "Coppiston", and the narrator's reports (#1–#3) are missed.
 
 For real local semantic scoring:
