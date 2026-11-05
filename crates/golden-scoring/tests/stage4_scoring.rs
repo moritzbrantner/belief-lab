@@ -381,7 +381,7 @@ fn stage4_diagnostics_trace_every_expected_and_fabricated_case_without_models() 
 }
 
 #[test]
-fn stage4_diagnostics_preserve_nli_neutral_and_wrong_stance_evidence() {
+fn stage4_diagnostics_keep_nli_evidence_and_wrong_stance_evidence() {
     let golden = golden();
     let document = document();
     let mut candidates = candidates(&document);
@@ -405,9 +405,8 @@ fn stage4_diagnostics_preserve_nli_neutral_and_wrong_stance_evidence() {
         Some(&polarity),
         &score,
     );
-    assert!(diagnostic.expected[1]
-        .observed_blockers
-        .contains(&"nli_neutral".into()));
+    // Flip-only polarity: a neutral judgment is evidence, not a blocker.
+    assert_eq!(diagnostic.expected[1].status, "hit");
     let trace = diagnostic.expected[1]
         .candidate_traces
         .iter()
@@ -415,7 +414,7 @@ fn stage4_diagnostics_preserve_nli_neutral_and_wrong_stance_evidence() {
         .unwrap();
     assert_eq!(trace.nli.as_ref().unwrap().label, NliLabel::Neutral);
     assert_eq!(trace.nli.as_ref().unwrap().probabilities, [0.1, 0.8, 0.1]);
-    assert!(trace.failed_gates.contains(&"nli_neutral".into()));
+    assert!(trace.failed_gates.is_empty(), "{:?}", trace.failed_gates);
     assert_eq!(
         diagnostic.expected[2].observed_blockers,
         vec!["stance".to_owned()]
@@ -658,7 +657,7 @@ fn polarity(overrides: &[(usize, &str, NliLabel)]) -> Polarity {
 }
 
 #[test]
-fn polarity_flips_contradictions_and_drops_neutral_matches() {
+fn polarity_only_flips_confident_contradictions_and_neutral_keeps_the_match() {
     let golden = golden();
     let document = document();
     let mut candidates = candidates(&document);
@@ -675,21 +674,28 @@ fn polarity_flips_contradictions_and_drops_neutral_matches() {
         (3, "world-explained", NliLabel::Contradiction),
         (1, "world-explained", NliLabel::Neutral),
     ]);
-    let score =
-        score_with_polarity(&golden, &mapped, &similarities(), Some(&table), config).unwrap();
+    let flip_at = |min: f64| {
+        score_with_polarity(
+            &golden,
+            &mapped,
+            &similarities(),
+            Some(&table),
+            config.with_min_contradiction(min),
+        )
+        .unwrap()
+    };
+    let score = flip_at(0.8);
     assert_eq!(score.polarity_model.as_deref(), Some("fixture-nli@fixture"));
     assert_eq!(
         score.expected[2].status, "hit",
-        "the flipped stance is endorses_negation"
+        "0.9 contradiction flips to endorses_negation"
     );
     assert_eq!(
-        score.expected[1].status, "miss",
-        "a neutral pair is no match"
+        score.expected[1].status, "hit",
+        "a neutral judgment keeps the cosine match"
     );
-    assert!(score
-        .near_misses
-        .iter()
-        .any(|miss| miss.candidate == 1 && miss.reason == "nli_neutral"));
+    // Below the confidence the stance is not flipped.
+    assert_eq!(flip_at(0.95).expected[2].status, "partial");
 }
 
 #[test]

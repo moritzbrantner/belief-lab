@@ -517,10 +517,25 @@ pub struct Polarity {
 
 impl Polarity {
     pub fn label(&self, candidate: usize, proposition: &str) -> Option<NliLabel> {
+        self.judgment(candidate, proposition)
+            .map(|judgment| judgment.label)
+    }
+
+    pub fn judgment(&self, candidate: usize, proposition: &str) -> Option<&NliJudgment> {
         self.candidates
             .get(candidate)
             .and_then(|row| row.get(proposition))
-            .map(|judgment| judgment.label)
+    }
+
+    /// The claim contradicts the proposition with at least `min_probability`.
+    pub fn confident_contradiction(
+        &self,
+        candidate: usize,
+        proposition: &str,
+        min_probability: f64,
+    ) -> bool {
+        self.judgment(candidate, proposition)
+            .is_some_and(|judgment| judgment.probabilities[2] >= min_probability)
     }
 
     /// Every pair at or above the similarity threshold needs a judgment: no silent default.
@@ -565,6 +580,14 @@ pub struct ScoringConfig {
     pub near_miss_similarity: f64,
     pub near_miss_seconds: f64,
     pub min_quote_overlap: f64,
+    /// Contradiction probability at which NLI flips the stance (flip-only polarity). Reports
+    /// written before the flip-only rule lack it and replay as "never flip".
+    #[serde(default = "never_flip")]
+    pub min_contradiction: f64,
+}
+
+fn never_flip() -> f64 {
+    1.0
 }
 
 impl ScoringConfig {
@@ -575,7 +598,14 @@ impl ScoringConfig {
             near_miss_similarity: NEAR_MISS_SIMILARITY,
             near_miss_seconds: NEAR_MISS_SECONDS,
             min_quote_overlap: MIN_QUOTE_OVERLAP,
+            min_contradiction: never_flip(),
         }
+    }
+
+    /// Flip-only polarity: flip the stance when NLI gives at least this contradiction probability.
+    pub fn with_min_contradiction(mut self, min_contradiction: f64) -> Self {
+        self.min_contradiction = min_contradiction;
+        self
     }
 }
 
@@ -663,8 +693,7 @@ pub struct NearMiss {
     pub canonical_text: String,
     pub similarity: f64,
     pub delta_seconds: f64,
-    /// `similarity` (below the threshold by at most the margin), `time` (outside ±30 s) or
-    /// `nli_neutral` (above the threshold, but NLI found neither entailment nor contradiction).
+    /// `similarity` (below the threshold by at most the margin) or `time` (outside ±30 s).
     pub reason: String,
 }
 
@@ -728,10 +757,11 @@ pub fn score_attributions(
         .expect("scoring without a polarity table cannot fail")
 }
 
-/// Scores with the owner's polarity rule (belief-lab#63, 2026-11-04) when `polarity` is given:
-/// a claim that passes the e5 match is checked against the golden proposition with NLI;
-/// `entailment` keeps its stance, `contradiction` flips it (`endorses` ↔ `endorses_negation`),
-/// `neutral` is no match. Fails when the table lacks a pair at or above the threshold.
+/// Scores with the owner's flip-only polarity rule (belief-lab#63, 2026-11-04) when `polarity` is
+/// given: the e5 match alone decides whether a claim matches a golden proposition; NLI only flips
+/// the stance (`endorses` ↔ `endorses_negation`) when the claim contradicts the proposition with at
+/// least `config.min_contradiction`. A neutral or entailment judgment keeps the match and stance.
+/// Fails when the table lacks a pair at or above the threshold.
 pub fn score_with_polarity(
     golden: &GoldenExpectations,
     mapped: &MappedCandidates,
@@ -743,21 +773,17 @@ pub fn score_with_polarity(
     if let Some(polarity) = polarity {
         polarity.check_complete(golden, similarities, mapped.candidates, threshold)?;
     }
-    let label = |candidate: usize, proposition: &str| {
-        polarity.and_then(|polarity| polarity.label(candidate, proposition))
+    let flips = |candidate: usize, proposition: &str| {
+        polarity.is_some_and(|polarity| {
+            polarity.confident_contradiction(candidate, proposition, config.min_contradiction)
+        })
     };
-    // Similarity as the matcher sees it: a neutral NLI judgment is no match.
-    let similarities_get = |candidate: usize, proposition: &str| {
-        if label(candidate, proposition) == Some(NliLabel::Neutral) {
-            f64::NEG_INFINITY
-        } else {
-            similarities.get(candidate, proposition)
-        }
-    };
+    let similarities_get =
+        |candidate: usize, proposition: &str| similarities.get(candidate, proposition);
     // The attribution's stance relative to one golden proposition.
     let relative = |predicted: &PredictedAttribution, proposition: &str| {
         let mut predicted = predicted.clone();
-        if label(predicted.candidate, proposition) == Some(NliLabel::Contradiction) {
+        if flips(predicted.candidate, proposition) {
             predicted.stance = flip_stance(&predicted.stance);
             predicted.attributed_stance = predicted.attributed_stance.as_deref().map(flip_stance);
         }
@@ -807,13 +833,7 @@ pub fn score_with_polarity(
                 matched.push(candidate);
                 continue;
             }
-            let raw = similarities.get(candidate, &expected.proposition);
-            let reason = if label(candidate, &expected.proposition) == Some(NliLabel::Neutral)
-                && raw >= threshold
-                && delta <= config.near_miss_seconds
-            {
-                Some("nli_neutral")
-            } else if similarity < threshold
+            let reason = if similarity < threshold
                 && similarity >= threshold - config.near_miss_similarity
                 && delta <= config.near_miss_seconds
             {
@@ -836,7 +856,7 @@ pub fn score_with_polarity(
                     proposition: expected.proposition.clone(),
                     candidate,
                     canonical_text,
-                    similarity: raw,
+                    similarity,
                     delta_seconds: seconds - approx,
                     reason: reason.to_owned(),
                 });
