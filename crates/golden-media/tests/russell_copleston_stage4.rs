@@ -29,10 +29,13 @@ use text_embeddings::{
     TextEmbeddingBackend,
 };
 
-/// e5 cosine a claim needs to match a golden proposition, chosen from the polarity threshold
-/// sweep of the draft-v3 run (README "Stage 4 calibration"): the highest threshold that keeps the
-/// most hits, which also gives the fewest fabrications.
-const SIMILARITY_THRESHOLD: f64 = 0.92;
+/// e5 cosine a claim needs to match a golden proposition, chosen with `MIN_CONTRADICTION` from the
+/// flip-only sweep of the draft-v3 run (README "Stage 4 calibration"): the lowest threshold at
+/// which fabrications reach their floor (2), keeping the most hits there.
+const SIMILARITY_THRESHOLD: f64 = 0.91;
+/// NLI contradiction probability at which the stance flips (flip-only polarity, owner decision
+/// 2026-11-04): the lowest swept confidence that flips no correct match (below 0.90 a hit is lost).
+const MIN_CONTRADICTION: f64 = 0.9;
 /// Lowest threshold of the calibration sweep; NLI judges every pair at or above it.
 const SWEEP_MIN: f64 = 0.80;
 
@@ -227,7 +230,8 @@ fn stage4_attributions_match_the_golden_file() {
         &mapped,
         &similarities,
         Some(&polarity),
-        ScoringConfig::with_threshold(SIMILARITY_THRESHOLD),
+        ScoringConfig::with_threshold(SIMILARITY_THRESHOLD)
+            .with_min_contradiction(MIN_CONTRADICTION),
     )
     .unwrap();
 
@@ -242,17 +246,21 @@ fn stage4_attributions_match_the_golden_file() {
                "candidatesMatchingNoProposition": at.candidates_matching_no_proposition})
     };
     let steps = || (80..=95).map(|step| f64::from(step) / 100.0);
+    // Flip-only polarity: the contradiction confidence is swept together with the threshold.
     let sweep: Vec<Value> = steps()
-        .map(|threshold| {
+        .flat_map(|threshold| (14..=19).map(move |step| (threshold, f64::from(step) * 0.05)))
+        .map(|(threshold, min_contradiction)| {
             let at = score_with_polarity(
                 &golden,
                 &mapped,
                 &similarities,
                 Some(&polarity),
-                ScoringConfig::with_threshold(threshold),
+                ScoringConfig::with_threshold(threshold).with_min_contradiction(min_contradiction),
             )
             .unwrap();
-            summarize(threshold, &at)
+            let mut row = summarize(threshold, &at);
+            row["minContradiction"] = json!((min_contradiction * 100.0).round() / 100.0);
+            row
         })
         .collect();
     let sweep_cosine_only: Vec<Value> = steps()
@@ -376,6 +384,7 @@ fn stage4_attributions_match_the_golden_file() {
         report["stages"]["attributions"] = json!({
             "status": "run",
             "threshold": SIMILARITY_THRESHOLD,
+            "minContradiction": MIN_CONTRADICTION,
             "candidates": score.candidates,
             "verifiedCandidates": score.verified_candidates,
             "hits": score.hits, "partial": score.partial, "misses": score.misses,

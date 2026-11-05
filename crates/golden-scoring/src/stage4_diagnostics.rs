@@ -154,12 +154,6 @@ fn trace(
     if similarity.is_none_or(|value| value < config.similarity_threshold) {
         failed_gates.push("similarity_threshold".into());
     }
-    if nli
-        .as_ref()
-        .is_some_and(|judgment| judgment.label == crate::stage4::NliLabel::Neutral)
-    {
-        failed_gates.push("nli_neutral".into());
-    }
     if quote_overlap.is_some_and(|overlap| overlap < config.min_quote_overlap) {
         failed_gates.push("quote_overlap".into());
     }
@@ -301,7 +295,6 @@ fn blockers(
         let reason = match near.reason.as_str() {
             "similarity" => "similarity_threshold",
             "time" => "time_window",
-            "nli_neutral" => "nli_neutral",
             other => other,
         };
         if !observed.iter().any(|existing| existing == reason) {

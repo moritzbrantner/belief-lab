@@ -29,7 +29,7 @@ ROOT = Path(__file__).resolve().parents[1]
 CASE = "russell-copleston-1948"
 GOLDEN = Path("fixtures/golden") / CASE / "expected-beliefs.json"
 OUTPUT = Path("target/golden") / CASE
-API_COMMIT = "d3613a0d0f281ce82c0087ecce743080a6bc5312"
+API_COMMIT = "1b5ba66fa07120e05cd44980a18db01012294bf2"
 API_URL = "https://github.com/moritzbrantner/proposition-api.git"
 LLAMA_MODEL_SHA256 = "d98cdcbd03e17ce47681435b5150e34c1417f50b5c0019dd560e4882c5745785"
 
