@@ -586,8 +586,11 @@ pub struct ScoringConfig {
     pub min_contradiction: f64,
 }
 
+/// Above every probability, so no judgment (not even a contradiction of exactly 1.0) flips.
+pub const NEVER_FLIP: f64 = 2.0;
+
 fn never_flip() -> f64 {
-    1.0
+    NEVER_FLIP
 }
 
 impl ScoringConfig {

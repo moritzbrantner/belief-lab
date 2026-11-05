@@ -715,3 +715,31 @@ fn a_missing_nli_judgment_fails_instead_of_defaulting() {
     .unwrap_err();
     assert!(error.contains("candidate 0") && error.contains("god-exists"));
 }
+
+#[test]
+fn the_default_config_never_flips_even_a_certain_contradiction() {
+    let golden = golden();
+    let document = document();
+    let mut candidates = candidates(&document);
+    candidates[3].stance_cue = Some("asserted".into());
+    let mapped = map_candidates(&document, &golden.people, &candidates);
+    let mut table = polarity(&[(3, "world-explained", NliLabel::Contradiction)]);
+    table.candidates[3]
+        .get_mut("world-explained")
+        .unwrap()
+        .probabilities = [0.0, 0.0, 1.0];
+    let score = |config: ScoringConfig| {
+        score_with_polarity(&golden, &mapped, &similarities(), Some(&table), config).unwrap()
+    };
+    let default = ScoringConfig::with_threshold(THRESHOLD);
+    assert_eq!(score(default).expected[2].status, "partial");
+    // A report written before `minContradiction` existed replays as "never flip".
+    let mut old = serde_json::to_value(default).unwrap();
+    old.as_object_mut().unwrap().remove("minContradiction");
+    let replayed: ScoringConfig = serde_json::from_value(old).unwrap();
+    assert_eq!(score(replayed).expected[2].status, "partial");
+    assert_eq!(
+        score(default.with_min_contradiction(1.0)).expected[2].status,
+        "hit"
+    );
+}
