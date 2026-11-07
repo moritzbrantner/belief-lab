@@ -1785,7 +1785,7 @@ dependencies = [
 [[package]]
 name = "moenarch-audio-analysis-core"
 version = "0.1.0"
-source = "git+https://github.com/moritzbrantner/audio-analysis?rev=999f1ae4d620e9745e8fe69f3f39b2c1bf78f3c0#999f1ae4d620e9745e8fe69f3f39b2c1bf78f3c0"
+source = "git+https://github.com/moritzbrantner/audio-analysis?rev=9f72c66a654d6e9ea3f438085a5f5321d5fd1407#9f72c66a654d6e9ea3f438085a5f5321d5fd1407"
 dependencies = [
  "moenarch-audio-contracts",
  "moenarch-math-signal-core",
@@ -1799,7 +1799,7 @@ dependencies = [
 [[package]]
 name = "moenarch-audio-analysis-io"
 version = "0.1.1"
-source = "git+https://github.com/moritzbrantner/audio-analysis?rev=999f1ae4d620e9745e8fe69f3f39b2c1bf78f3c0#999f1ae4d620e9745e8fe69f3f39b2c1bf78f3c0"
+source = "git+https://github.com/moritzbrantner/audio-analysis?rev=9f72c66a654d6e9ea3f438085a5f5321d5fd1407#9f72c66a654d6e9ea3f438085a5f5321d5fd1407"
 dependencies = [
  "hound",
  "moenarch-audio-analysis-core",
@@ -1812,7 +1812,7 @@ dependencies = [
 [[package]]
 name = "moenarch-audio-analysis-recognition"
 version = "0.1.0"
-source = "git+https://github.com/moritzbrantner/audio-analysis?rev=999f1ae4d620e9745e8fe69f3f39b2c1bf78f3c0#999f1ae4d620e9745e8fe69f3f39b2c1bf78f3c0"
+source = "git+https://github.com/moritzbrantner/audio-analysis?rev=9f72c66a654d6e9ea3f438085a5f5321d5fd1407#9f72c66a654d6e9ea3f438085a5f5321d5fd1407"
 dependencies = [
  "moenarch-audio-analysis-core",
  "moenarch-audio-contracts",
@@ -1826,7 +1826,7 @@ dependencies = [
 [[package]]
 name = "moenarch-audio-analysis-speakers"
 version = "0.1.4"
-source = "git+https://github.com/moritzbrantner/audio-analysis?rev=999f1ae4d620e9745e8fe69f3f39b2c1bf78f3c0#999f1ae4d620e9745e8fe69f3f39b2c1bf78f3c0"
+source = "git+https://github.com/moritzbrantner/audio-analysis?rev=9f72c66a654d6e9ea3f438085a5f5321d5fd1407#9f72c66a654d6e9ea3f438085a5f5321d5fd1407"
 dependencies = [
  "hex",
  "moenarch-audio-analysis-core",
@@ -1844,7 +1844,7 @@ dependencies = [
 [[package]]
 name = "moenarch-audio-analysis-transcription"
 version = "0.1.15"
-source = "git+https://github.com/moritzbrantner/audio-analysis?rev=999f1ae4d620e9745e8fe69f3f39b2c1bf78f3c0#999f1ae4d620e9745e8fe69f3f39b2c1bf78f3c0"
+source = "git+https://github.com/moritzbrantner/audio-analysis?rev=9f72c66a654d6e9ea3f438085a5f5321d5fd1407#9f72c66a654d6e9ea3f438085a5f5321d5fd1407"
 dependencies = [
  "candle-core 0.10.2",
  "candle-nn 0.10.2",
@@ -1989,7 +1989,7 @@ dependencies = [
 [[package]]
 name = "moenarch-text-classification"
 version = "0.1.1"
-source = "git+https://github.com/moritzbrantner/nlp-stack?rev=1cb4b0ea91c53d4e69024a47667f5bc329bfd16d#1cb4b0ea91c53d4e69024a47667f5bc329bfd16d"
+source = "git+https://github.com/moritzbrantner/nlp-stack?rev=34717dfbfeff3af894d964ecb1697b7bd2df841c#34717dfbfeff3af894d964ecb1697b7bd2df841c"
 dependencies = [
  "moenarch-model-runtime",
  "moenarch-runtime-core",
@@ -2005,7 +2005,7 @@ dependencies = [
 [[package]]
 name = "moenarch-text-core"
 version = "0.1.1"
-source = "git+https://github.com/moritzbrantner/nlp-stack?rev=1cb4b0ea91c53d4e69024a47667f5bc329bfd16d#1cb4b0ea91c53d4e69024a47667f5bc329bfd16d"
+source = "git+https://github.com/moritzbrantner/nlp-stack?rev=34717dfbfeff3af894d964ecb1697b7bd2df841c#34717dfbfeff3af894d964ecb1697b7bd2df841c"
 dependencies = [
  "moenarch-media-core",
  "moenarch-runtime-core",
@@ -2019,7 +2019,7 @@ dependencies = [
 [[package]]
 name = "moenarch-text-embeddings"
 version = "0.1.1"
-source = "git+https://github.com/moritzbrantner/nlp-stack?rev=1cb4b0ea91c53d4e69024a47667f5bc329bfd16d#1cb4b0ea91c53d4e69024a47667f5bc329bfd16d"
+source = "git+https://github.com/moritzbrantner/nlp-stack?rev=34717dfbfeff3af894d964ecb1697b7bd2df841c#34717dfbfeff3af894d964ecb1697b7bd2df841c"
 dependencies = [
  "candle-core 0.11.1",
  "candle-nn 0.11.1",
@@ -2041,7 +2041,7 @@ dependencies = [
 [[package]]
 name = "moenarch-text-lexical"
 version = "0.1.1"
-source = "git+https://github.com/moritzbrantner/nlp-stack?rev=1cb4b0ea91c53d4e69024a47667f5bc329bfd16d#1cb4b0ea91c53d4e69024a47667f5bc329bfd16d"
+source = "git+https://github.com/moritzbrantner/nlp-stack?rev=34717dfbfeff3af894d964ecb1697b7bd2df841c#34717dfbfeff3af894d964ecb1697b7bd2df841c"
 dependencies = [
  "moenarch-math-sparse-data",
  "moenarch-runtime-core",
