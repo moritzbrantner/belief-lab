@@ -227,7 +227,7 @@ dependencies = [
  "proc-macro-crate",
  "proc-macro2",
  "quote",
- "syn 3.0.9",
+ "syn 3.0.10",
 ]
 
 [[package]]
@@ -253,7 +253,7 @@ checksum = "6a1f896587b6f2c069c73d2f0913e2d590c3990285cd2f0b6aa02b786b4c679c"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 3.0.9",
+ "syn 3.0.10",
 ]
 
 [[package]]
@@ -419,9 +419,9 @@ dependencies = [
 
 [[package]]
 name = "cc"
-version = "1.11.0"
+version = "1.11.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "375989decec1a0fa424442bed520fa12ede43a48475ce8c7417d2c69b32b5f6b"
+checksum = "4ff2a8126fff0f8c839080d619675a585e61720bb12d2baceae45769fd66f155"
 dependencies = [
  "find-msvc-tools",
  "shlex",
@@ -447,6 +447,12 @@ checksum = "c0f78a02292a74a88ac736019ab962ece0bc380e3f977bf72e376c5d78ff0678"
 dependencies = [
  "cc",
 ]
+
+[[package]]
+name = "collection-kernels"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "967563c46ecaa4ba9c27ed2cfb584e49a81c83364535201e15f5c3189b49d2ef"
 
 [[package]]
 name = "compact_str"
@@ -480,6 +486,15 @@ name = "const-oid"
 version = "0.10.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a6ef517f0926dd24a1582492c791b6a4818a4d94e789a334894aa15b0d12f55c"
+
+[[package]]
+name = "constant_time_eq"
+version = "0.6.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9eb6feb175df65d0a3ccd3e73484e940d0ac664e8034f0519fd49a93db3071d9"
+dependencies = [
+ "rustversion",
+]
 
 [[package]]
 name = "cookie"
@@ -764,7 +779,7 @@ checksum = "c6232dd377dcc64799954cbd3a9bb882e9cdc1308ccd87b1c098f1fb2eaf82a8"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 3.0.9",
+ "syn 3.0.10",
 ]
 
 [[package]]
@@ -890,9 +905,9 @@ checksum = "1c66915cc5391097de7a2b0b972e8505aa33c0df401fd3a6811dbdb32881ba48"
 
 [[package]]
 name = "flate2"
-version = "1.1.10"
+version = "1.1.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6e634e2e0ebac1ee034020da1ca582e17ffe4e0f5e985823721e168928136dcb"
+checksum = "626d4928326b646e70f65ed36fc7cf9f206bdb68a0019ee7c6b4709da4e084c4"
 dependencies = [
  "crc32fast",
  "miniz_oxide",
@@ -1606,9 +1621,9 @@ dependencies = [
 
 [[package]]
 name = "itoa"
-version = "1.0.18"
+version = "1.0.19"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8f42a60cbdf9a97f5d2305f08a87dc4e09308d1276d28c869c684d7777685682"
+checksum = "3bd1574e617a9a6c1f8f8181bd7e841e1f20e4277607ef28945765188d6284d4"
 
 [[package]]
 name = "js-sys"
@@ -1745,9 +1760,9 @@ dependencies = [
 
 [[package]]
 name = "mime"
-version = "0.3.17"
+version = "0.3.18"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6877bb514081ee2a7ff5ef9de3281f14a4dd4bceac4c09388074a6b5df8a139a"
+checksum = "d5848f5a9e8117cf94f2f90faac24a87ff81600ff8628c1e3deaab572e76bfa1"
 
 [[package]]
 name = "minimal-lexical"
@@ -1779,7 +1794,7 @@ dependencies = [
 [[package]]
 name = "moenarch-audio-analysis-core"
 version = "0.1.0"
-source = "git+https://github.com/moritzbrantner/audio-analysis?rev=324dee37d319a7996f0134b8f7240bca591a1186#324dee37d319a7996f0134b8f7240bca591a1186"
+source = "git+https://github.com/moritzbrantner/audio-analysis?rev=645e35819f48807d8a5f2513bd28eff048190e3f#645e35819f48807d8a5f2513bd28eff048190e3f"
 dependencies = [
  "moenarch-audio-contracts",
  "moenarch-math-signal-core",
@@ -1793,7 +1808,7 @@ dependencies = [
 [[package]]
 name = "moenarch-audio-analysis-io"
 version = "0.1.1"
-source = "git+https://github.com/moritzbrantner/audio-analysis?rev=324dee37d319a7996f0134b8f7240bca591a1186#324dee37d319a7996f0134b8f7240bca591a1186"
+source = "git+https://github.com/moritzbrantner/audio-analysis?rev=645e35819f48807d8a5f2513bd28eff048190e3f#645e35819f48807d8a5f2513bd28eff048190e3f"
 dependencies = [
  "hound",
  "moenarch-audio-analysis-core",
@@ -1806,7 +1821,7 @@ dependencies = [
 [[package]]
 name = "moenarch-audio-analysis-recognition"
 version = "0.1.0"
-source = "git+https://github.com/moritzbrantner/audio-analysis?rev=324dee37d319a7996f0134b8f7240bca591a1186#324dee37d319a7996f0134b8f7240bca591a1186"
+source = "git+https://github.com/moritzbrantner/audio-analysis?rev=645e35819f48807d8a5f2513bd28eff048190e3f#645e35819f48807d8a5f2513bd28eff048190e3f"
 dependencies = [
  "moenarch-audio-analysis-core",
  "moenarch-audio-contracts",
@@ -1820,7 +1835,7 @@ dependencies = [
 [[package]]
 name = "moenarch-audio-analysis-speakers"
 version = "0.1.4"
-source = "git+https://github.com/moritzbrantner/audio-analysis?rev=324dee37d319a7996f0134b8f7240bca591a1186#324dee37d319a7996f0134b8f7240bca591a1186"
+source = "git+https://github.com/moritzbrantner/audio-analysis?rev=645e35819f48807d8a5f2513bd28eff048190e3f#645e35819f48807d8a5f2513bd28eff048190e3f"
 dependencies = [
  "hex",
  "moenarch-audio-analysis-core",
@@ -1838,7 +1853,7 @@ dependencies = [
 [[package]]
 name = "moenarch-audio-analysis-transcription"
 version = "0.1.15"
-source = "git+https://github.com/moritzbrantner/audio-analysis?rev=324dee37d319a7996f0134b8f7240bca591a1186#324dee37d319a7996f0134b8f7240bca591a1186"
+source = "git+https://github.com/moritzbrantner/audio-analysis?rev=645e35819f48807d8a5f2513bd28eff048190e3f#645e35819f48807d8a5f2513bd28eff048190e3f"
 dependencies = [
  "candle-core 0.10.2",
  "candle-nn 0.10.2",
@@ -1862,19 +1877,21 @@ dependencies = [
 
 [[package]]
 name = "moenarch-audio-contracts"
-version = "0.1.0"
-source = "git+https://github.com/moritzbrantner/moenarch-foundation?rev=9a162dfd44d3cae7f88ad993de79defc0ac94cd6#9a162dfd44d3cae7f88ad993de79defc0ac94cd6"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c3c686476f42bb9a19810b69bff92ceb8b0d1e54fca67ec3f38359e45e01c813"
 dependencies = [
  "moenarch-media-core",
 ]
 
 [[package]]
 name = "moenarch-math-linear"
-version = "0.1.1"
+version = "0.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4b5f3869f538efc98fec1faa771cfc140ff2d5de9030ec8bebfa065b6bbb7659"
+checksum = "ac71230f722505817c305c1e8f35bee5bd20a64125061fbde5584c74fb0cd4d3"
 dependencies = [
  "moenarch-media-core",
+ "moenarch-numbers-core",
  "moenarch-runtime-core",
  "moenarch-tensor-data",
  "moenarch-vector-analysis-core",
@@ -1884,11 +1901,12 @@ dependencies = [
 
 [[package]]
 name = "moenarch-math-signal-core"
-version = "0.1.1"
-source = "git+https://github.com/moritzbrantner/moenarch-foundation?rev=9a162dfd44d3cae7f88ad993de79defc0ac94cd6#9a162dfd44d3cae7f88ad993de79defc0ac94cd6"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3f9b714d2d56bbabe90257677401de40ad1af546885a207dcb11a973162fd052"
 dependencies = [
  "moenarch-media-core",
- "moenarch-numbers-core 0.1.1 (git+https://github.com/moritzbrantner/moenarch-foundation?rev=9a162dfd44d3cae7f88ad993de79defc0ac94cd6)",
+ "moenarch-numbers-core",
  "moenarch-runtime-core",
  "serde",
  "serde_json",
@@ -1896,25 +1914,28 @@ dependencies = [
 
 [[package]]
 name = "moenarch-math-sparse-data"
-version = "0.1.1"
+version = "0.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ee51ba648e2bbf68781d00e4b52b95d53a8b315b71ab443ba049408ce73d12ab"
+checksum = "d8ca4cf15eb2d5923ce18be2f387c6e98fc588baa77cf0f7c4f8d501176141f5"
 dependencies = [
  "moenarch-math-linear",
  "moenarch-media-core",
- "moenarch-numbers-core 0.1.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "moenarch-numbers-core",
  "moenarch-runtime-core",
  "moenarch-vector-analysis-core",
+ "search-kernels",
  "serde",
  "serde_json",
 ]
 
 [[package]]
 name = "moenarch-media-core"
-version = "0.1.0"
-source = "git+https://github.com/moritzbrantner/moenarch-foundation?rev=9a162dfd44d3cae7f88ad993de79defc0ac94cd6#9a162dfd44d3cae7f88ad993de79defc0ac94cd6"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "671d82131dd4a342353fdecf82056c883e1e4db2a5960584698eca12f0d3ecb1"
 dependencies = [
  "serde",
+ "serde_json",
 ]
 
 [[package]]
@@ -1930,20 +1951,9 @@ dependencies = [
 
 [[package]]
 name = "moenarch-numbers-core"
-version = "0.1.1"
+version = "0.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c633ffed2e3a7f3d5bf77c0abc55c32685135c882eb431adca3076448da198a3"
-dependencies = [
- "moenarch-media-core",
- "moenarch-runtime-core",
- "serde",
- "serde_json",
-]
-
-[[package]]
-name = "moenarch-numbers-core"
-version = "0.1.1"
-source = "git+https://github.com/moritzbrantner/moenarch-foundation?rev=9a162dfd44d3cae7f88ad993de79defc0ac94cd6#9a162dfd44d3cae7f88ad993de79defc0ac94cd6"
+checksum = "946ba7f1839bf01bbdb148bd8d9d0625b0913f731e22b7797fbaf5a97e21d02d"
 dependencies = [
  "moenarch-media-core",
  "moenarch-runtime-core",
@@ -1975,8 +1985,9 @@ dependencies = [
 
 [[package]]
 name = "moenarch-tensor-data"
-version = "0.1.1"
-source = "git+https://github.com/moritzbrantner/moenarch-foundation?rev=9a162dfd44d3cae7f88ad993de79defc0ac94cd6#9a162dfd44d3cae7f88ad993de79defc0ac94cd6"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5451b1075701eb3772d1ea3c12aec6c8637a7b232cfab97ef02a0befd6f850c2"
 dependencies = [
  "moenarch-media-core",
  "moenarch-runtime-core",
@@ -1987,7 +1998,7 @@ dependencies = [
 [[package]]
 name = "moenarch-text-classification"
 version = "0.1.1"
-source = "git+https://github.com/moritzbrantner/nlp-stack?rev=66f190678ef5061e1d856b7bfd997eb243105759#66f190678ef5061e1d856b7bfd997eb243105759"
+source = "git+https://github.com/moritzbrantner/nlp-stack?rev=5e472f92cde1261f49d24bd1b647c45cf70833f1#5e472f92cde1261f49d24bd1b647c45cf70833f1"
 dependencies = [
  "moenarch-model-runtime",
  "moenarch-runtime-core",
@@ -1996,14 +2007,14 @@ dependencies = [
  "moenarch-text-lexical",
  "serde",
  "serde_json",
- "sha2 0.10.9",
+ "sha2 0.11.1",
  "tokenizers 0.23.2",
 ]
 
 [[package]]
 name = "moenarch-text-core"
 version = "0.1.1"
-source = "git+https://github.com/moritzbrantner/nlp-stack?rev=66f190678ef5061e1d856b7bfd997eb243105759#66f190678ef5061e1d856b7bfd997eb243105759"
+source = "git+https://github.com/moritzbrantner/nlp-stack?rev=5e472f92cde1261f49d24bd1b647c45cf70833f1#5e472f92cde1261f49d24bd1b647c45cf70833f1"
 dependencies = [
  "moenarch-media-core",
  "moenarch-runtime-core",
@@ -2017,7 +2028,7 @@ dependencies = [
 [[package]]
 name = "moenarch-text-embeddings"
 version = "0.1.1"
-source = "git+https://github.com/moritzbrantner/nlp-stack?rev=66f190678ef5061e1d856b7bfd997eb243105759#66f190678ef5061e1d856b7bfd997eb243105759"
+source = "git+https://github.com/moritzbrantner/nlp-stack?rev=5e472f92cde1261f49d24bd1b647c45cf70833f1#5e472f92cde1261f49d24bd1b647c45cf70833f1"
 dependencies = [
  "candle-core 0.11.1",
  "candle-nn 0.11.1",
@@ -2032,14 +2043,14 @@ dependencies = [
  "moenarch-vector-analysis-index",
  "serde",
  "serde_json",
- "sha2 0.10.9",
+ "sha2 0.11.1",
  "tokenizers 0.23.2",
 ]
 
 [[package]]
 name = "moenarch-text-lexical"
 version = "0.1.1"
-source = "git+https://github.com/moritzbrantner/nlp-stack?rev=66f190678ef5061e1d856b7bfd997eb243105759#66f190678ef5061e1d856b7bfd997eb243105759"
+source = "git+https://github.com/moritzbrantner/nlp-stack?rev=5e472f92cde1261f49d24bd1b647c45cf70833f1#5e472f92cde1261f49d24bd1b647c45cf70833f1"
 dependencies = [
  "moenarch-math-sparse-data",
  "moenarch-runtime-core",
@@ -2050,11 +2061,12 @@ dependencies = [
 
 [[package]]
 name = "moenarch-vector-analysis-core"
-version = "0.1.1"
+version = "0.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "de15a4cd8baa74e92cb2a262f7bebc44889402d8a480a73da59ce8e5e1b352f5"
+checksum = "f7e146fd70ca0378eff98f70251452b7338e4d7e34d733332ea17d2453741226"
 dependencies = [
  "moenarch-media-core",
+ "moenarch-numbers-core",
  "moenarch-runtime-core",
  "serde",
  "serde_json",
@@ -2062,13 +2074,14 @@ dependencies = [
 
 [[package]]
 name = "moenarch-vector-analysis-index"
-version = "0.1.1"
+version = "0.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "90f07138154446288158cdc723d2ac95aec7a5346161c0c790529ab424dfffa8"
+checksum = "9f57458eea54bbcce1b5d4445bb7d548b2363e9596e87431782205b526485c12"
 dependencies = [
  "moenarch-media-core",
  "moenarch-runtime-core",
  "moenarch-vector-analysis-core",
+ "search-kernels",
  "serde",
  "serde_json",
 ]
@@ -2776,6 +2789,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "94143f37725109f92c262ed2cf5e59bce7498c01bcc1502d7b9afe439a4e9f49"
 
 [[package]]
+name = "search-kernels"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f2361dd406be7f403dc5855a7c24bef5bdebe7b3ebdfa78ec372e98c7cfc63bc"
+dependencies = [
+ "collection-kernels",
+]
+
+[[package]]
 name = "semantic-decision"
 version = "0.1.0"
 dependencies = [
@@ -2829,7 +2851,7 @@ checksum = "e7a5d71263a5a7d47b41f6b3f06ba276f10cc18b0931f1799f710578e2309348"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 3.0.9",
+ "syn 3.0.10",
 ]
 
 [[package]]
@@ -2929,9 +2951,9 @@ checksum = "0c790de23124f9ab44544d7ac05d60440adc586479ce501c1d6d7da3cd8c9cf5"
 
 [[package]]
 name = "smallvec"
-version = "1.16.4"
+version = "1.16.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d0d5d4b1981b8bbbb7aed204cae5726d683d5d6ac7e74ec54122ea28f315e7c8"
+checksum = "149309498a5f7334b12ddae0cad8aba81ce785fe91755068867e017cf98fee46"
 
 [[package]]
 name = "socket2"
@@ -2998,9 +3020,9 @@ dependencies = [
 
 [[package]]
 name = "syn"
-version = "3.0.9"
+version = "3.0.10"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d78c8dee4c7bf0e14673097256fed6142ce9d3b85a408189d07482442145823b"
+checksum = "4ae9ccbea3a7b0b09443036490c8f34a8b1b760fd345e5c0dae0aac718faea79"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -3032,7 +3054,7 @@ checksum = "901704edd0dfe137f1987838ee4f259e4e063c31371bdb423f7ae38ec6f77f02"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 3.0.9",
+ "syn 3.0.10",
 ]
 
 [[package]]
@@ -3099,7 +3121,7 @@ checksum = "fe5197923287db20a58125f0bc85c062f7f2c892de97b18c356f9efb14b28524"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 3.0.9",
+ "syn 3.0.10",
 ]
 
 [[package]]
@@ -3237,23 +3259,23 @@ checksum = "78773a2a397f451582ce068015985c33193cf6dea8b74d2a639fe457b2f07b0e"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 3.0.9",
+ "syn 3.0.10",
 ]
 
 [[package]]
 name = "toml_datetime"
-version = "1.1.2+spec-1.1.0"
+version = "1.1.3+spec-1.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2b86d767906c6c42421dcba507eb9d203e779497710a47782a224bb871653053"
+checksum = "173f25c883cd2176a2d8212155638c0a60d484a9d84546d270866f40f56b6e49"
 dependencies = [
  "serde_core",
 ]
 
 [[package]]
 name = "toml_edit"
-version = "0.25.17+spec-1.1.0"
+version = "0.25.19+spec-1.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e3641d5bbb5349a79e1020a242d251efbc546ad8048d133958323ce9c40a9c9c"
+checksum = "dd43688c4858d7264ae1cf9a9f874a67c3feb74a883b1cd7bebd6a4ea8307218"
 dependencies = [
  "indexmap",
  "toml_datetime",
@@ -3584,7 +3606,7 @@ dependencies = [
  "bumpalo",
  "proc-macro2",
  "quote",
- "syn 3.0.9",
+ "syn 3.0.10",
  "wasm-bindgen-shared",
 ]
 
@@ -3749,9 +3771,9 @@ checksum = "589f6da84c646204747d1270a2a5661ea66ed1cced2631d546fdfb155959f9ec"
 
 [[package]]
 name = "winnow"
-version = "1.0.4"
+version = "1.0.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "23b97319f7b8343df12cc98938e5c3eb436064524c8d2b4e30a1d3a36eecdf81"
+checksum = "8c3b93199df0ab874cdf0c6a94f0a0dc3423fe41f1cafb62b8bd7b1deb277aef"
 dependencies = [
  "memchr",
 ]
@@ -3817,7 +3839,7 @@ checksum = "ec8ebde2db3681e8c9980cc27822030e68752690ddfa9473e739aeb4dbde6d71"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 3.0.9",
+ "syn 3.0.10",
  "synstructure 0.14.0",
 ]
 
@@ -3858,7 +3880,7 @@ checksum = "f75b4683f6c7f45248d4d64056a24298c6281e0993356d7d1b4a1a962ef10d4a"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 3.0.9",
+ "syn 3.0.10",
  "synstructure 0.14.0",
 ]
 
@@ -3867,6 +3889,20 @@ name = "zeroize"
 version = "1.9.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e13084392c5e4bc371903e2935a5eaeed24905a7511356b883835e18a78f6879"
+dependencies = [
+ "zeroize_derive",
+]
+
+[[package]]
+name = "zeroize_derive"
+version = "1.5.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3c50655cbb0fe3fc43170059e702f1ce5e19b84cec58dc87b037a09935c2f328"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 2.0.119",
+]
 
 [[package]]
 name = "zerotrie"
@@ -3898,15 +3934,16 @@ checksum = "c3743ddbf47738d929cd1ae2e199d40d0162979dfe31aef8ae646d2bf00bf97a"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 3.0.9",
+ "syn 3.0.10",
 ]
 
 [[package]]
 name = "zip"
-version = "9.2.2"
+version = "9.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e408c6cc4699dd017d53dc080cd51c2cea2b5354af57a1479bd265ed42911487"
+checksum = "0700e6c427aff64acdbf02e85fbfd946c2ee12319d1af013092f3a2178914ff8"
 dependencies = [
+ "constant_time_eq",
  "crc32fast",
  "getrandom 0.4.3",
  "indexmap",
@@ -3915,6 +3952,7 @@ dependencies = [
  "nix",
  "typed-path",
  "windows-sys 0.61.2",
+ "zeroize",
 ]
 
 [[package]]
@@ -3928,3 +3966,23 @@ name = "zmij"
 version = "1.0.23"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "29666d0abbfad1e3dc4dcf6144730dd3a3ab225bbbdac83319345b1b44ccfc1b"
+
+[[patch.unused]]
+name = "moenarch-audio-contracts"
+version = "0.1.0"
+source = "git+https://github.com/moritzbrantner/moenarch-foundation?rev=9a162dfd44d3cae7f88ad993de79defc0ac94cd6#9a162dfd44d3cae7f88ad993de79defc0ac94cd6"
+
+[[patch.unused]]
+name = "moenarch-math-signal-core"
+version = "0.1.1"
+source = "git+https://github.com/moritzbrantner/moenarch-foundation?rev=9a162dfd44d3cae7f88ad993de79defc0ac94cd6#9a162dfd44d3cae7f88ad993de79defc0ac94cd6"
+
+[[patch.unused]]
+name = "moenarch-media-core"
+version = "0.1.0"
+source = "git+https://github.com/moritzbrantner/moenarch-foundation?rev=9a162dfd44d3cae7f88ad993de79defc0ac94cd6#9a162dfd44d3cae7f88ad993de79defc0ac94cd6"
+
+[[patch.unused]]
+name = "moenarch-tensor-data"
+version = "0.1.1"
+source = "git+https://github.com/moritzbrantner/moenarch-foundation?rev=9a162dfd44d3cae7f88ad993de79defc0ac94cd6#9a162dfd44d3cae7f88ad993de79defc0ac94cd6"
