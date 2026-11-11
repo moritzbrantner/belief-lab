@@ -8,14 +8,23 @@ publish = false
 # workspace so `cargo test --workspace` stays offline and light. Run it with:
 #   cargo test --release --manifest-path crates/golden-media/Cargo.toml -- --ignored --nocapture
 
+[features]
+# Opt in to the pinned audio-analysis producer's CUDA backend for Whisper medium.
+cuda = ["audio-analysis-transcription/cuda"]
+
 [dependencies]
 
 [dev-dependencies]
 golden-scoring = { path = "../golden-scoring" }
+belief-cli = { path = "../../apps/belief-cli" }
 serde_json = "=1.0.154"
 sha2 = "=0.11.1"
-audio-analysis-transcription = { package = "moenarch-audio-analysis-transcription", git = "https://github.com/moritzbrantner/audio-analysis", rev = "ddba9a3ad361a37e9b7f5fac5731633a478f35bb", features = ["candle", "model-bundles", "pyannote-diarization", "audio-io"] }
-audio-analysis-speakers = { package = "moenarch-audio-analysis-speakers", git = "https://github.com/moritzbrantner/audio-analysis", rev = "ddba9a3ad361a37e9b7f5fac5731633a478f35bb", features = ["pyannote-diarization"] }
+audio-analysis-transcription = { package = "moenarch-audio-analysis-transcription", git = "https://github.com/moritzbrantner/audio-analysis", rev = "645e35819f48807d8a5f2513bd28eff048190e3f", features = ["candle", "model-bundles", "pyannote-diarization", "audio-io"] }
+audio-analysis-speakers = { package = "moenarch-audio-analysis-speakers", git = "https://github.com/moritzbrantner/audio-analysis", rev = "645e35819f48807d8a5f2513bd28eff048190e3f", features = ["pyannote-diarization"] }
+# Stage 4 claim matching: multilingual-e5-base preset (nlp-stack#188), pinned to nlp-stack main.
+# Stage 4 polarity: the owner-chosen multilingual NLI preset (nlp-stack#195).
+text-classification = { package = "moenarch-text-classification", git = "https://github.com/moritzbrantner/nlp-stack", rev = "5e472f92cde1261f49d24bd1b647c45cf70833f1", features = ["onnx"] }
+text-embeddings = { package = "moenarch-text-embeddings", git = "https://github.com/moritzbrantner/nlp-stack", rev = "5e472f92cde1261f49d24bd1b647c45cf70833f1", features = ["candle", "model-bundles"] }
 
 # The producer's own source graph at that revision: its Cargo.toml Candle backport and the
 # moenarch-foundation revision from its .coding-tooling.source-deps.json.
@@ -25,5 +34,7 @@ moenarch-audio-contracts = { git = "https://github.com/moritzbrantner/moenarch-f
 moenarch-math-signal-core = { git = "https://github.com/moritzbrantner/moenarch-foundation", rev = "9a162dfd44d3cae7f88ad993de79defc0ac94cd6" }
 moenarch-media-core = { git = "https://github.com/moritzbrantner/moenarch-foundation", rev = "9a162dfd44d3cae7f88ad993de79defc0ac94cd6" }
 moenarch-model-runtime = { git = "https://github.com/moritzbrantner/moenarch-foundation", rev = "9a162dfd44d3cae7f88ad993de79defc0ac94cd6" }
+# Both producers patch runtime-onnx to this foundation revision for typed missing-runtime errors.
+moenarch-runtime-onnx = { git = "https://github.com/moritzbrantner/moenarch-foundation", rev = "cf8d6f1052ad1d5c567e797a56d3bb8910828920" }
 moenarch-runtime-core = { git = "https://github.com/moritzbrantner/moenarch-foundation", rev = "9a162dfd44d3cae7f88ad993de79defc0ac94cd6" }
 moenarch-tensor-data = { git = "https://github.com/moritzbrantner/moenarch-foundation", rev = "9a162dfd44d3cae7f88ad993de79defc0ac94cd6" }

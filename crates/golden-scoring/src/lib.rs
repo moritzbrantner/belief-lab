@@ -7,6 +7,10 @@
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 
+pub mod interchange;
+pub mod stage4;
+pub mod stage4_diagnostics;
+
 /// Frame step used for every time-based comparison.
 pub const FRAME_SECONDS: f64 = 0.01;
 
@@ -17,6 +21,61 @@ pub struct GoldenExpectations {
     pub status: String,
     pub source: GoldenSource,
     pub speaker_turns: Vec<GoldenTurn>,
+    #[serde(default)]
+    pub people: Vec<GoldenPerson>,
+    #[serde(default)]
+    pub propositions: Vec<GoldenProposition>,
+    #[serde(default)]
+    pub expected_attributions: Vec<GoldenAttribution>,
+    #[serde(default)]
+    pub expected_no_attribution: Vec<GoldenNoAttribution>,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct GoldenPerson {
+    pub id: String,
+    pub display_name: String,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct GoldenProposition {
+    pub id: String,
+    pub text: String,
+    pub scope: String,
+}
+
+/// One approved attribution. `stance` is a belief-core stance or `no_stance_evidence`
+/// (no observation of a stance should exist). Reported positions name the reporter either as
+/// `via` (on the holder's entry) or as the entry's `person` with `aboutPerson` and
+/// `attributedStance` (on the reporter's entry).
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct GoldenAttribution {
+    pub person: String,
+    pub proposition: String,
+    pub stance: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub kind: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub about_person: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub attributed_stance: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub via: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub approx_seconds: Option<f64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub quote: Option<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct GoldenNoAttribution {
+    pub person: String,
+    pub proposition: String,
+    pub reason: String,
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -337,7 +396,7 @@ fn quoted_fragments(evidence: &str) -> Vec<String> {
         .collect()
 }
 
-fn words(text: &str) -> Vec<String> {
+pub(crate) fn words(text: &str) -> Vec<String> {
     text.to_lowercase()
         .replace('’', "'")
         .split(|c: char| !(c.is_alphanumeric() || c == '\''))
