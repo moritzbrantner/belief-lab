@@ -36,7 +36,7 @@ jobs:
           path: ~/.cargo/bin/wasm-bindgen
           key: ${{ runner.os }}-${{ runner.arch }}-wasm-bindgen-cli-0.2.130
       - if: steps.wasm-bindgen-cache.outputs.cache-hit != 'true'
-        run: cargo install wasm-bindgen-cli --version 0.2.130 --locked
+        run: cargo install wasm-bindgen-cli --version 0.2.130 --locked --force
       - run: scripts/build-pages.sh
       - run: npm --prefix site ci
       - name: Cache Playwright Chromium
