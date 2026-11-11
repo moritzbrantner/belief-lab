@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 cd "$(dirname "$0")/.."
-if [[ "$(wasm-bindgen --version)" != "wasm-bindgen 0.2.128" ]]; then
-  echo 'Install the matching binding generator: cargo install wasm-bindgen-cli --version 0.2.128 --locked' >&2
+if [[ "$(wasm-bindgen --version)" != "wasm-bindgen 0.2.130" ]]; then
+  echo 'Install the matching binding generator: cargo install wasm-bindgen-cli --version 0.2.130 --locked' >&2
   exit 1
 fi
 cargo build --locked --release -p belief-cli --lib --target wasm32-unknown-unknown
