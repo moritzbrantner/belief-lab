@@ -30,7 +30,7 @@ This authorizes the request before installing or invoking SemIf. First use downl
 
 ```sh
 rustup target add wasm32-unknown-unknown
-cargo install wasm-bindgen-cli --version 0.2.128 --locked
+cargo install wasm-bindgen-cli --version 0.2.130 --locked
 scripts/build-pages.sh
 python3 -m http.server --directory target/pages 8765
 ```
