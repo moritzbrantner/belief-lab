@@ -374,7 +374,23 @@ await projectPage.getByLabel('New proposition text').fill('A-only proposition');
 await projectPage.getByLabel('New proposition scope').fill('Investigation A');
 await projectPage.getByRole('button',{name:'Add proposition'}).click();
 await projectPage.getByRole('status').filter({hasText:'Comparison ready.'}).waitFor();
-await projectPage.waitForFunction(() => document.getElementById('investigation-select').options.length === 2);
+// "Comparison ready." appears before the save commits; closing earlier resumes the newer, empty B.
+await projectPage.evaluate(async (id) => {
+  const savedText = () => new Promise((resolve, reject) => {
+    const request = indexedDB.open('belief-lab', 1);
+    request.onerror = () => reject(request.error);
+    request.onsuccess = () => {
+      const saved = request.result.transaction('investigations').objectStore('investigations').get(id);
+      saved.onerror = () => reject(saved.error);
+      saved.onsuccess = () => { request.result.close(); resolve(saved.result?.text || ''); };
+    };
+  });
+  const deadline = Date.now() + 10000;
+  while (!(await savedText()).includes('A-only proposition')) {
+    if (Date.now() > deadline) throw Error('Investigation A was not saved');
+    await new Promise((resolve) => setTimeout(resolve, 50));
+  }
+}, researchA);
 await projectPage.close();
 // Reopen the session: the last updated investigation (A) resumes; B stays empty and separate.
 projectPage = await workspace.newPage();
