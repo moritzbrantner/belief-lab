@@ -142,9 +142,10 @@ def command(args: list[str], *, cwd: Path, env: dict[str, str] | None = None) ->
     return subprocess.run(args, cwd=cwd, env=env, check=False).returncode
 
 
-def ensure_api_checkout(root: Path, out: Path, requested: Path | None) -> Path:
+def ensure_api_checkout(root: Path, requested: Path | None) -> Path:
     required_tool("git")
-    checkout = requested.resolve() if requested else out / ".producers/proposition-api"
+    # Source checkouts stay out of target/ so build-output cleanup can reclaim it.
+    checkout = requested.resolve() if requested else root / ".local/producers/proposition-api"
     managed = requested is None
     if not (checkout / ".git").exists():
         if checkout.exists() and any(checkout.iterdir()):
@@ -308,7 +309,7 @@ def run_pipeline(
             print("Reuse: pinned proposition-api candidates (matching document digest).")
         else:
             required_tool("bun")
-            checkout = ensure_api_checkout(root, out, api_dir)
+            checkout = ensure_api_checkout(root, api_dir)
             with pinned_llama_server(checkout, out) as environment:
                 code = command(
                     ["bun", str(root / "crates/golden-media/stage4/extract.ts"), str(checkout), str(out)],

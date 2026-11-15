@@ -75,7 +75,7 @@ The runner validates the committed audio and each saved stage's source/model rec
 It reuses transcript/turns, pinned proposition-api candidate drafts, and the recorded
 e5/NLI score if the offline replay matches the saved baseline. Missing stages run in order,
 never concurrently. It fetches proposition-api at its **pinned commit** into
-`target/golden/russell-copleston-1948/.producers/` when required, starts its pinned local
+`.local/producers/` when required, starts its pinned local
 `llama-server`, and stops only that server when extraction ends. Interrupted Qwen draft windows
 resume from their request-hash cache. Re-running with complete inputs performs only the
 cheap offline replay, and unchanged diagnostic files are not rewritten.
