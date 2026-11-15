@@ -177,10 +177,11 @@ class GoldenPipelineTests(unittest.TestCase):
             check=True,
         ).stdout.strip()
         with patch.object(stage, "API_URL", str(remote)), patch.object(stage, "API_COMMIT", sha):
-            checkout = stage.ensure_api_checkout(self.root, self.out, None)
+            checkout = stage.ensure_api_checkout(self.root, None)
             self.assertTrue((checkout / "src/example.rs").is_file())
+            self.assertEqual(checkout, self.root / ".local/producers/proposition-api")
             with patch.object(stage, "command", side_effect=AssertionError("no clone or fetch")):
-                self.assertEqual(stage.ensure_api_checkout(self.root, self.out, None), checkout)
+                self.assertEqual(stage.ensure_api_checkout(self.root, None), checkout)
 
 
 if __name__ == "__main__":
