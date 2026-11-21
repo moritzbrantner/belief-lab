@@ -19,12 +19,12 @@ golden-scoring = { path = "../golden-scoring" }
 belief-cli = { path = "../../apps/belief-cli" }
 serde_json = "=1.0.154"
 sha2 = "=0.11.1"
-audio-analysis-transcription = { package = "moenarch-audio-analysis-transcription", git = "https://github.com/moritzbrantner/audio-analysis", rev = "98c20fe065271997534f1fbed5e31099c74d4c95", features = ["candle", "model-bundles", "pyannote-diarization", "audio-io"] }
-audio-analysis-speakers = { package = "moenarch-audio-analysis-speakers", git = "https://github.com/moritzbrantner/audio-analysis", rev = "98c20fe065271997534f1fbed5e31099c74d4c95", features = ["pyannote-diarization"] }
+audio-analysis-transcription = { package = "moenarch-audio-analysis-transcription", git = "https://github.com/moritzbrantner/audio-analysis", rev = "579a3750844670c4385015311179cab79d6215d9", features = ["candle", "model-bundles", "pyannote-diarization", "audio-io"] }
+audio-analysis-speakers = { package = "moenarch-audio-analysis-speakers", git = "https://github.com/moritzbrantner/audio-analysis", rev = "579a3750844670c4385015311179cab79d6215d9", features = ["pyannote-diarization"] }
 # Stage 4 claim matching: multilingual-e5-base preset (nlp-stack#188), pinned to nlp-stack main.
 # Stage 4 polarity: the owner-chosen multilingual NLI preset (nlp-stack#195).
-text-classification = { package = "moenarch-text-classification", git = "https://github.com/moritzbrantner/nlp-stack", rev = "a80be6ef078995b6c1191234ec24d6e6fbd28bbf", features = ["onnx"] }
-text-embeddings = { package = "moenarch-text-embeddings", git = "https://github.com/moritzbrantner/nlp-stack", rev = "a80be6ef078995b6c1191234ec24d6e6fbd28bbf", features = ["candle", "model-bundles"] }
+text-classification = { package = "moenarch-text-classification", git = "https://github.com/moritzbrantner/nlp-stack", rev = "4f573ba5a2303be43556e9f91e9b27d07bd91309", features = ["onnx"] }
+text-embeddings = { package = "moenarch-text-embeddings", git = "https://github.com/moritzbrantner/nlp-stack", rev = "4f573ba5a2303be43556e9f91e9b27d07bd91309", features = ["candle", "model-bundles"] }
 
 # The producer's own source graph at that revision: its Cargo.toml Candle backport and the
 # moenarch-foundation revision from its .coding-tooling.source-deps.json.
